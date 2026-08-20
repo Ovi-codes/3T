@@ -1,0 +1,28 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Java / Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local env
+.env
+.env.local

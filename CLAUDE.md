@@ -16,7 +16,7 @@ Don't duplicate facts from those docs here — link to them so nothing drifts.
 
 - **Backend:** Spring Boot 3.x (Java 21), Maven, Spring Web + Data JPA + Flyway.
 - **DB:** PostgreSQL 16 (Testcontainers for integration tests).
-- **Frontend:** Angular (standalone components, `@if`/`@for`), npm, Node 20.
+- **Frontend:** Angular (standalone components, `@if`/`@for`), npm, Node 24 LTS.
 - **Auth:** Spring Security (email + BCrypt), behind an abstracted `AuthProvider` seam. Core loop needs no auth.
 - **Email:** Mailpit in dev/tests; a transactional provider in prod.
 - **CI/CD:** GitHub Actions. **Cloud:** Azure (App Service + Static Web Apps + Postgres Flexible Server), EU region.
