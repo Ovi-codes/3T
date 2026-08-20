@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: 3t-run-backend
+
+  # Defaults match docker-compose.yml, so a local run needs no environment at all.
+  # Every value is overridable for CI and for Azure.
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:runro}
+    username: ${DB_USER:runro}
+    password: ${DB_PASSWORD:runro}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  jpa:
+    # Flyway owns the schema; Hibernate only checks the mapping still matches it.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8080}

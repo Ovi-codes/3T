@@ -63,11 +63,24 @@ exists.
 
 ```bash
 cd backend
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Runs on http://localhost:8080. Flyway applies the migrations in
 `backend/src/main/resources/db/migration` at startup, so start Postgres first.
+
+Maven itself is not a prerequisite — `mvnw` downloads the pinned version on first use. On
+Windows, run `.\mvnw.cmd` instead.
+
+Check it is alive:
+
+```bash
+curl localhost:8080/api/ping
+# {"status":"ok","appVersion":"0.0.1"}
+```
+
+Database settings come from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and
+`SERVER_PORT`; the defaults match the Compose services above, so locally you need none of them.
 
 ### 3. Frontend
 
@@ -83,7 +96,7 @@ Runs on http://localhost:4200 and calls the backend at `localhost:8080`.
 
 | Layer | Command | Where |
 | :--- | :--- | :--- |
-| Backend unit + integration | `mvn verify` | `backend/` |
+| Backend unit + integration | `./mvnw verify` | `backend/` |
 | Frontend unit/component | `npm test` | `frontend/` |
 | End-to-end | `npx playwright test` | `e2e/` |
 
