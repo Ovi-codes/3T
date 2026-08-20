@@ -6,7 +6,7 @@
 ## How it's tracked
 
 - **GitHub Milestones** `V1`, `V2`, `V3`. Every idea → an issue assigned to its milestone *the moment it occurs*, then out of sight until pulled in.
-- **GitHub Project board** with **Now / Next / Later** columns for the visual roadmap.
+- **[GitHub Project board](https://github.com/users/Ovi-codes/projects/1)** with **Now / Next / Later** columns for the visual roadmap.
 - **This file** is the human-readable summary that mirrors intent; **GitHub tracks the live state.**
 
 ---
