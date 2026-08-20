@@ -42,3 +42,5 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 - A feature isn't done until it meets the **Definition of Done** in charter §6 and CI is green.
 - Personal data touched? Check the **GDPR** section (charter §7) before shipping.
 - Incomplete work sits behind a feature flag on `main`.
+- **Branching:** one short-lived branch per task → PR → squash-merge to `main`. No long-lived
+  feature branches; `main` stays releasable. The PR template carries the DoD checklist.
