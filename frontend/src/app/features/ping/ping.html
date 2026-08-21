@@ -1,0 +1,12 @@
+<main class="ping">
+  <section class="card">
+    <h1>3T Run</h1>
+    @if (ping(); as p) {
+      <p class="status">Backend says: {{ p.status }} (v{{ p.appVersion }})</p>
+    } @else if (error(); as e) {
+      <p class="status status--error">{{ e }}</p>
+    } @else {
+      <p class="status status--muted">contacting backend…</p>
+    }
+  </section>
+</main>

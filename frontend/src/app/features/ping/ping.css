@@ -1,0 +1,40 @@
+/* Fluid units and a max-width card keep this legible from a 320px phone to a
+   wide desktop without any breakpoints — the responsive baseline for Increment 0. */
+.ping {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border-radius: 0.75rem;
+  text-align: center;
+  background: Canvas;
+  color: CanvasText;
+  border: 1px solid color-mix(in srgb, CanvasText 15%, transparent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+}
+
+.status {
+  margin: 0;
+  font-size: clamp(1rem, 3.5vw, 1.25rem);
+}
+
+.status--muted {
+  opacity: 0.6;
+}
+
+.status--error {
+  color: #b3261e;
+}
