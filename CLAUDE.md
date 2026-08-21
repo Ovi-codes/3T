@@ -14,7 +14,7 @@ Don't duplicate facts from those docs here — link to them so nothing drifts.
 
 ## Stack
 
-- **Backend:** Spring Boot 3.x (Java 21), Maven, Spring Web + Data JPA + Flyway.
+- **Backend:** Spring Boot 4.x (Java 21), Maven via the wrapper (`mvnw`), Spring Web + Data JPA + Flyway.
 - **DB:** PostgreSQL 16 (Testcontainers for integration tests).
 - **Frontend:** Angular (standalone components, `@if`/`@for`), npm, Node 24 LTS.
 - **Auth:** Spring Security (email + BCrypt), behind an abstracted `AuthProvider` seam. Core loop needs no auth.
@@ -31,7 +31,7 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 ## Canonical commands
 
 - `docker compose up -d` — local Postgres + Mailpit
-- `mvn verify` (in `backend/`) — unit + Testcontainers integration
+- `./mvnw verify` (in `backend/`) — unit + Testcontainers integration
 - `npm test` (in `frontend/`) — Jest
 - `npx playwright test` (in `e2e/`) — E2E, desktop + mobile viewports
 
