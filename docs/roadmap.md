@@ -28,6 +28,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).
 - Volunteering interest registration.
 - Medical waiver users must accept before registering for a run.
+- Integrate a free weather API that shows prediction for the next session.
 
 ---
 

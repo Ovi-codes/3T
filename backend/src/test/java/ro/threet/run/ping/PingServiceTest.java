@@ -37,7 +37,7 @@ class PingServiceTest {
 
 		assertThatIllegalStateException()
 				.isThrownBy(() -> pingService.ping())
-				.withMessageContaining("V1 migration");
+				.withMessageContaining("app_info is empty");
 	}
 
 }
