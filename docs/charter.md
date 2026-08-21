@@ -98,7 +98,7 @@ GDPR essentials (§7), accessibility pass, performance baseline captured (§5), 
 | Backend unit | JUnit 5 + Mockito | Fast logic checks; no Spring context. |
 | Backend integration | Spring Boot Test + **Testcontainers** (Postgres + Mailpit) | Real DB + real SMTP, no mocks for infra. |
 | API | MockMvc / WebTestClient (or REST Assured) | Endpoint contracts, status codes, payloads. |
-| Frontend unit/component | **Jest** (+ Angular Testing Library) | Fast component logic and rendering. |
+| Frontend unit/component | **Vitest** (Angular's built-in `@angular/build:unit-test`) | Fast component logic and rendering; the default runner scaffolded by Angular 21+. |
 | End-to-end | **Playwright** | Cross-browser + mobile viewports; pairs well with an agent. |
 | Accessibility | **axe-core** via Playwright | No critical/serious violations on new UI. |
 | Performance | **k6** | Baseline + regression gate (below). |
