@@ -32,7 +32,7 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 
 - `docker compose up -d` — local Postgres + Mailpit
 - `./mvnw verify` (in `backend/`) — unit + Testcontainers integration
-- `npm test` (in `frontend/`) — Jest
+- `npm test` (in `frontend/`) — Vitest (Angular's built-in test runner)
 - `npx playwright test` (in `e2e/`) — E2E, desktop + mobile viewports
 
 ## Conventions
