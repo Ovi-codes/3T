@@ -42,5 +42,8 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 - A feature isn't done until it meets the **Definition of Done** in charter §6 and CI is green.
 - Personal data touched? Check the **GDPR** section (charter §7) before shipping.
 - Incomplete work sits behind a feature flag on `main`.
+- **Docs stay in sync:** when a task is done, before committing, check whether the implementation
+  choices change any project doc — `charter.md`, `roadmap.md`, `README.md`, this file — and update
+  them in the same commit. (E.g. a swapped tool, a new dependency file, a changed command.)
 - **Branching:** one short-lived branch per task → PR → squash-merge to `main`. No long-lived
   feature branches; `main` stays releasable. The PR template carries the DoD checklist.
