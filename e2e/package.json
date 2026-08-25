@@ -1,0 +1,14 @@
+{
+  "name": "threet-e2e",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}
