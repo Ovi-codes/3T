@@ -26,6 +26,9 @@ export default defineConfig({
   use: {
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',
+    // Capture evidence only when a test fails, so green runs stay artifact-free.
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
 
   projects: [
