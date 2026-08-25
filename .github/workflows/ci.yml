@@ -1,0 +1,117 @@
+name: CI
+
+# The seed of the release gate. All three jobs must pass; the CS-1..6 core-scenario
+# E2E tests (charter §5) plug into the e2e job as they are built.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch/PR cancels an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (JDK 21)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      # verify = unit tests + Testcontainers integration. Docker is present on the runner,
+      # so the throwaway Postgres spins up with no extra setup.
+      - name: mvn verify
+        working-directory: backend
+        run: ./mvnw -B verify
+
+  frontend:
+    name: Frontend (Node 24)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # spring-boot:run (started by Playwright's webServer) needs a real Postgres. Testcontainers
+    # is not used here, so provide one as a service with the same defaults as docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: runro
+          POSTGRES_USER: runro
+          POSTGRES_PASSWORD: runro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runro -d runro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+      - name: Install E2E deps
+        working-directory: e2e
+        run: npm ci
+      - name: Install Playwright browser
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      # Build both apps up front: the backend package also compiles + warms the Maven cache so
+      # the spring-boot:run inside webServer starts within budget, and the frontend production
+      # build is a real gate (AOT + bundle budgets) that the dev server would not catch.
+      - name: Build backend
+        working-directory: backend
+        run: ./mvnw -B -DskipTests package
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # Playwright's webServer starts the backend (spring-boot:run) and frontend (npm start),
+      # waits for both, runs the suite on desktop + mobile, then tears them down.
+      - name: Run E2E
+        working-directory: e2e
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7

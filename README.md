@@ -97,6 +97,7 @@ Runs on http://localhost:4200 and calls the backend at `localhost:8080`.
 | Layer | Command | Where |
 | :--- | :--- | :--- |
 | Backend unit + integration | `./mvnw verify` | `backend/` |
+| Frontend lint | `npm run lint` | `frontend/` |
 | Frontend unit/component | `npm test` | `frontend/` |
 | End-to-end | `npx playwright test` | `e2e/` |
 
@@ -106,6 +107,20 @@ Postgres — they do not use the Compose one.
 E2E tests start the backend and frontend themselves (Playwright's `webServer`), so you only need
 Docker up first (`docker compose up -d`) for the database. Install the browser once with
 `npx playwright install chromium`.
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and on every
+pull request, as three jobs that must all pass:
+
+| Job | Does |
+| :--- | :--- |
+| `backend` | JDK 21, `./mvnw verify` (unit + Testcontainers integration). |
+| `frontend` | Node 24, `npm ci`, `npm run lint`, `npm test`. |
+| `e2e` | Builds both apps, runs Playwright against the live stack (backed by a Postgres service), and uploads the HTML report as a build artifact. |
+
+This is the seed of the release gate: the core-scenario E2E tests (charter §5, CS-1..6) plug into
+the `e2e` job as they are built.
 
 ## Dependencies & versions
 
