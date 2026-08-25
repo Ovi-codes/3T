@@ -122,6 +122,14 @@ pull request, as three jobs that must all pass:
 This is the seed of the release gate: the core-scenario E2E tests (charter §5, CS-1..6) plug into
 the `e2e` job as they are built.
 
+### Deploy
+
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) deploys the backend to Azure App
+Service and the frontend to Azure Static Web Apps. It is **manual-only for now** (`workflow_dispatch`)
+and does **not** run on merge — Azure is not provisioned yet. The file's header comments carry the
+one-time setup checklist (resource group, App Service, Static Web App, Postgres Flexible Server, and
+the GitHub secrets) and how to switch it to auto-deploy, gated on green CI on `main`, once that exists.
+
 ## Dependencies & versions
 
 Every tool version in the repo is pinned in one of the files below. If you need to bump a

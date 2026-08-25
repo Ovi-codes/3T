@@ -24,7 +24,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 - Kit dashboard / shoe closet + reviews & recommendations (data source e.g. runrepeat.com).
 
 ## Later — V3
-
+- Azure full deployment
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).
 - Volunteering interest registration.
 - Medical waiver users must accept before registering for a run.
