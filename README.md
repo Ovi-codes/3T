@@ -56,8 +56,8 @@ docker compose ps
 
 Stop with `docker compose down`, or `docker compose down -v` to also wipe the database volume.
 
-Mailpit is not used until Increment 2 (confirmation email). It is wired up now so the seam
-exists.
+Mailpit receives the registration confirmation email. After registering for a run
+locally, open the Mailpit web UI (http://localhost:8025) to read the message the app sent.
 
 ### 2. Backend
 
@@ -80,7 +80,11 @@ curl localhost:8080/api/ping
 ```
 
 Database settings come from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and
-`SERVER_PORT`; the defaults match the Compose services above, so locally you need none of them.
+`SERVER_PORT`.
+The confirmation email uses `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
+`MAIL_PASSWORD`, `MAIL_SMTP_AUTH`, `MAIL_SMTP_STARTTLS` and `MAIL_FROM`. 
+All defaults match the Compose services above, so locally you need none of them; 
+a prod SMTP provider sets the mail ones.
 
 ### 3. Frontend
 
