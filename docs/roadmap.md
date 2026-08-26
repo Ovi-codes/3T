@@ -17,6 +17,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 
 ## Next — V2
 
+- Create a design theme and logo
 - Multi-location expansion *(cheap if `Location` is first-class from day one — see charter §3)*.
 - Post-event time upload via Strava / Garmin *(needs the leaderboard-friendly results shape — charter §3)*.
 - Leaderboards per run.
@@ -24,6 +25,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 - Kit dashboard / shoe closet + reviews & recommendations (data source e.g. runrepeat.com).
 
 ## Later — V3
+- Implement JWT auth
 - Azure full deployment
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).
 - Volunteering interest registration.
