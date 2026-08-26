@@ -17,6 +17,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 
 ## Next — V2
 
+- User access management - admins should be able to CRUD events
 - Create a design theme and logo
 - Multi-location expansion *(cheap if `Location` is first-class from day one — see charter §3)*.
 - Post-event time upload via Strava / Garmin *(needs the leaderboard-friendly results shape — charter §3)*.
