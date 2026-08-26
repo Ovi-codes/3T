@@ -1,1 +1,29 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles. The design tokens (colours, type, spacing, radii) are the single
+ * source of truth — components reference the variables, never raw hex or px. */
+@import './styles/tokens.css';
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible keyboard focus everywhere (quality floor / DoD). */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: var(--focus-offset);
+}
