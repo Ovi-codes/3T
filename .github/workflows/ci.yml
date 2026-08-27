@@ -52,8 +52,9 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    # spring-boot:run (started by Playwright's webServer) needs a real Postgres. Testcontainers
-    # is not used here, so provide one as a service with the same defaults as docker-compose.yml.
+    # spring-boot:run (started by Playwright's webServer) needs a real Postgres, and the CS-1 test
+    # needs a real SMTP server to read the confirmation email back from. Testcontainers is not used
+    # here, so provide both as services with the same defaults as docker-compose.yml.
     services:
       postgres:
         image: postgres:16
@@ -68,6 +69,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Mailpit receives the confirmation email on :1025; the E2E reads it back over :8025.
+      mailpit:
+        image: axllent/mailpit:v1.30.7
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: 1
+          MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        ports:
+          - 1025:1025
+          - 8025:8025
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -110,7 +120,7 @@ jobs:
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: e2e/playwright-report/

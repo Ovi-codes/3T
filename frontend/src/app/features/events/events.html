@@ -17,9 +17,6 @@
     <ul class="event-list" role="list">
       @for (event of events(); track event.id) {
         <li class="event-card" data-testid="event-item">
-          @if ($first) {
-            <span class="next-badge">Next</span>
-          }
           <time class="event-date" [attr.datetime]="event.startDateTime">
             <span class="event-day">{{ event.startDateTime | date: 'EEE d MMM' }}</span>
             <span class="event-time">{{ event.startDateTime | date: 'HH:mm' }}</span>
@@ -27,6 +24,12 @@
           <div class="event-body">
             <h2 class="event-name">{{ event.name }}</h2>
             <p class="event-location">{{ event.locationName }}, {{ event.city }}</p>
+          </div>
+          <div class="event-actions">
+            @if ($first) {
+              <span class="next-badge">Next</span>
+            }
+            <a class="event-register" [routerLink]="['/register', event.id]">Register</a>
           </div>
         </li>
       }

@@ -1,0 +1,79 @@
+<main class="page">
+  @if (loadState() === 'loading') {
+    <p class="state" aria-live="polite">Loading…</p>
+  } @else if (loadState() === 'missing') {
+    <header class="page-header">
+      <p class="eyebrow">Register</p>
+      <h1>Run not found</h1>
+      <p class="lede">That run isn’t open for registration. <a routerLink="/">See upcoming runs</a>.</p>
+    </header>
+  } @else if (confirmation(); as done) {
+    <section data-testid="confirmation">
+      <header class="page-header">
+        <p class="eyebrow">See you at the start line</p>
+        <h1>You're in!</h1>
+      </header>
+
+      <hr class="course-rule" aria-hidden="true" />
+
+      <p class="lede">
+        You’re registered for <strong>{{ done.eventName }}</strong>. We’ve sent a confirmation to
+        <strong>{{ done.email }}</strong>.
+      </p>
+      <p><a class="button" routerLink="/">Back to upcoming runs</a></p>
+    </section>
+  } @else {
+    <header class="page-header">
+      <p class="eyebrow">Register</p>
+      <h1>{{ event()!.name }}</h1>
+      <p class="lede">
+        <time class="run-when" [attr.datetime]="event()!.startDateTime">
+          {{ event()!.startDateTime | date: 'EEE d MMM' }} · {{ event()!.startDateTime | date: 'HH:mm' }}
+        </time>
+        · {{ event()!.locationName }}, {{ event()!.city }}
+      </p>
+    </header>
+
+    <hr class="course-rule" aria-hidden="true" />
+
+    @if (formError(); as message) {
+      <p class="state-error" role="alert">{{ message }}</p>
+    }
+
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="name">Name</label>
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          autocomplete="name"
+          [attr.aria-invalid]="controlError('name') ? 'true' : null"
+          [attr.aria-describedby]="controlError('name') ? 'name-error' : null"
+        />
+        @if (controlError('name'); as message) {
+          <p class="field-error" id="name-error">{{ message }}</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="controlError('email') ? 'true' : null"
+          [attr.aria-describedby]="controlError('email') ? 'email-error' : null"
+        />
+        @if (controlError('email'); as message) {
+          <p class="field-error" id="email-error">{{ message }}</p>
+        }
+      </div>
+
+      <button class="button" type="submit" [disabled]="submitting()" data-testid="register-submit">
+        {{ submitting() ? 'Registering…' : 'Register' }}
+      </button>
+    </form>
+  }
+</main>
