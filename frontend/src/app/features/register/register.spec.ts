@@ -80,6 +80,39 @@ describe('Register', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
   });
 
+  it('rejects a name shorter than three characters', () => {
+    loadEvent();
+
+    setInput('name', 'Ab');
+    setInput('email', 'ana.pop@example.com');
+    submitForm();
+
+    httpMock.expectNone('/api/registrations');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name must be at least 3 characters.');
+  });
+
+  it('rejects a name that is only numbers', () => {
+    loadEvent();
+
+    setInput('name', '12345');
+    setInput('email', 'ana.pop@example.com');
+    submitForm();
+
+    httpMock.expectNone('/api/registrations');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name can’t be only numbers.');
+  });
+
+  it('rejects an email without a valid extension (e.g. a@a)', () => {
+    loadEvent();
+
+    setInput('name', 'Ana Pop');
+    setInput('email', 'a@a');
+    submitForm();
+
+    httpMock.expectNone('/api/registrations');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
+  });
+
   it('posts a valid registration and shows the confirmation', () => {
     loadEvent();
 

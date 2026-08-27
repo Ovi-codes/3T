@@ -122,11 +122,15 @@ h1 {
   background: var(--color-primary-hover);
 }
 
+/* Card actions, right-aligned: the "Next" badge sits to the left of Register, both centred. */
+.event-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 /* The next upcoming run — the single amber accent, dark ink on it (per design). */
 .next-badge {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
   padding: var(--space-1) var(--space-2);
   background: var(--color-accent);
   border-radius: var(--radius-pill);

@@ -2,9 +2,30 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 
 import { EventItem } from '../events/events';
+
+/**
+ * A name has to look like a name: at least one letter, so "12345" (only digits) is rejected even
+ * though it clears the minimum length. Empty is left to the required validator.
+ */
+function nameNotOnlyNumbers(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value ?? '').trim();
+  return value && /^\d+$/.test(value) ? { onlyDigits: true } : null;
+}
+
+/**
+ * Stricter than Angular's Validators.email, which accepts "a@a". Require a domain with a dot and a
+ * real extension (2+ chars), so an address without a valid extension is rejected before submit.
+ */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /** The successful POST /api/registrations response — mirrors the backend RegistrationResponse. */
 interface RegistrationResult {
@@ -48,8 +69,8 @@ export class Register {
   protected readonly formError = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    name: ['', [Validators.required]],
-    email: ['', [Validators.required, Validators.email]],
+    name: ['', [Validators.required, Validators.minLength(3), nameNotOnlyNumbers]],
+    email: ['', [Validators.required, Validators.pattern(EMAIL_PATTERN)]],
   });
 
   constructor() {
@@ -78,7 +99,15 @@ export class Register {
     if (control.hasError('required')) {
       return field === 'name' ? 'Enter your name.' : 'Enter your email.';
     }
-    if (control.hasError('email')) {
+    if (field === 'name') {
+      if (control.hasError('minlength')) {
+        return 'Name must be at least 3 characters.';
+      }
+      if (control.hasError('onlyDigits')) {
+        return 'Name can’t be only numbers.';
+      }
+    }
+    if (field === 'email' && control.hasError('pattern')) {
       return 'Enter a valid email address.';
     }
     return null;
