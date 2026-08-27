@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 /** Shape of one item from GET /api/events — mirrors the backend EventResponse record. */
 export interface EventItem {
@@ -18,7 +19,7 @@ export interface EventItem {
  */
 @Component({
   selector: 'app-events',
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink],
   templateUrl: './events.html',
   styleUrl: './events.css',
 })

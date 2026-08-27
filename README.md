@@ -109,7 +109,8 @@ Backend integration tests use Testcontainers, so Docker must be running. They st
 Postgres — they do not use the Compose one.
 
 E2E tests start the backend and frontend themselves (Playwright's `webServer`), so you only need
-Docker up first (`docker compose up -d`) for the database. Install the browser once with
+Docker up first (`docker compose up -d`) for Postgres and Mailpit — the CS-1 core-loop test reads
+the confirmation email back from Mailpit. Install the browser once with
 `npx playwright install chromium`.
 
 ## Continuous integration

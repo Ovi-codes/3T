@@ -28,6 +28,7 @@
             <h2 class="event-name">{{ event.name }}</h2>
             <p class="event-location">{{ event.locationName }}, {{ event.city }}</p>
           </div>
+          <a class="event-register" [routerLink]="['/register', event.id]">Register</a>
         </li>
       }
     </ul>
