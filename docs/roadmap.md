@@ -34,6 +34,9 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 - Medical waiver users must accept before registering for a run.
 - Integrate a free weather API that shows prediction for the next session.
 
+## Later - V4
+- Attempting to register twice prompts the user to create an account so they can see their existing registration
+
 ---
 
 **Architectural pre-work already scheduled into V1** so V2 is additive, not disruptive: `Location` entity, leaderboard-shaped results table, abstracted auth boundary.
