@@ -1,11 +1,6 @@
 -- Increment 3 (accounts): a person can hold an account to track their runs on a dashboard.
---
--- Accounts are the dashboard upsell, not a gate on the core loop (charter §3): anonymous
--- registration (V3) is unchanged. Auth sits behind a thin AuthProvider seam so a later swap to
--- Microsoft Entra External ID stays local; this table is what the *local* provider owns.
---
--- GDPR (§7): only email + a BCrypt password hash are stored (data minimisation). The plaintext
--- password is never persisted. `app_user` (not `user`) because USER is a reserved word in SQL.
+-- GDPR (§7): only email + a BCrypt password hash are stored (data minimisation).
+-- `app_user` (not `user`) because USER is a reserved word in SQL.
 
 create table app_user (
     id            bigint       generated always as identity primary key,

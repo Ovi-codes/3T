@@ -15,13 +15,13 @@ import jakarta.persistence.Table;
 import ro.threet.run.event.Event;
 
 /**
- * A person's registration for an {@link Event}. Stored per (event, participant) so results and
- * signed-in linkage slot in later (charter §3 seam); this increment only sets name + email.
+ * A person's registration for an {@link Event}, stored per (event, participant) — the shape that
+ * lets results and account linkage share one row (charter §3 seam).
  *
- * {@code user_id} is set when a signed-in user registers (Increment 3) and left null for an
- * anonymous registration — the core loop stays anonymous. {@code finish_time} is still unmapped;
- * it belongs to V2 (results). Hibernate validates mapped columns against the schema, so leaving
- * that one off is fine.
+ * Always carries name + email. {@code user_id} attributes the registration to a signed-in account
+ * and is null for an anonymous one, so the core loop stays anonymous while a logged-in registration
+ * links to its owner. {@code finish_time} remains unmapped — it belongs to V2 (results); Hibernate
+ * validates only mapped columns against the schema, so leaving it off is fine.
  */
 @Entity
 @Table(name = "registration")

@@ -100,6 +100,21 @@ class AuthIntegrationTest {
 	}
 
 	@Test
+	void logoutEndsTheSession() throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		MockHttpSession session = sessionOf(signup);
+
+		mockMvc.perform(post("/api/auth/logout").session(session))
+				.andExpect(status().isNoContent());
+
+		// The (now invalidated) session no longer authenticates.
+		mockMvc.perform(get("/api/auth/me").session(session))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
 	void loginWithWrongPasswordIsUnauthorised() throws Exception {
 		mockMvc.perform(signupRequest("ana@example.com", "correct horse")).andExpect(status().isCreated());
 

@@ -44,7 +44,14 @@ class SecurityConfig {
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 				.formLogin(form -> form.disable())
 				.httpBasic(basic -> basic.disable())
-				.logout(logout -> logout.disable());
+				// POST /api/auth/logout: drop the session, clear the context, expire the cookie, and
+				// answer 204 — no redirect (the SPA handles what comes next).
+				.logout(logout -> logout
+						.logoutUrl("/api/auth/logout")
+						.invalidateHttpSession(true)
+						.deleteCookies("JSESSIONID")
+						.logoutSuccessHandler((request, response, authentication) ->
+								response.setStatus(HttpStatus.NO_CONTENT.value())));
 		return http.build();
 	}
 
