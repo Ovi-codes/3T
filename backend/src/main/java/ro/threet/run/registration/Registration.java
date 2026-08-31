@@ -18,9 +18,10 @@ import ro.threet.run.event.Event;
  * A person's registration for an {@link Event}. Stored per (event, participant) so results and
  * signed-in linkage slot in later (charter §3 seam); this increment only sets name + email.
  *
- * The {@code user_id} and {@code finish_time} columns exist in the table (V3 migration) but are
- * deliberately unmapped here — they belong to Increment 3 (accounts) and V2 (results). Hibernate
- * validates mapped columns against the schema, so leaving them off is fine.
+ * {@code user_id} is set when a signed-in user registers (Increment 3) and left null for an
+ * anonymous registration — the core loop stays anonymous. {@code finish_time} is still unmapped;
+ * it belongs to V2 (results). Hibernate validates mapped columns against the schema, so leaving
+ * that one off is fine.
  */
 @Entity
 @Table(name = "registration")
@@ -40,6 +41,10 @@ public class Registration {
 	@Column(nullable = false, length = 254)
 	private String email;
 
+	/** The account that made this registration, or null when it was made anonymously. */
+	@Column(name = "user_id")
+	private Long userId;
+
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private OffsetDateTime createdAt;
 
@@ -51,6 +56,11 @@ public class Registration {
 		this.event = event;
 		this.name = name;
 		this.email = email;
+	}
+
+	/** Attribute this registration to a signed-in account. */
+	public void linkUser(Long userId) {
+		this.userId = userId;
 	}
 
 	public Long getId() {
@@ -67,6 +77,10 @@ public class Registration {
 
 	public String getEmail() {
 		return email;
+	}
+
+	public Long getUserId() {
+		return userId;
 	}
 
 	public OffsetDateTime getCreatedAt() {

@@ -36,8 +36,12 @@ public class RegistrationService {
 		this.clock = clock;
 	}
 
+	/**
+	 * @param userId the signed-in account making the registration, or null when anonymous — the
+	 *               anonymous core loop passes null and is unchanged
+	 */
 	@Transactional
-	public RegistrationResponse register(RegistrationRequest request) {
+	public RegistrationResponse register(RegistrationRequest request, Long userId) {
 		String name = request.name().trim();
 		String email = request.email().trim().toLowerCase(Locale.ROOT);
 
@@ -55,7 +59,11 @@ public class RegistrationService {
 					"The email is already registered for this run.");
 		}
 
-		Registration registration = registrationRepository.save(new Registration(event, name, email));
+		Registration registration = new Registration(event, name, email);
+		if (userId != null) {
+			registration.linkUser(userId);
+		}
+		registration = registrationRepository.save(registration);
 
 		ConfirmationEmail confirmation = ConfirmationEmail.forRegistration(registration);
 		emailSender.send(email, confirmation.subject(), confirmation.body());

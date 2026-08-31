@@ -33,6 +33,15 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        # The account session cookie. httpOnly keeps it out of JavaScript; SameSite=Lax blocks the
+        # cross-site POST that CSRF tokens would otherwise guard (see SecurityConfig). Secure is on
+        # by default and dropped only for local http via env, so prod always sends it over TLS.
+        http-only: true
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 # Application settings not owned by a Spring namespace.
 app:
