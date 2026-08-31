@@ -51,6 +51,9 @@ export default defineConfig({
       url: BACKEND_PING,
       timeout: 180_000,
       reuseExistingServer: !process.env.CI,
+      // The session cookie is Secure by default (prod is HTTPS); the E2E stack is http, where a
+      // Secure cookie is never stored — so login wouldn't stick. Opt out for the test run.
+      env: { ...process.env, SESSION_COOKIE_SECURE: 'false' },
     },
     {
       command: 'npm start',
