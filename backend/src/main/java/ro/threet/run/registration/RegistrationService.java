@@ -36,8 +36,18 @@ public class RegistrationService {
 		this.clock = clock;
 	}
 
+	/**
+	 * Record a registration for an upcoming event and send its confirmation email, atomically.
+	 *
+	 * @param request the submitted event id, name, and email (already bean-validated at the boundary)
+	 * @param userId  the signed-in account making the registration, or null when anonymous — the
+	 *                anonymous core loop passes null and is unchanged
+	 * @return the recorded registration, echoed back with its event details for the confirmation view
+	 * @throws RegistrationException if the event is unknown (404), already past (400), or the email
+	 *                               is already registered for it (409) — nothing is saved or sent
+	 */
 	@Transactional
-	public RegistrationResponse register(RegistrationRequest request) {
+	public RegistrationResponse register(RegistrationRequest request, Long userId) {
 		String name = request.name().trim();
 		String email = request.email().trim().toLowerCase(Locale.ROOT);
 
@@ -55,7 +65,11 @@ public class RegistrationService {
 					"The email is already registered for this run.");
 		}
 
-		Registration registration = registrationRepository.save(new Registration(event, name, email));
+		Registration registration = new Registration(event, name, email);
+		if (userId != null) {
+			registration.linkUser(userId);
+		}
+		registration = registrationRepository.save(registration);
 
 		ConfirmationEmail confirmation = ConfirmationEmail.forRegistration(registration);
 		emailSender.send(email, confirmation.subject(), confirmation.body());

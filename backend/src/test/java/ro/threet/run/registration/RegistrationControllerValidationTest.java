@@ -2,6 +2,7 @@ package ro.threet.run.registration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -16,9 +17,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The web-layer contract: a payload that fails validation is a 400 carrying per-field messages,
  * and the request never reaches the service — so, crucially, no registration is attempted and no
  * email is sent for bad input. The service is mocked; the real one is covered by the integration
- * test.
+ * test. Security filters are off here — this slice is about the validation contract, and the
+ * endpoint's public-vs-authenticated behaviour is covered by the integration tests.
  */
 @WebMvcTest(RegistrationController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class RegistrationControllerValidationTest {
 
 	@Autowired

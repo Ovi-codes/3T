@@ -86,6 +86,15 @@ The confirmation email uses `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
 All defaults match the Compose services above, so locally you need none of them; 
 a prod SMTP provider sets the mail ones.
 
+The account session cookie is `Secure` by default (prod is HTTPS). To sign in over local
+**http**, opt out so the browser will store the cookie:
+
+```bash
+SESSION_COOKIE_SECURE=false ./mvnw spring-boot:run
+```
+
+Anonymous run registration needs no session, so you only need this when exercising accounts.
+
 ### 3. Frontend
 
 ```bash

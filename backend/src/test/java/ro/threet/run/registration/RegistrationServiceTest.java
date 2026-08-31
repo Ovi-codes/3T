@@ -62,14 +62,15 @@ class RegistrationServiceTest {
 		when(registrationRepository.existsByEventIdAndEmailIgnoreCase(1L, "ana@example.com")).thenReturn(false);
 		when(registrationRepository.save(any(Registration.class))).thenAnswer(call -> call.getArgument(0));
 
-		// Mixed case + surrounding spaces to prove normalisation on the way in.
+		// Mixed case + surrounding spaces to prove normalisation on the way in. Anonymous: no user.
 		RegistrationResponse response = service()
-				.register(new RegistrationRequest(1L, "  Ana  ", "  Ana@Example.com  "));
+				.register(new RegistrationRequest(1L, "  Ana  ", "  Ana@Example.com  "), null);
 
 		verify(registrationRepository).save(savedCaptor.capture());
 		Registration saved = savedCaptor.getValue();
 		assertThat(saved.getName()).isEqualTo("Ana");
 		assertThat(saved.getEmail()).isEqualTo("ana@example.com");
+		assertThat(saved.getUserId()).isNull();
 
 		ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
 		verify(emailSender).send(eq("ana@example.com"), subject.capture(), anyString());
@@ -80,10 +81,23 @@ class RegistrationServiceTest {
 	}
 
 	@Test
+	void attributesRegistrationToTheSignedInUser() {
+		Event event = upcomingEvent();
+		when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+		when(registrationRepository.existsByEventIdAndEmailIgnoreCase(1L, "ana@example.com")).thenReturn(false);
+		when(registrationRepository.save(any(Registration.class))).thenAnswer(call -> call.getArgument(0));
+
+		service().register(new RegistrationRequest(1L, "Ana", "ana@example.com"), 42L);
+
+		verify(registrationRepository).save(savedCaptor.capture());
+		assertThat(savedCaptor.getValue().getUserId()).isEqualTo(42L);
+	}
+
+	@Test
 	void rejectsUnknownEventAndSendsNothing() {
 		when(eventRepository.findById(99L)).thenReturn(Optional.empty());
 
-		assertThatThrownBy(() -> service().register(new RegistrationRequest(99L, "Ana", "ana@example.com")))
+		assertThatThrownBy(() -> service().register(new RegistrationRequest(99L, "Ana", "ana@example.com"), null))
 				.isInstanceOf(RegistrationException.class)
 				.satisfies(thrown -> assertThat(((RegistrationException) thrown).status())
 						.isEqualTo(HttpStatus.NOT_FOUND));
@@ -97,7 +111,7 @@ class RegistrationServiceTest {
 		Event past = event(NOW.minusDays(1));
 		when(eventRepository.findById(1L)).thenReturn(Optional.of(past));
 
-		assertThatThrownBy(() -> service().register(new RegistrationRequest(1L, "Ana", "ana@example.com")))
+		assertThatThrownBy(() -> service().register(new RegistrationRequest(1L, "Ana", "ana@example.com"), null))
 				.isInstanceOf(RegistrationException.class)
 				.satisfies(thrown -> assertThat(((RegistrationException) thrown).status())
 						.isEqualTo(HttpStatus.BAD_REQUEST));
@@ -112,7 +126,7 @@ class RegistrationServiceTest {
 		when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
 		when(registrationRepository.existsByEventIdAndEmailIgnoreCase(anyLong(), anyString())).thenReturn(true);
 
-		assertThatThrownBy(() -> service().register(new RegistrationRequest(1L, "Ana", "ana@example.com")))
+		assertThatThrownBy(() -> service().register(new RegistrationRequest(1L, "Ana", "ana@example.com"), null))
 				.isInstanceOf(RegistrationException.class)
 				.satisfies(thrown -> assertThat(((RegistrationException) thrown).status())
 						.isEqualTo(HttpStatus.CONFLICT));

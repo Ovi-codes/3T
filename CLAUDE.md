@@ -17,7 +17,7 @@ Don't duplicate facts from those docs here — link to them so nothing drifts.
 - **Backend:** Spring Boot 4.x (Java 21), Maven via the wrapper (`mvnw`), Spring Web + Data JPA + Flyway.
 - **DB:** PostgreSQL 16 (Testcontainers for integration tests).
 - **Frontend:** Angular (standalone components, `@if`/`@for`), npm, Node 24 LTS.
-- **Auth:** Spring Security (email + BCrypt), behind an abstracted `AuthProvider` seam. Core loop needs no auth.
+- **Auth:** Spring Security (email + BCrypt), behind an abstracted `AuthProvider` seam. Core loop needs no auth. See [Auth](#auth) for the session model and the seam boundary.
 - **Email:** Mailpit in dev/tests; a transactional provider in prod.
 - **CI/CD:** GitHub Actions. **Cloud:** Azure (App Service + Static Web Apps + Postgres Flexible Server), EU region.
 
@@ -35,7 +35,7 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 - `npm test` (in `frontend/`) — Vitest (Angular's built-in test runner)
 - `npx playwright test` (in `e2e/`) — E2E, desktop + mobile viewports
 
-## Conventions
+## Conventions - these are critical, do not skip
 
 - **Vertical slices only:** DB migration → service → API → Angular UI in one increment.
 - **Test-first for core scenarios:** if a change touches CS-1..6 (see charter §5), add/update its E2E test.
@@ -47,6 +47,35 @@ docker-compose.yml   # Postgres + Mailpit for local dev
   them in the same commit. (E.g. a swapped tool, a new dependency file, a changed command.)
 - **Branching:** one short-lived branch per task → PR → squash-merge to `main`. No long-lived
   feature branches; `main` stays releasable. The PR template carries the DoD checklist.
+- **Review comments:** If you see a review comment that you don't agree with, reply explaining
+  why you think it's not applicable, or ask for clarification, before making changes
+
+## Auth
+
+Introduced in Increment 3 (accounts). Kept deliberately thin so the later Entra External ID swap
+stays local (charter §3).
+
+- **Seam:** everything above `ro.threet.run.auth.AuthProvider` deals in `AccountPrincipal`, never in
+  the users table or BCrypt. The only implementation today is `LocalAuthProvider` (email + BCrypt on
+  the `app_user` table). A future Entra provider is a new `AuthProvider` + a `SecurityConfig` change,
+  not edits across the app. The `AuthProvider` does credential logic only — session mechanics live
+  in `SessionAuthenticator` (web layer), so an OIDC provider that manages its own session drops in.
+- **Session model:** **httpOnly cookie session** (Spring Security's default `SecurityContextRepository`),
+  not a token in JS. The cookie is `HttpOnly; SameSite=Lax`; `Secure` is on by default and dropped
+  only for local http via `SESSION_COOKIE_SECURE` (see `application.yml`). Session id is rotated on
+  login (fixation defence).
+- **Endpoints:** `POST /api/auth/signup` (201, logs in), `POST /api/auth/login` (200),
+  `POST /api/auth/logout` (204), `GET /api/auth/me` (200 or 401). Authorisation is deny-by-default;
+  the public API (events, anonymous registration, signup/login, ping, health) is enumerated in
+  `SecurityConfig`.
+- **Registration linkage:** `POST /api/registrations` stays anonymous, but if the caller has a
+  session the registration is attributed to that account (`registration.user_id`). Anonymous → null.
+- **CSRF:** Spring's CSRF token machinery is **off** for the JSON API — it's served same-origin and the
+  `SameSite=Lax` session cookie blocks the cross-site form POST tokens defend against, without forcing
+  a token round-trip onto the anonymous registration POST. A token-based CSRF layer is a **pre-go-live
+  hardening item, tracked in the charter's Increment 5 (Hardening).**
+- **Logout:** `POST /api/auth/logout` invalidates the session, clears the security context, and
+  expires the cookie (204). Handled by Spring Security's logout filter (configured in `SecurityConfig`).
 
 ## Design direction
 
