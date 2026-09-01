@@ -1,0 +1,18 @@
+<main class="page" data-testid="dashboard">
+  <header class="page-header">
+    <p class="eyebrow">Your dashboard</p>
+    <h1>Hi, {{ user()?.email }}</h1>
+    <p class="lede">You're signed in. Your runs will show up here.</p>
+  </header>
+
+  <hr class="course-rule" aria-hidden="true" />
+
+  <p class="state-empty">No runs yet — register for an upcoming run and it'll appear here.</p>
+
+  <div class="actions">
+    <a class="button" routerLink="/">See upcoming runs</a>
+    <button class="button button-ghost" type="button" (click)="logout()" data-testid="logout">
+      Sign out
+    </button>
+  </div>
+</main>
