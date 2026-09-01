@@ -33,16 +33,124 @@ h1 {
   color: var(--color-ink-soft);
 }
 
-.state-empty {
-  padding: var(--space-8) 0;
+.state {
+  padding: var(--space-12) 0;
+  text-align: center;
   font-size: var(--text-lg);
   color: var(--color-ink-soft);
+}
+
+.state-error {
+  color: var(--color-danger);
+}
+
+/* Each bucket of runs; the two stack with breathing room between them. */
+.runs {
+  margin-top: var(--space-8);
+}
+
+.section-heading {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+  color: var(--color-ink);
+}
+
+.state-empty {
+  padding: var(--space-6) 0;
+  font-size: var(--text-lg);
+  color: var(--color-ink-soft);
+}
+
+.run-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Mirrors the upcoming-events card so a run reads the same wherever it appears. */
+.run-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+/* Past runs are done — quieter, so the eye lands on what's ahead. */
+.run-card-past {
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+.run-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 5.5rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunk);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.run-day {
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  text-align: center;
+}
+
+.run-time {
+  font-size: var(--text-xs);
+  color: var(--color-ink-soft);
+}
+
+.run-body {
+  flex: 1;
+}
+
+.run-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  color: var(--color-ink);
+}
+
+.run-location {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+/* The next upcoming run — the single amber accent, dark ink on it (per design). */
+.next-badge {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
+  margin-top: var(--space-12);
 }
 
 .button {

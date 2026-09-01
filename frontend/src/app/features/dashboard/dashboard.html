@@ -2,12 +2,63 @@
   <header class="page-header">
     <p class="eyebrow">Your dashboard</p>
     <h1>Hi, {{ user()?.email }}</h1>
-    <p class="lede">You're signed in. Your runs will show up here.</p>
+    <p class="lede">Your runs — the ones ahead and the ones you've done.</p>
   </header>
 
   <hr class="course-rule" aria-hidden="true" />
 
-  <p class="state-empty">No runs yet — register for an upcoming run and it'll appear here.</p>
+  @if (error(); as message) {
+    <p class="state state-error" role="alert">{{ message }}</p>
+  } @else if (runs() === null) {
+    <p class="state" aria-live="polite">Loading your runs…</p>
+  } @else {
+    <section class="runs" aria-labelledby="upcoming-heading" data-testid="section-upcoming">
+      <h2 id="upcoming-heading" class="section-heading">Upcoming</h2>
+      @if (runs()!.upcoming.length === 0) {
+        <p class="state-empty">No upcoming runs yet — register for a run and it'll appear here.</p>
+      } @else {
+        <ul class="run-list" role="list">
+          @for (run of runs()!.upcoming; track run.registrationId) {
+            <li class="run-card" data-testid="upcoming-item">
+              <time class="run-date" [attr.datetime]="run.startDateTime">
+                <span class="run-day">{{ run.startDateTime | date: 'EEE d MMM' }}</span>
+                <span class="run-time">{{ run.startDateTime | date: 'HH:mm' }}</span>
+              </time>
+              <div class="run-body">
+                <h3 class="run-name">{{ run.eventName }}</h3>
+                <p class="run-location">{{ run.locationName }}, {{ run.city }}</p>
+              </div>
+              @if ($first) {
+                <span class="next-badge">Next</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="runs" aria-labelledby="past-heading" data-testid="section-past">
+      <h2 id="past-heading" class="section-heading">Past</h2>
+      @if (runs()!.past.length === 0) {
+        <p class="state-empty">No past runs yet — once a run you've joined is over, it'll show here.</p>
+      } @else {
+        <ul class="run-list" role="list">
+          @for (run of runs()!.past; track run.registrationId) {
+            <li class="run-card run-card-past" data-testid="past-item">
+              <time class="run-date" [attr.datetime]="run.startDateTime">
+                <span class="run-day">{{ run.startDateTime | date: 'EEE d MMM' }}</span>
+                <span class="run-time">{{ run.startDateTime | date: 'HH:mm' }}</span>
+              </time>
+              <div class="run-body">
+                <h3 class="run-name">{{ run.eventName }}</h3>
+                <p class="run-location">{{ run.locationName }}, {{ run.city }}</p>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
 
   <div class="actions">
     <a class="button" routerLink="/">See upcoming runs</a>
