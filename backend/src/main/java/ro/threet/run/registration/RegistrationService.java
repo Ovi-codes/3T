@@ -2,6 +2,9 @@ package ro.threet.run.registration;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
@@ -75,6 +78,34 @@ public class RegistrationService {
 		emailSender.send(email, confirmation.subject(), confirmation.body());
 
 		return RegistrationResponse.from(registration);
+	}
+
+	/**
+	 * The signed-in user's registrations, split into upcoming (event starting now or later) and past
+	 * (already gone by), for the dashboard. The cutoff comes from the injected {@link Clock} so the
+	 * split is testable against a fixed instant. The repository returns rows newest-run-first; that
+	 * order is what "past" wants (most recent at the top), so past keeps it and upcoming is reversed
+	 * to soonest-first (the next run at the top).
+	 *
+	 * @param userId the current account (never null — the endpoint requires authentication)
+	 */
+	@Transactional(readOnly = true)
+	public MyRegistrationsResponse myRegistrations(Long userId) {
+		OffsetDateTime now = OffsetDateTime.now(clock);
+
+		List<MyRegistration> upcoming = new ArrayList<>();
+		List<MyRegistration> past = new ArrayList<>();
+		for (Registration registration : registrationRepository.findByUserIdWithEvent(userId)) {
+			if (registration.getEvent().getStartDateTime().isBefore(now)) {
+				past.add(MyRegistration.from(registration));
+			} else {
+				upcoming.add(MyRegistration.from(registration));
+			}
+		}
+		// Rows arrive newest-first; upcoming reads best soonest-first.
+		Collections.reverse(upcoming);
+
+		return new MyRegistrationsResponse(upcoming, past);
 	}
 
 }
