@@ -57,6 +57,27 @@ test('CS-3: an existing account logs in and reaches the dashboard', async ({ pag
   await expect(page.getByTestId('dashboard')).toBeVisible();
 });
 
+test('the header auth action persists across pages and flips after signing in', async ({ page }) => {
+  // Signed out: the "Log in" action shows on a public page…
+  await page.goto('/');
+  await expect(page.getByTestId('nav-login')).toBeVisible();
+  // …and persists on another page.
+  await page.goto('/signup');
+  await expect(page.getByTestId('nav-login')).toBeVisible();
+
+  // Sign up, then the action flips to "My dashboard"…
+  await page.getByLabel('Email').fill(uniqueEmail());
+  await page.getByLabel('Password').fill('correct horse battery');
+  await page.getByTestId('signup-submit').click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByTestId('nav-dashboard')).toBeVisible();
+
+  // …and stays that way when navigating elsewhere.
+  await page.goto('/');
+  await expect(page.getByTestId('nav-dashboard')).toBeVisible();
+  await expect(page.getByTestId('nav-login')).toHaveCount(0);
+});
+
 test('wrong credentials show an error and stay on the login page', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Email').fill('nobody@example.com');

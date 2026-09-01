@@ -1,1 +1,14 @@
+<header class="app-header">
+  <nav class="app-header-inner" aria-label="Primary">
+    <a class="brand" routerLink="/">3T Run</a>
+
+    <!-- One auth action; hidden until the session check settles, so it never shows the wrong one. -->
+    @if (user(); as account) {
+      <a class="nav-button" routerLink="/dashboard" data-testid="nav-dashboard">My dashboard</a>
+    } @else if (user() === null) {
+      <a class="nav-button" routerLink="/login" data-testid="nav-login">Log in</a>
+    }
+  </nav>
+</header>
+
 <router-outlet></router-outlet>
