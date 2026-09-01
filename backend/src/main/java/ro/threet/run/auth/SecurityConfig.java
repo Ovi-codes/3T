@@ -14,9 +14,10 @@ import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
  * The site is public-first: browsing runs and registering for one stay anonymous (the core loop,
- * charter §3). Accounts add a small authenticated surface — {@code /api/auth/me} today, the
- * dashboard next increment. Authorisation is therefore deny-by-default with the public API
- * enumerated explicitly, so a new endpoint is closed until deliberately opened.
+ * charter §3). Accounts add a small authenticated surface — {@code /api/auth/me} and the
+ * dashboard's {@code /api/me/registrations}. Authorisation is therefore deny-by-default with the
+ * public API enumerated explicitly, so a new endpoint (like the dashboard's) is closed until
+ * deliberately opened — an anonymous hit is a plain 401.
  *
  * Sessions are an httpOnly cookie (Spring Security's default {@code SecurityContextRepository}).
  * CSRF's token machinery is switched off for this JSON API: it is served same-origin and the

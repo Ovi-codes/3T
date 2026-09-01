@@ -3,6 +3,7 @@ package ro.threet.run.registration;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -135,11 +136,38 @@ class RegistrationServiceTest {
 		verifyNoInteractions(emailSender);
 	}
 
+	@Test
+	void splitsRegistrationsIntoUpcomingSoonestFirstAndPastMostRecentFirst() {
+		// The repository returns rows newest-run-first (its `order by start_datetime desc`).
+		Event future1 = event(10L, NOW.plusDays(3));
+		Event future2 = event(11L, NOW.plusDays(10));
+		Event past1 = event(20L, NOW.minusDays(14));
+		Event past2 = event(21L, NOW.minusDays(7));
+		when(registrationRepository.findByUserIdWithEvent(42L))
+				.thenReturn(List.of(
+						registration(future2), registration(future1),
+						registration(past2), registration(past1)));
+
+		MyRegistrationsResponse response = service().myRegistrations(42L);
+
+		// Upcoming is flipped to soonest-first; past keeps the newest-first order.
+		assertThat(response.upcoming()).extracting(MyRegistration::eventId).containsExactly(10L, 11L);
+		assertThat(response.past()).extracting(MyRegistration::eventId).containsExactly(21L, 20L);
+	}
+
+	private Registration registration(Event event) {
+		return new Registration(event, "Ana", "ana@example.com");
+	}
+
 	private Event upcomingEvent() {
-		return event(NOW.plusDays(3));
+		return event(1L, NOW.plusDays(3));
 	}
 
 	private Event event(OffsetDateTime start) {
+		return event(1L, start);
+	}
+
+	private Event event(long id, OffsetDateTime start) {
 		// Lenient: the reject cases throw before touching the event's details, so not every
 		// stub is used on every path.
 		Location location = mock(Location.class);
@@ -147,7 +175,7 @@ class RegistrationServiceTest {
 		lenient().when(location.getCity()).thenReturn("Bucharest");
 
 		Event event = mock(Event.class);
-		lenient().when(event.getId()).thenReturn(1L);
+		lenient().when(event.getId()).thenReturn(id);
 		lenient().when(event.getName()).thenReturn("Tineretului parkrun");
 		lenient().when(event.getStartDateTime()).thenReturn(start);
 		lenient().when(event.getLocation()).thenReturn(location);
