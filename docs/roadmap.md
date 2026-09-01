@@ -16,10 +16,9 @@
 Increments 0–5 (see [`charter.md`](./charter.md) §4).
 
 ## Next — V2
-
 - User access management - admins should be able to CRUD events
 - Create a design theme and logo
-- Multi-location expansion *(cheap if `Location` is first-class from day one — see charter §3)*.
+- Tidy up user experience - sign up should take name also and logged in users no longer enter registration info manually
 - Post-event time upload via Strava / Garmin *(needs the leaderboard-friendly results shape — charter §3)*.
 - Leaderboards per run.
 - Personal stats: placement, time trend, graphs.
@@ -36,7 +35,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 
 ## Later - V4
 - Attempting to register twice prompts the user to create an account so they can see their existing registration
-
+- Multi-location expansion *(cheap if `Location` is first-class from day one — see charter §3)*.
 ---
 
 **Architectural pre-work already scheduled into V1** so V2 is additive, not disruptive: `Location` entity, leaderboard-shaped results table, abstracted auth boundary.
