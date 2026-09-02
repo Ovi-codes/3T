@@ -15,8 +15,9 @@ import org.springframework.security.web.context.SecurityContextRepository;
 /**
  * The site is public-first: browsing runs and registering for one stay anonymous (the core loop,
  * charter §3). Accounts add a small authenticated surface — {@code /api/auth/me} and the
- * dashboard's {@code /api/me/registrations}. Authorisation is therefore deny-by-default with the
- * public API enumerated explicitly, so a new endpoint (like the dashboard's) is closed until
+ * dashboard's {@code /api/me/registrations}, and the user's own GDPR data controls
+ * ({@code GET /api/me/export}, {@code DELETE /api/me}). Authorisation is therefore deny-by-default
+ * with the public API enumerated explicitly, so a new endpoint (like those) is closed until
  * deliberately opened — an anonymous hit is a plain 401.
  *
  * Sessions are an httpOnly cookie (Spring Security's default {@code SecurityContextRepository}).
