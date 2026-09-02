@@ -154,6 +154,12 @@ A feature is shippable when:
 - **Lawful basis:** run registration = contract/legitimate interest; any marketing email = explicit opt-in consent.
 - **Data minimisation:** collect only name + email for registration.
 - **Rights:** support access (export) and erasure (delete account + data) — build the seam early even if the UI is minimal.
+  Implemented in Increment 5: `GET /api/me/export` downloads the account + its registrations as JSON
+  (structured, machine-readable; no password hash); `DELETE /api/me` erases the account and its
+  registrations (hard delete — V1 keeps no aggregate that needs the rows) and ends the session.
 - **Consent + cookies:** privacy policy page; cookie/consent banner only for non-essential cookies.
+  We set **no non-essential cookies** — the only cookie is the strictly-necessary `JSESSIONID` session
+  cookie (no analytics, no tracking), so **no consent banner is needed** (per the Increment 5 brief); the
+  privacy policy states this. Revisit if analytics or any tracking cookie is ever added.
 - **Storage:** EU region; encryption in transit (HTTPS) and at rest (managed DB default).
 - **Transactional email** (confirmation) is fine without marketing consent.

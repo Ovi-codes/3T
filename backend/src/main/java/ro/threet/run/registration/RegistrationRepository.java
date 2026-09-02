@@ -27,4 +27,11 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 			order by e.startDateTime desc""")
 	List<Registration> findByUserIdWithEvent(Long userId);
 
+	/**
+	 * Delete every registration made by an account — the registration side of GDPR erasure
+	 * (charter §7). Anonymous rows keep {@code user_id} null and are left untouched. Returns how
+	 * many were removed.
+	 */
+	long deleteByUserId(Long userId);
+
 }

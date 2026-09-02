@@ -108,4 +108,30 @@ public class RegistrationService {
 		return new MyRegistrationsResponse(upcoming, past);
 	}
 
+	/**
+	 * The account's registrations flattened for a GDPR data export (charter §7), newest run first —
+	 * every field held on each row, including the name and email the person gave. Read inside a
+	 * transaction so the lazy event/location join resolves before the entities detach.
+	 *
+	 * @param userId the current account (never null — the endpoint requires authentication)
+	 */
+	@Transactional(readOnly = true)
+	public List<RegistrationExport> exportForUser(Long userId) {
+		return registrationRepository.findByUserIdWithEvent(userId).stream()
+				.map(RegistrationExport::from)
+				.toList();
+	}
+
+	/**
+	 * Delete every registration made by an account — the registration side of account erasure (GDPR
+	 * right to erasure, charter §7). Anonymous rows (user_id null) are untouched.
+	 *
+	 * @param userId the account being erased
+	 * @return how many registrations were removed
+	 */
+	@Transactional
+	public long deleteForUser(Long userId) {
+		return registrationRepository.deleteByUserId(userId);
+	}
+
 }
