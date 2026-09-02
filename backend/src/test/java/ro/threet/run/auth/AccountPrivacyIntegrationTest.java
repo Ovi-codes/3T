@@ -2,6 +2,7 @@ package ro.threet.run.auth;
 
 import java.time.OffsetDateTime;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 import tools.jackson.core.type.TypeReference;
@@ -86,7 +87,8 @@ class AccountPrivacyIntegrationTest {
 				.andExpect(status().isCreated())
 				.andReturn();
 		long userId = userIdOf(signup);
-		seedRegistration(anUpcomingEvent(), userId, "Ana", "ana@example.com");
+		List<Event> events3 = upcomingEvents(3);
+		events3.forEach(event -> seedRegistration(event, userId, "Ana", "ana@example.com"));
 
 		mockMvc.perform(get("/api/me/export").session(sessionOf(signup)))
 				.andExpect(status().isOk())
@@ -97,7 +99,7 @@ class AccountPrivacyIntegrationTest {
 				.andExpect(jsonPath("$.account.id").value(userId))
 				// The password hash is never part of the export.
 				.andExpect(jsonPath("$.account.passwordHash").doesNotExist())
-				.andExpect(jsonPath("$.registrations.length()").value(1))
+				.andExpect(jsonPath("$.registrations.length()").value(3))
 				.andExpect(jsonPath("$.registrations[0].participantName").value("Ana"))
 				.andExpect(jsonPath("$.registrations[0].email").value("ana@example.com"));
 	}
@@ -108,7 +110,7 @@ class AccountPrivacyIntegrationTest {
 				.andExpect(status().isCreated())
 				.andReturn();
 		long userId = userIdOf(signup);
-		seedRegistration(anUpcomingEvent(), userId, "Ana", "ana@example.com");
+		upcomingEvents(3).forEach(event -> seedRegistration(event, userId, "Ana", "ana@example.com"));
 		MockHttpSession session = sessionOf(signup);
 
 		mockMvc.perform(delete("/api/me").session(session)).andExpect(status().isNoContent());
@@ -140,11 +142,16 @@ class AccountPrivacyIntegrationTest {
 	}
 
 	private Event anUpcomingEvent() {
+		return upcomingEvents(1).getFirst();
+	}
+
+	private List<Event> upcomingEvents(int count) {
 		OffsetDateTime now = OffsetDateTime.now();
 		return events.findAll().stream()
 				.filter(event -> !event.getStartDateTime().isBefore(now))
-				.min(Comparator.comparing(Event::getStartDateTime))
-				.orElseThrow();
+				.sorted(Comparator.comparing(Event::getStartDateTime))
+				.limit(count)
+				.toList();
 	}
 
 	private void seedRegistration(Event event, long userId, String name, String email) {
