@@ -86,12 +86,14 @@ Seeded events for the Bucharest location; anonymous visitor sees a list of upcom
 ### Increment 5 — Hardening
 
 GDPR essentials (§7), accessibility pass, performance baseline captured (§5), error/empty states.
-Security hardening carried forward from earlier increments:
+
+**Deferred to a later pre-go-live hardening step (not in Increment 5 scope):**
 
 - **CSRF token layer** for the state-changing API. Increment 3 relies on a same-origin, httpOnly,
   `SameSite=Lax` session cookie (which blocks the classic cross-site POST) and disables Spring's
   CSRF tokens to keep the anonymous registration POST token-free. Before go-live, add token-based
   CSRF protection (e.g. `CookieCsrfTokenRepository` + an Angular interceptor).
+- **Full-target soak** toward ~5,000 concurrent (see the performance baseline task) — before a real launch, not now.
 
 ---
 
