@@ -1,13 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { Dashboard, MyRegistrations } from './dashboard';
+
+const EMPTY: MyRegistrations = { upcoming: [], past: [] };
 
 describe('Dashboard', () => {
   let fixture: ComponentFixture<Dashboard>;
   let httpMock: HttpTestingController;
+  let router: Router;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -17,9 +20,21 @@ describe('Dashboard', () => {
 
     fixture = TestBed.createComponent(Dashboard);
     httpMock = TestBed.inject(HttpTestingController);
+    router = TestBed.inject(Router);
   });
 
   afterEach(() => httpMock.verify());
+
+  function click(testid: string): void {
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>(`[data-testid="${testid}"]`)!
+      .click();
+    fixture.detectChanges();
+  }
+
+  function query(testid: string): HTMLElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(`[data-testid="${testid}"]`);
+  }
 
   async function flush(runs: MyRegistrations): Promise<void> {
     fixture.detectChanges();
@@ -97,5 +112,77 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not load your runs');
+  });
+
+  describe('Your data (GDPR)', () => {
+    it('exports the account data as a downloadable file', async () => {
+      const url = 'blob:fake';
+      const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue(url);
+      const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
+      const clickAnchor = vi
+        .spyOn(HTMLAnchorElement.prototype, 'click')
+        .mockReturnValue(undefined);
+
+      await flush(EMPTY);
+      click('export-data');
+
+      const request = httpMock.expectOne('/api/me/export');
+      expect(request.request.method).toBe('GET');
+      request.flush(new Blob(['{}'], { type: 'application/json' }));
+      await fixture.whenStable();
+
+      expect(createObjectURL).toHaveBeenCalledOnce();
+      expect(clickAnchor).toHaveBeenCalledOnce();
+      expect(revokeObjectURL).toHaveBeenCalledWith(url);
+    });
+
+    it('shows an error if the export fails, without breaking the page', async () => {
+      await flush(EMPTY);
+      click('export-data');
+
+      httpMock.expectOne('/api/me/export').error(new ProgressEvent('network error'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not prepare your download');
+    });
+
+    it('deletes the account only after confirmation, then leaves for home', async () => {
+      const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+      await flush(EMPTY);
+      // The destructive request is not made until the user confirms.
+      click('delete-account');
+      expect(query('delete-confirm')).not.toBeNull();
+
+      click('delete-confirm-yes');
+      const request = httpMock.expectOne('/api/me');
+      expect(request.request.method).toBe('DELETE');
+      request.flush(null);
+      await fixture.whenStable();
+
+      expect(navigate).toHaveBeenCalledWith('/');
+    });
+
+    it('cancelling the delete makes no request and hides the confirmation', async () => {
+      await flush(EMPTY);
+      click('delete-account');
+      click('delete-cancel');
+
+      expect(query('delete-confirm')).toBeNull();
+      // No DELETE was issued — afterEach's verify() would fail if one were left pending.
+    });
+
+    it('shows an error if the delete fails', async () => {
+      await flush(EMPTY);
+      click('delete-account');
+      click('delete-confirm-yes');
+
+      httpMock.expectOne('/api/me').error(new ProgressEvent('network error'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not delete your account');
+    });
   });
 });

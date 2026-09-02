@@ -52,4 +52,14 @@ describe('App', () => {
     expect(el.querySelector('[data-testid="nav-dashboard"]')).not.toBeNull();
     expect(el.querySelector('[data-testid="nav-login"]')).toBeNull();
   });
+
+  it('always links to the privacy policy in the footer', () => {
+    settleSession('signed-out');
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '[data-testid="footer-privacy"]',
+    );
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe('/privacy');
+  });
 });

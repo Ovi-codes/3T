@@ -66,4 +66,81 @@
       Sign out
     </button>
   </div>
+
+  <hr class="course-rule" aria-hidden="true" />
+
+  <section class="data-controls" aria-labelledby="data-heading" data-testid="section-data">
+    <h2 id="data-heading" class="section-heading">Your data</h2>
+    <p class="data-lede">
+      Download everything we hold about you, or delete your account for good. See our
+      <a routerLink="/privacy">privacy policy</a> for what we keep and why.
+    </p>
+
+    <div class="data-row">
+      <div class="data-copy">
+        <h3 class="data-title">Download your data</h3>
+        <p class="data-note">Your account and every run you've registered for, as a JSON file.</p>
+      </div>
+      <button
+        class="button button-ghost"
+        type="button"
+        (click)="exportData()"
+        [disabled]="exporting()"
+        data-testid="export-data"
+      >
+        {{ exporting() ? 'Preparing…' : 'Download' }}
+      </button>
+    </div>
+    @if (exportError(); as message) {
+      <p class="field-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="data-row">
+      <div class="data-copy">
+        <h3 class="data-title">Delete your account</h3>
+        <p class="data-note">Removes your account and all your registrations. This can't be undone.</p>
+      </div>
+      @if (!confirmingDelete()) {
+        <button
+          class="button button-danger"
+          type="button"
+          (click)="startDelete()"
+          data-testid="delete-account"
+        >
+          Delete account
+        </button>
+      }
+    </div>
+
+    @if (confirmingDelete()) {
+      <div class="confirm" role="group" aria-labelledby="confirm-heading" data-testid="delete-confirm">
+        <p id="confirm-heading" class="confirm-text">
+          Permanently delete your account and all your runs? This can't be undone.
+        </p>
+        <div class="confirm-actions">
+          <button
+            class="button button-danger"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="deleting()"
+            data-testid="delete-confirm-yes"
+          >
+            {{ deleting() ? 'Deleting…' : 'Yes, delete my account' }}
+          </button>
+          <button
+            class="button button-ghost"
+            type="button"
+            (click)="cancelDelete()"
+            [disabled]="deleting()"
+            data-testid="delete-cancel"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
+    @if (deleteError(); as message) {
+      <p class="field-error" role="alert">{{ message }}</p>
+    }
+  </section>
 </main>

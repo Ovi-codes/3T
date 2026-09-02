@@ -46,6 +46,22 @@ export class AuthService {
   }
 
   /**
+   * GDPR right to portability: everything held about the account as a downloadable file
+   * (GET /api/me/export). Returned as a blob so the caller can save it as-is.
+   */
+  exportMyData(): Observable<Blob> {
+    return this.http.get('/api/me/export', { responseType: 'blob' });
+  }
+
+  /**
+   * GDPR right to erasure: delete the account and its data (DELETE /api/me). The server ends the
+   * session too, so mirror logout locally — the now-deleted principal is signed out.
+   */
+  deleteAccount(): Observable<void> {
+    return this.http.delete<void>('/api/me').pipe(tap(() => this._user.set(null)));
+  }
+
+  /**
    * Resolve the current account from the session cookie. A 401 is the normal "signed out" answer,
    * not an error, so it settles `user` to null rather than throwing.
    */

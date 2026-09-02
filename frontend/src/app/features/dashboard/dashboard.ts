@@ -62,4 +62,72 @@ export class Dashboard {
       error: () => this.router.navigateByUrl('/login'),
     });
   }
+
+  // --- GDPR: the user's control over their own data (charter §7) ---
+
+  /** True while the export download is being fetched, so the button can show progress. */
+  protected readonly exporting = signal(false);
+  /** Set if the export fails, shown next to the button rather than blanking the page. */
+  protected readonly exportError = signal<string | null>(null);
+
+  /** Whether the "permanently delete" confirmation is showing. */
+  protected readonly confirmingDelete = signal(false);
+  /** True while the account is being deleted. */
+  protected readonly deleting = signal(false);
+  /** Set if the delete fails. */
+  protected readonly deleteError = signal<string | null>(null);
+
+  /** Fetch the account's data and hand it to the browser as a file to save. */
+  protected exportData(): void {
+    if (this.exporting()) {
+      return;
+    }
+    this.exporting.set(true);
+    this.exportError.set(null);
+    this.auth.exportMyData().subscribe({
+      next: (blob) => {
+        this.exporting.set(false);
+        this.saveBlob(blob, 'threet-run-my-data.json');
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.exportError.set('We could not prepare your download. Please try again shortly.');
+      },
+    });
+  }
+
+  protected startDelete(): void {
+    this.deleteError.set(null);
+    this.confirmingDelete.set(true);
+  }
+
+  protected cancelDelete(): void {
+    this.confirmingDelete.set(false);
+  }
+
+  /** Erase the account and its data, then leave for the home page — the session is gone. */
+  protected confirmDelete(): void {
+    if (this.deleting()) {
+      return;
+    }
+    this.deleting.set(true);
+    this.deleteError.set(null);
+    this.auth.deleteAccount().subscribe({
+      next: () => this.router.navigateByUrl('/'),
+      error: () => {
+        this.deleting.set(false);
+        this.deleteError.set('We could not delete your account. Please try again shortly.');
+      },
+    });
+  }
+
+  /** Trigger a browser download of the given blob under the given filename. */
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 }
