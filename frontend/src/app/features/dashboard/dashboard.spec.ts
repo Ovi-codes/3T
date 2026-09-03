@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { Router, provideRouter } from '@angular/router';
 
-import { Dashboard, MyRegistrations } from './dashboard';
+import { Dashboard } from './dashboard';
+import { MyRegistrations } from '../account/account.service';
 
 const EMPTY: MyRegistrations = { upcoming: [], past: [] };
 

@@ -1,25 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
-
-/** One of the user's registrations — mirrors the backend MyRegistration record. */
-export interface MyRegistration {
-  registrationId: number;
-  eventId: number;
-  eventName: string;
-  startDateTime: string;
-  locationName: string;
-  city: string;
-}
-
-/** Body of GET /api/me/registrations: the two buckets the dashboard shows. */
-export interface MyRegistrations {
-  upcoming: MyRegistration[];
-  past: MyRegistration[];
-}
+import { AccountService, MyRegistrations } from '../account/account.service';
 
 /**
  * Increment 4: the runner's own runs, split into the ones ahead (CS-4) and the ones done (CS-5).
@@ -37,8 +21,8 @@ export interface MyRegistrations {
   styleUrl: './dashboard.css',
 })
 export class Dashboard {
-  private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly account = inject(AccountService);
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
@@ -49,7 +33,7 @@ export class Dashboard {
   protected readonly error = signal<string | null>(null);
 
   constructor() {
-    this.http.get<MyRegistrations>('/api/me/registrations').subscribe({
+    this.account.getMyRegistrations().subscribe({
       next: (response) => this.runs.set(response),
       error: () => this.error.set('We could not load your runs. Please try again shortly.'),
     });
@@ -84,7 +68,7 @@ export class Dashboard {
     }
     this.exporting.set(true);
     this.exportError.set(null);
-    this.auth.exportMyData().subscribe({
+    this.account.exportData().subscribe({
       next: (blob) => {
         this.exporting.set(false);
         this.saveBlob(blob, 'threet-run-my-data.json');
@@ -112,7 +96,7 @@ export class Dashboard {
     }
     this.deleting.set(true);
     this.deleteError.set(null);
-    this.auth.deleteAccount().subscribe({
+    this.account.deleteAccount().subscribe({
       next: () => this.router.navigateByUrl('/'),
       error: () => {
         this.deleting.set(false);

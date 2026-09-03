@@ -1,12 +1,11 @@
 import { test, expect, APIRequestContext, Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
 
 /**
  * Increment 5 (GDPR, charter §7): a signed-in user can download everything held about them and can
- * permanently delete their account from their dashboard, and the privacy policy is reachable from
- * every page's footer. These aren't part of the CS-1..6 release gate, but they are Task 1's
- * acceptance criteria — the user can export and delete their data, and the policy page is live.
- * Runs on desktop and mobile.
+ * permanently delete their account from their dashboard. These aren't part of the CS-1..6 release
+ * gate, but they are Task 1's acceptance criteria — data that leaves and re-enters the system, so
+ * they're worth an end-to-end check. (The privacy policy is a static, frontend-only page, covered
+ * by its component unit tests, not here.) Runs on desktop and mobile.
  *
  * Prerequisite (local): `docker compose up -d` for Postgres. The backend is started by Playwright's
  * webServer with SESSION_COOKIE_SECURE=false so the session cookie is stored over http.
@@ -64,7 +63,7 @@ test('a user can permanently delete their account, which ends their session', as
   page,
   request,
 }) => {
-  await signUpAndLogIn(page, request);
+  const user = await signUpAndLogIn(page, request);
 
   // The destructive action asks for confirmation before it fires.
   await page.getByTestId('delete-account').click();
@@ -73,30 +72,10 @@ test('a user can permanently delete their account, which ends their session', as
 
   // Erasure ends the session and drops the user on the home page…
   await expect(page).toHaveURL(/\/$/);
-  // …and the now-deleted account can't log back in.
+  // …and the session is gone, so the dashboard bounces to login…
   await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/login$/);
-});
-
-test('the privacy policy is reachable from the footer on any page', async ({ page }) => {
-  // The footer is global; exercise it from the login page (a narrow form, no wide content) so this
-  // stays about the footer link, not another page's layout.
-  await page.goto('/login');
-  await page.getByTestId('footer-privacy').click();
-
-  await expect(page).toHaveURL(/\/privacy$/);
-  await expect(page.getByTestId('privacy')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Privacy policy');
-});
-
-test('the privacy policy has no critical or serious accessibility violations', async ({ page }) => {
-  await page.goto('/privacy');
-  await page.getByTestId('privacy').waitFor();
-
-  const results = await new AxeBuilder({ page }).analyze();
-  const seriousOrWorse = results.violations.filter(
-    (violation) => violation.impact === 'critical' || violation.impact === 'serious',
-  );
-
-  expect(seriousOrWorse).toEqual([]);
+  // …and the account itself is erased, not just signed out: the old credentials no longer log in.
+  const relogin = await request.post(`${BACKEND}/api/auth/login`, { data: user });
+  expect(relogin.status()).toBe(401);
 });

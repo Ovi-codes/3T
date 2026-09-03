@@ -46,19 +46,12 @@ export class AuthService {
   }
 
   /**
-   * GDPR right to portability: everything held about the account as a downloadable file
-   * (GET /api/me/export). Returned as a blob so the caller can save it as-is.
+   * Reflect locally that the session has ended without a call of its own — used when another flow
+   * ends it server-side (e.g. AccountService deleting the account). AuthService owns the session
+   * state, so clearing it stays here even when the triggering call lives elsewhere.
    */
-  exportMyData(): Observable<Blob> {
-    return this.http.get('/api/me/export', { responseType: 'blob' });
-  }
-
-  /**
-   * GDPR right to erasure: delete the account and its data (DELETE /api/me). The server ends the
-   * session too, so mirror logout locally — the now-deleted principal is signed out.
-   */
-  deleteAccount(): Observable<void> {
-    return this.http.delete<void>('/api/me').pipe(tap(() => this._user.set(null)));
+  markSignedOut(): void {
+    this._user.set(null);
   }
 
   /**

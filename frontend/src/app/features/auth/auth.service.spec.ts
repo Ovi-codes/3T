@@ -52,26 +52,11 @@ describe('AuthService', () => {
     expect(service.isSignedIn()).toBe(false);
   });
 
-  it('exportMyData fetches the account data as a blob', () => {
-    let received: Blob | undefined;
-    service.exportMyData().subscribe((blob) => (received = blob));
-
-    const request = httpMock.expectOne('/api/me/export');
-    expect(request.request.method).toBe('GET');
-    expect(request.request.responseType).toBe('blob');
-    request.flush(new Blob(['{}'], { type: 'application/json' }));
-
-    expect(received).toBeInstanceOf(Blob);
-  });
-
-  it('deleteAccount deletes and clears the local session', () => {
+  it('markSignedOut clears the account (used when the session ends elsewhere)', () => {
     service.login('ana@example.com', 'correct horse').subscribe();
     httpMock.expectOne('/api/auth/login').flush({ id: 1, email: 'ana@example.com' });
 
-    service.deleteAccount().subscribe();
-    const request = httpMock.expectOne('/api/me');
-    expect(request.request.method).toBe('DELETE');
-    request.flush(null);
+    service.markSignedOut();
 
     expect(service.user()).toBeNull();
     expect(service.isSignedIn()).toBe(false);
