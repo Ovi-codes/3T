@@ -1,3 +1,25 @@
+/* Skip-to-content link: off-screen until it takes keyboard focus, then it drops into the
+   top-left as a solid, high-contrast control. First thing the Tab order reaches. */
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -3rem;
+  z-index: 10;
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: top var(--dur-fast) var(--ease-out);
+}
+
+.skip-link:focus {
+  top: var(--space-3);
+}
+
 /* Persistent top bar above every route. Aligned to the same content column as the pages. */
 .app-header {
   border-bottom: 1px solid var(--color-border);

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, effect, inject, signal, viewChild } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -73,7 +73,18 @@ export class Register {
     email: ['', [Validators.required, Validators.pattern(EMAIL_PATTERN)]],
   });
 
+  /** The confirmation heading, focused when it replaces the form so success is announced. */
+  private readonly confirmationHeading = viewChild<ElementRef<HTMLElement>>('confirmationHeading');
+
   constructor() {
+    // On success the form is swapped for the confirmation; move focus to its heading so a
+    // screen-reader / keyboard user is taken to the outcome rather than left on the vanished form.
+    effect(() => {
+      if (this.confirmation()) {
+        this.confirmationHeading()?.nativeElement.focus();
+      }
+    });
+
     const eventId = Number(this.route.snapshot.paramMap.get('eventId'));
     // /api/events only returns upcoming runs, so an unknown or past id simply isn't in the list.
     this.http.get<EventItem[]>('/api/events').subscribe({

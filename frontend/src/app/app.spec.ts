@@ -53,6 +53,18 @@ describe('App', () => {
     expect(el.querySelector('[data-testid="nav-login"]')).toBeNull();
   });
 
+  it('offers a skip-to-content link as the first focusable element (a11y)', () => {
+    settleSession('signed-out');
+
+    const el = fixture.nativeElement as HTMLElement;
+    const skip = el.querySelector<HTMLAnchorElement>('.skip-link');
+    expect(skip).not.toBeNull();
+    // Targets the page's main landmark and sits before the header in the DOM (so, in tab order).
+    expect(skip!.getAttribute('href')).toBe('#main-content');
+    expect(skip!.compareDocumentPosition(el.querySelector('.app-header')!))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('always links to the privacy policy in the footer', () => {
     settleSession('signed-out');
 

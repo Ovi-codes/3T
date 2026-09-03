@@ -27,3 +27,10 @@ body {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: var(--focus-offset);
 }
+
+/* Skip-link and other scripted focus moves land on non-interactive containers (a page's <main>,
+   a confirmation region). The scroll and context change are signal enough — don't ring the whole
+   box. Global (not component-scoped) so it reaches the routed <main> elements. */
+[tabindex='-1']:focus {
+  outline: none;
+}

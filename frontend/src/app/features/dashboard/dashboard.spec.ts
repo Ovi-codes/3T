@@ -185,5 +185,32 @@ describe('Dashboard', () => {
 
       expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not delete your account');
     });
+
+    // Opening the confirmation removes the button that had focus; without a deliberate move, focus
+    // falls to <body> and a keyboard / screen-reader user is stranded. These check it doesn't.
+    describe('focus management (a11y)', () => {
+      // Attach to the document so focus() registers as the active element.
+      beforeEach(() => document.body.appendChild(fixture.nativeElement));
+      afterEach(() => fixture.nativeElement.remove());
+
+      it('moves focus into the confirmation when the delete flow opens', async () => {
+        await flush(EMPTY);
+        click('delete-account');
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        expect(document.activeElement).toBe(query('delete-confirm'));
+      });
+
+      it('returns focus to the Delete button when the confirmation is cancelled', async () => {
+        await flush(EMPTY);
+        click('delete-account');
+        click('delete-cancel');
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        expect(document.activeElement).toBe(query('delete-account'));
+      });
+    });
   });
 });
