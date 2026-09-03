@@ -26,3 +26,6 @@ Thumbs.db
 # Local env
 .env
 .env.local
+
+# Perf — transient k6 summary exports (baseline.json is committed; these are not)
+perf/results/

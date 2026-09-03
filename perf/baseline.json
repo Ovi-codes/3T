@@ -1,0 +1,30 @@
+{
+  "_comment": "Committed performance baseline for the two hot paths (issue #31). The gate (perf/scripts/gate.mjs, run by .github/workflows/perf.yml) fails if a run's p95 exceeds baseline p95 * regression_factor, or its error rate exceeds max_error_rate. Regenerate with perf/scripts/capture.mjs (or the 'Perf — capture baseline' workflow) and commit the result. Numbers must be re-captured in the environment the gate runs in — see perf/baseline.md.",
+  "capture": {
+    "date": "2026-09-03",
+    "k6_version": "v2.2.0",
+    "environment": "local dev — Docker Desktop (Postgres 16 + Mailpit), backend via spring-boot:run, JDK 21"
+  },
+  "regression_factor": 1.2,
+  "max_error_rate": 0.01,
+  "endpoints": {
+    "events_read": {
+      "label": "GET /api/events (read)",
+      "script": "perf/k6/events-read.js",
+      "vus": 25,
+      "duration": "30s",
+      "p95_ms": 32.58,
+      "error_rate": 0.0,
+      "throughput_rps": 980.2
+    },
+    "registrations_write": {
+      "label": "POST /api/registrations (write)",
+      "script": "perf/k6/registrations-write.js",
+      "vus": 10,
+      "duration": "30s",
+      "p95_ms": 97.29,
+      "error_rate": 0.0,
+      "throughput_rps": 120.1
+    }
+  }
+}
