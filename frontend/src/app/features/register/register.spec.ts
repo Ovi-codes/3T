@@ -139,6 +139,33 @@ describe('Register', () => {
     expect(confirmation.textContent).toContain('ana.pop@example.com');
   });
 
+  it('moves focus to the confirmation heading on success, so it is announced (a11y)', async () => {
+    // The element must be in the document for focus() to register as the active element.
+    document.body.appendChild(fixture.nativeElement);
+    try {
+      loadEvent();
+      setInput('name', 'Ana Pop');
+      setInput('email', 'ana.pop@example.com');
+      submitForm();
+
+      httpMock.expectOne('/api/registrations').flush({
+        eventName: 'Tineretului parkrun',
+        startDateTime: EVENT.startDateTime,
+        locationName: 'Tineretului Park',
+        city: 'Bucharest',
+        email: 'ana.pop@example.com',
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const heading = fixture.nativeElement.querySelector('[data-testid="confirmation"] h1');
+      expect(document.activeElement).toBe(heading);
+    } finally {
+      fixture.nativeElement.remove();
+    }
+  });
+
   it('surfaces a server field error against the email input', () => {
     loadEvent();
 

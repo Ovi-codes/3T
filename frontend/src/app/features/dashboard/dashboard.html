@@ -1,4 +1,4 @@
-<main class="page" data-testid="dashboard">
+<main id="main-content" tabindex="-1" class="page" data-testid="dashboard">
   <header class="page-header">
     <p class="eyebrow">Your dashboard</p>
     <h1>Hi, {{ user()?.email }}</h1>
@@ -102,6 +102,7 @@
       </div>
       @if (!confirmingDelete()) {
         <button
+          #deleteButton
           class="button button-danger"
           type="button"
           (click)="startDelete()"
@@ -113,7 +114,14 @@
     </div>
 
     @if (confirmingDelete()) {
-      <div class="confirm" role="group" aria-labelledby="confirm-heading" data-testid="delete-confirm">
+      <div
+        #confirmRegion
+        tabindex="-1"
+        class="confirm"
+        role="group"
+        aria-labelledby="confirm-heading"
+        data-testid="delete-confirm"
+      >
         <p id="confirm-heading" class="confirm-text">
           Permanently delete your account and all your runs? This can't be undone.
         </p>

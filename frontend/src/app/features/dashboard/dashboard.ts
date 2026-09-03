@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
@@ -32,10 +32,34 @@ export class Dashboard {
   /** Set only if the call fails, so the page fails visibly, not blankly. */
   protected readonly error = signal<string | null>(null);
 
+  /** The delete-confirm region, focused when it opens so the destructive choice isn't lost. */
+  private readonly confirmRegion = viewChild<ElementRef<HTMLElement>>('confirmRegion');
+  /** The "Delete account" button, refocused when the confirmation is cancelled. */
+  private readonly deleteButton = viewChild<ElementRef<HTMLElement>>('deleteButton');
+  /** Set on cancel so the effect returns focus once the button is back in the DOM. */
+  private readonly returnFocusToDelete = signal(false);
+
   constructor() {
     this.account.getMyRegistrations().subscribe({
       next: (response) => this.runs.set(response),
       error: () => this.error.set('We could not load your runs. Please try again shortly.'),
+    });
+
+    // Opening the confirmation swaps the Delete button for the confirm group; move focus into it so
+    // a keyboard / screen-reader user lands on the choice instead of on <body>.
+    effect(() => {
+      if (this.confirmingDelete()) {
+        this.confirmRegion()?.nativeElement.focus();
+      }
+    });
+
+    // Cancelling restores the Delete button; hand focus back to it once it has re-rendered.
+    effect(() => {
+      const button = this.deleteButton();
+      if (this.returnFocusToDelete() && button) {
+        button.nativeElement.focus();
+        this.returnFocusToDelete.set(false);
+      }
     });
   }
 
@@ -87,6 +111,7 @@ export class Dashboard {
 
   protected cancelDelete(): void {
     this.confirmingDelete.set(false);
+    this.returnFocusToDelete.set(true);
   }
 
   /** Erase the account and its data, then leave for the home page — the session is gone. */
