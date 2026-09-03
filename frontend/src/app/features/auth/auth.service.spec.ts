@@ -52,6 +52,16 @@ describe('AuthService', () => {
     expect(service.isSignedIn()).toBe(false);
   });
 
+  it('markSignedOut clears the account (used when the session ends elsewhere)', () => {
+    service.login('ana@example.com', 'correct horse').subscribe();
+    httpMock.expectOne('/api/auth/login').flush({ id: 1, email: 'ana@example.com' });
+
+    service.markSignedOut();
+
+    expect(service.user()).toBeNull();
+    expect(service.isSignedIn()).toBe(false);
+  });
+
   it('loadCurrentUser resolves an active session', () => {
     service.loadCurrentUser().subscribe();
     httpMock.expectOne('/api/auth/me').flush({ id: 7, email: 'ana@example.com' });

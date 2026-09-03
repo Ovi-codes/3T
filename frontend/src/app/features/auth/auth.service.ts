@@ -46,6 +46,15 @@ export class AuthService {
   }
 
   /**
+   * Reflect locally that the session has ended without a call of its own — used when another flow
+   * ends it server-side (e.g. AccountService deleting the account). AuthService owns the session
+   * state, so clearing it stays here even when the triggering call lives elsewhere.
+   */
+  markSignedOut(): void {
+    this._user.set(null);
+  }
+
+  /**
    * Resolve the current account from the session cookie. A 401 is the normal "signed out" answer,
    * not an error, so it settles `user` to null rather than throwing.
    */

@@ -182,6 +182,85 @@ h1 {
   background: var(--color-surface-sunk);
 }
 
+/* Destructive action — outlined in danger red so it reads as weighty but not alarmist until pressed. */
+.button-danger {
+  color: var(--color-danger);
+  background: transparent;
+  border-color: var(--color-danger);
+}
+
+.button-danger:hover {
+  background: var(--color-danger);
+  color: var(--color-surface);
+}
+
+/* GDPR "Your data" controls — export + delete, sat below the runs. */
+.data-lede {
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-ink-soft);
+}
+
+.data-lede a,
+.confirm-text a {
+  color: var(--color-primary);
+  font-weight: var(--weight-medium);
+}
+
+.data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.data-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink);
+}
+
+.data-note {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.data-row .button {
+  flex-shrink: 0;
+}
+
+/* The delete confirmation — a danger-tinted panel so the irreversible choice stands apart. */
+.confirm {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-danger-soft);
+  border-radius: var(--radius-md);
+}
+
+.confirm-text {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-base);
+  color: var(--color-ink);
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.field-error {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
 @media (max-width: 30rem) {
   h1 {
     font-size: var(--text-3xl);
@@ -193,5 +272,16 @@ h1 {
 
   .button {
     text-align: center;
+  }
+
+  /* Stack the label and its action so the button isn't squeezed on narrow screens. */
+  .data-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .confirm-actions {
+    flex-direction: column;
   }
 }
