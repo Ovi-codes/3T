@@ -1,6 +1,6 @@
 // Capture a fresh baseline: run every endpoint in perf/baseline.json against a running backend
 // and rewrite the recorded numbers (p95, error rate, throughput). Run config (script, vus,
-// duration) and the gate settings (regression_factor, max_error_rate) are preserved.
+// duration), the fixed p95_budget_ms, and max_error_rate are preserved.
 //
 //   BASE_URL=http://localhost:8080 node perf/scripts/capture.mjs
 //

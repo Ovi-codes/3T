@@ -15,34 +15,28 @@ human-readable companion.
 
 Captured 2026-09-03 with k6 v2.2.0.
 
-| Path                       | Load          | p95     | Error rate | Throughput | p95 budget (×1.2) |
-| -------------------------- | ------------- | ------- | ---------- | ---------- | ----------------- |
-| `GET /api/events`          | 25 VUs, 30s   | 32.6 ms | 0%         | ~980 req/s | 39.1 ms           |
-| `POST /api/registrations`  | 10 VUs, 30s   | 97.3 ms | 0%         | ~120 req/s | 116.8 ms          |
+| Path                       | Load          | p95     | Error rate | Throughput | p95 budget |
+| -------------------------- | ------------- | ------- | ---------- | ---------- | ---------- |
+| `GET /api/events`          | 25 VUs, 30s   | 32.6 ms | 0%         | ~980 req/s | 40 ms      |
+| `POST /api/registrations`  | 10 VUs, 30s   | 97.3 ms | 0%         | ~120 req/s | 120 ms     |
 
 **Environment:** local dev — Docker Desktop (Postgres 16 + Mailpit), backend via
-`spring-boot:run`, JDK 21. These are laptop numbers; see [Calibration](#calibration-required).
+`spring-boot:run`, JDK 21. The GitHub runner is in fact faster (read p95 ~19 ms, write ~55 ms), so
+the fixed budgets clear both environments with room to spare.
 
 ## The gate
 
 For each path, [`scripts/gate.mjs`](./scripts/gate.mjs) reruns the same load and fails when:
 
-- **p95 > baseline × `regression_factor`** (default 1.2 → a regression worse than 20%), or
+- **p95 > the endpoint's `p95_budget_ms`** (40 ms read, 120 ms write), or
 - **error rate > `max_error_rate`** (default 0.01 → ~1%).
 
-Both are enforced as k6 thresholds, so k6 itself exits non-zero; `gate.mjs` re-checks them so the
-reason prints plainly and one failing path never masks another. It runs in CI on every pull request
-and on pushes to `main` via [`.github/workflows/perf.yml`](../.github/workflows/perf.yml).
-
-## Calibration required
-
-A committed baseline only means something against the environment it was captured in. The numbers
-above come from a developer laptop; a shared CI runner is slower and noisier, so **re-capture on the
-runner before making the Perf check required**:
-
-1. Actions → **Perf** → **Run workflow** (the manual `capture` job).
-2. Download the `perf-baseline` artifact and commit it as `perf/baseline.json`.
-3. Once green on a few PRs, mark **Perf / Regression gate (k6)** a required status check.
+The budgets are fixed policy ceilings — ~20% over the recorded p95, rounded — not a moving multiple
+of the last capture, so re-recording the baseline never silently loosens the gate. Both are enforced
+as k6 thresholds, so k6 itself exits non-zero; `gate.mjs` re-checks them so the reason prints plainly
+and one failing path never masks another. It runs in CI on every pull request and on pushes to `main`
+via [`.github/workflows/perf.yml`](../.github/workflows/perf.yml), and is a **required status check**
+on `main`.
 
 ## Running it locally
 

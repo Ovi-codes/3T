@@ -1,5 +1,6 @@
 // The regression gate (issue #31). For each endpoint, run the same load and fail if:
-//   - p95 exceeds baseline p95 * regression_factor (default 1.2 → a >20% regression), or
+//   - p95 exceeds the endpoint's fixed p95_budget_ms (40ms read / 120ms write — headroom over
+//     both laptop and CI-runner baselines), or
 //   - the error rate exceeds max_error_rate (default 0.01 → ~1%).
 //
 // Both checks are enforced by k6 thresholds (so k6 itself exits non-zero), and re-checked here
@@ -9,14 +10,13 @@
 import { loadBaseline, runK6, round } from './lib.mjs';
 
 const baseline = loadBaseline();
-const factor = baseline.regression_factor;
 const maxErr = baseline.max_error_rate;
 
 let failed = false;
 for (const [key, ep] of Object.entries(baseline.endpoints)) {
-  const budget = round(ep.p95_ms * factor);
+  const budget = ep.p95_budget_ms;
   console.log(`\n=== gating ${key}: ${ep.label} ===`);
-  console.log(`  baseline p95 ${ep.p95_ms}ms → budget ${budget}ms (x${factor}); max error rate ${maxErr}`);
+  console.log(`  budget ${budget}ms p95 (last recorded ${ep.p95_ms}ms); max error rate ${maxErr}`);
   const { p95, errorRate, rps, code } = runK6(ep.script, {
     VUS: String(ep.vus),
     DURATION: ep.duration,

@@ -1,12 +1,12 @@
 name: Perf
 
 # Performance regression gate for the two hot paths (issue #31): GET /api/events (read) and
-# POST /api/registrations (write). The `gate` job fails if a run's p95 regresses beyond
-# perf/baseline.json's regression_factor, or its error rate exceeds max_error_rate.
+# POST /api/registrations (write). The `gate` job fails if a run's p95 exceeds the endpoint's fixed
+# p95_budget_ms in perf/baseline.json (40ms read / 120ms write), or its error rate exceeds
+# max_error_rate. It is a required status check on main.
 #
-# The committed baseline is only meaningful against the environment it was captured in, so before
-# making this a required check, re-capture it on the runner with the manual `capture` job below and
-# commit the artifact it produces. See perf/baseline.md.
+# The manual `capture` job re-records the baseline numbers on the runner (the budgets themselves are
+# fixed policy, edited by hand). See perf/baseline.md.
 on:
   push:
     branches: [main]
