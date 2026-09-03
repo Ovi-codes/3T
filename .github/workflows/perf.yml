@@ -1,0 +1,157 @@
+name: Perf
+
+# Performance regression gate for the two hot paths (issue #31): GET /api/events (read) and
+# POST /api/registrations (write). The `gate` job fails if a run's p95 exceeds the endpoint's fixed
+# p95_budget_ms in perf/baseline.json (40ms read / 120ms write), or its error rate exceeds
+# max_error_rate. It is a required status check on main.
+#
+# The manual `capture` job re-records the baseline numbers on the runner (the budgets themselves are
+# fixed policy, edited by hand). See perf/baseline.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  K6_VERSION: v2.2.0
+
+jobs:
+  gate:
+    name: Regression gate (k6)
+    runs-on: ubuntu-latest
+    # The backend runs for real here (no Testcontainers), so it needs Postgres and Mailpit with the
+    # same defaults as docker-compose.yml — the write path persists a row and sends its confirmation
+    # email inside one transaction, so Mailpit has to be present for the write test to succeed.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: runro
+          POSTGRES_USER: runro
+          POSTGRES_PASSWORD: runro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runro -d runro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.30.7
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: 1
+          MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Build backend
+        working-directory: backend
+        run: ./mvnw -B -DskipTests package
+
+      - name: Install k6 ${{ env.K6_VERSION }}
+        run: |
+          curl -sL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" | tar xz
+          sudo mv "k6-${K6_VERSION}-linux-amd64/k6" /usr/local/bin/k6
+          k6 version
+
+      - name: Start backend
+        working-directory: backend
+        run: |
+          nohup java -jar target/*.jar > "${{ runner.temp }}/backend.log" 2>&1 &
+          echo "Waiting for backend on :8080 ..."
+          for i in $(seq 1 60); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/events)" = "200" ]; then
+              echo "Backend up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend did not become ready:"; cat "${{ runner.temp }}/backend.log"; exit 1
+
+      - name: Run regression gate
+        run: node perf/scripts/gate.mjs
+
+      - name: Backend log on failure
+        if: failure()
+        run: cat "${{ runner.temp }}/backend.log" || true
+
+  capture:
+    name: Capture baseline (manual)
+    # Run this by hand (Actions → Perf → Run workflow) to record numbers in the CI environment,
+    # then download the artifact and commit it as perf/baseline.json.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: runro
+          POSTGRES_USER: runro
+          POSTGRES_PASSWORD: runro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runro -d runro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.30.7
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: 1
+          MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Build backend
+        working-directory: backend
+        run: ./mvnw -B -DskipTests package
+      - name: Install k6 ${{ env.K6_VERSION }}
+        run: |
+          curl -sL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" | tar xz
+          sudo mv "k6-${K6_VERSION}-linux-amd64/k6" /usr/local/bin/k6
+      - name: Start backend
+        working-directory: backend
+        run: |
+          nohup java -jar target/*.jar > "${{ runner.temp }}/backend.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/events)" = "200" ]; then exit 0; fi
+            sleep 1
+          done
+          echo "Backend did not become ready:"; cat "${{ runner.temp }}/backend.log"; exit 1
+      - name: Capture baseline
+        env:
+          K6_VERSION: ${{ env.K6_VERSION }}
+          PERF_ENV: GitHub Actions ubuntu-latest (Postgres 16 + Mailpit services, JDK 21)
+        run: node perf/scripts/capture.mjs
+      - name: Upload captured baseline
+        uses: actions/upload-artifact@v7
+        with:
+          name: perf-baseline
+          path: perf/baseline.json
+          retention-days: 14

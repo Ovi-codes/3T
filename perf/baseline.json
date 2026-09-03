@@ -1,0 +1,31 @@
+{
+  "_comment": "Committed performance baseline for the two hot paths (issue #31). The gate (perf/scripts/gate.mjs, run by .github/workflows/perf.yml) fails if a run's p95 exceeds the endpoint's p95_budget_ms, or its error rate exceeds max_error_rate. p95_ms/error_rate/throughput_rps are the last recorded run (regenerate with perf/scripts/capture.mjs); the budgets are fixed policy ceilings, set with headroom over both laptop and CI-runner numbers — see perf/baseline.md.",
+  "capture": {
+    "date": "2026-09-03",
+    "k6_version": "v2.2.0",
+    "environment": "local dev — Docker Desktop (Postgres 16 + Mailpit), backend via spring-boot:run, JDK 21"
+  },
+  "max_error_rate": 0.01,
+  "endpoints": {
+    "events_read": {
+      "label": "GET /api/events (read)",
+      "script": "perf/k6/events-read.js",
+      "vus": 25,
+      "duration": "30s",
+      "p95_budget_ms": 40,
+      "p95_ms": 32.58,
+      "error_rate": 0.0,
+      "throughput_rps": 980.2
+    },
+    "registrations_write": {
+      "label": "POST /api/registrations (write)",
+      "script": "perf/k6/registrations-write.js",
+      "vus": 10,
+      "duration": "30s",
+      "p95_budget_ms": 120,
+      "p95_ms": 97.29,
+      "error_rate": 0.0,
+      "throughput_rps": 120.1
+    }
+  }
+}

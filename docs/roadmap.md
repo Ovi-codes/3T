@@ -26,7 +26,7 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 
 ## Later — V3
 - Implement JWT auth
-- Azure full deployment incl CSRF token layer
+- Azure full deployment incl CSRF token layer and full-target soak toward ~5,000 concurrent
 - Clean up endpoints and other functionality which is no longer needed (ping?)
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).
 - Volunteering interest registration.

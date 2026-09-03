@@ -113,6 +113,11 @@ Runs on http://localhost:4200 and calls the backend at `localhost:8080`.
 | Frontend lint | `npm run lint` | `frontend/` |
 | Frontend unit/component | `npm test` | `frontend/` |
 | End-to-end (+ axe-core a11y) | `npx playwright test` | `e2e/` |
+| Performance gate (k6) | `node perf/scripts/gate.mjs` | `perf/` |
+
+The performance gate load-tests the two hot paths and fails on a p95 regression or a raised error
+rate. It needs the stack up and [k6](https://k6.io/) on `PATH` — see
+[`perf/baseline.md`](perf/baseline.md) for the numbers, the gate rules, and how to re-baseline.
 
 Backend integration tests use Testcontainers, so Docker must be running. They start their own
 Postgres — they do not use the Compose one.
@@ -135,6 +140,11 @@ pull request, as three jobs that must all pass:
 
 This is the seed of the release gate: the core-scenario E2E tests (charter §5, CS-1..6) plug into
 the `e2e` job as they are built.
+
+A separate [`.github/workflows/perf.yml`](.github/workflows/perf.yml) runs the k6 performance gate
+(`gate` job) on the same triggers, and carries a manual `capture` job to re-record the baseline on
+the runner. It is a **required status check** on `main`, failing on a p95 over budget (40 ms read /
+120 ms write) or a raised error rate (see [`perf/baseline.md`](perf/baseline.md)).
 
 ### Deploy
 
