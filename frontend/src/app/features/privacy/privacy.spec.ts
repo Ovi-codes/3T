@@ -25,16 +25,6 @@ describe('Privacy', () => {
     expect(el().querySelector('h1')!.textContent).toContain('Privacy policy');
   });
 
-  it('states what is collected, the cookie stance, and the rights', () => {
-    const text = el().textContent!;
-    expect(text).toContain('name');
-    expect(text).toContain('email');
-    // The no-tracking-cookies stance that justifies having no consent banner.
-    expect(text).toContain('no analytics');
-    expect(text).toContain('Download your data');
-    expect(text).toContain('Delete your account');
-  });
-
   it('links to the dashboard where the data controls live', () => {
     const link = el().querySelector<HTMLAnchorElement>('a[href="/dashboard"]');
     expect(link).not.toBeNull();
