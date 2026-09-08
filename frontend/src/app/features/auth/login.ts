@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AuthService } from './auth.service';
+import { toFormErrors } from '../../core/form-errors';
 
 /**
  * Increment 3 (CS-3): sign in. Both fields are only required here — the server answers a wrong
@@ -54,8 +55,10 @@ export class Login {
       next: () => this.router.navigateByUrl('/dashboard'),
       error: (response: HttpErrorResponse) => {
         this.submitting.set(false);
-        const errors = response.error?.errors as Record<string, string> | undefined;
-        this.formError.set(errors?.['credentials'] ?? 'Something went wrong — please try again.');
+        const { fieldErrors, formError } = toFormErrors(response);
+        // The server never says which credential was wrong; it sends one `credentials` message.
+        // Anything else (a missing envelope) falls back to the generic form error.
+        this.formError.set(fieldErrors['credentials'] ?? formError);
       },
     });
   }

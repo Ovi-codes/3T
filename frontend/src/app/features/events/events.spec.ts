@@ -6,7 +6,8 @@ import {
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
-import { Events, EventItem } from './events';
+import { Events } from './events';
+import { EventItem } from './events.service';
 
 describe('Events', () => {
   let fixture: ComponentFixture<Events>;

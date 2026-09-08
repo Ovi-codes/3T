@@ -7,7 +7,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { Register } from './register';
-import { EventItem } from '../events/events';
+import { EventItem } from '../events/events.service';
 
 const EVENT: EventItem = {
   id: 3,

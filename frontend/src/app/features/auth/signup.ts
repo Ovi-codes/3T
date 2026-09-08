@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AuthService } from './auth.service';
+import { toFormErrors } from '../../core/form-errors';
 
 /**
  * Stricter than Angular's Validators.email (which accepts "a@a"): require a domain with a dot and a
@@ -77,12 +78,9 @@ export class Signup {
       next: () => this.router.navigateByUrl('/dashboard'),
       error: (response: HttpErrorResponse) => {
         this.submitting.set(false);
-        const errors = response.error?.errors as Record<string, string> | undefined;
-        if (errors && typeof errors === 'object') {
-          this.fieldErrors.set(errors);
-        } else {
-          this.formError.set('Something went wrong — please try again.');
-        }
+        const { fieldErrors, formError } = toFormErrors(response);
+        this.fieldErrors.set(fieldErrors);
+        this.formError.set(formError);
       },
     });
   }
