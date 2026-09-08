@@ -10,8 +10,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 const FRONTEND_URL = 'http://localhost:4200';
-// Backend readiness: Actuator's health endpoint (its "db" indicator flips to UP only once
-// Postgres is reachable), so Playwright waits for a fully wired stack before the run starts.
+// Backend readiness
 const BACKEND_HEALTH = 'http://localhost:8080/actuator/health';
 
 // The Maven wrapper is invoked differently per OS; CI (Linux) uses ./mvnw.
