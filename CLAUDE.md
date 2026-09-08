@@ -67,7 +67,7 @@ stays local (charter §3).
   login (fixation defence).
 - **Endpoints:** `POST /api/auth/signup` (201, logs in), `POST /api/auth/login` (200),
   `POST /api/auth/logout` (204), `GET /api/auth/me` (200 or 401). Authorisation is deny-by-default;
-  the public API (events, anonymous registration, signup/login, ping, health) is enumerated in
+  the public API (events, anonymous registration, signup/login, health) is enumerated in
   `SecurityConfig`.
 - **Registration linkage:** `POST /api/registrations` stays anonymous, but if the caller has a
   session the registration is attributed to that account (`registration.user_id`). Anonymous → null.

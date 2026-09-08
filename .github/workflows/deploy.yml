@@ -20,11 +20,11 @@ name: Deploy (Azure)
 #      and this repository variable:
 #        - AZURE_WEBAPP_NAME                   (the App Service name)
 #   3. On the App Service, set application settings so the app reaches Azure Postgres
-#      (Flyway then migrates on startup and /api/ping reads the version from it):
+#      (Flyway then migrates on startup; /actuator/health then reports the DB as UP):
 #        DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD   (or a full DB connection string)
 #   4. Configure how the Static Web App forwards /api/* to the backend App Service
 #      (a staticwebapp.config.json route, or a linked backend) so the SPA's relative
-#      /api/ping call reaches Spring Boot in production.
+#      /api/* calls reach Spring Boot in production.
 #
 # TO ENABLE AUTO-DEPLOY (gated on green CI on main):
 #   Replace the `on:` block with the commented `workflow_run` version below, and

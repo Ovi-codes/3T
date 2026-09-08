@@ -1,16 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Increment 0 end-to-end check: drive a real browser against the live stack
- * (Angular dev server → /api proxy → Spring Boot → Postgres) and assert the
- * walking-skeleton text renders. Runs on a desktop and a mobile viewport.
+ * End-to-end checks: drive a real browser against the live stack
+ * (Angular dev server → /api proxy → Spring Boot → Postgres). Runs on a
+ * desktop and a mobile viewport.
  *
  * Prerequisite: `docker compose up -d` (Postgres) must be running — Playwright
  * starts the backend and frontend below, but not the database container.
  */
 
 const FRONTEND_URL = 'http://localhost:4200';
-const BACKEND_PING = 'http://localhost:8080/api/ping';
+// Backend readiness: Actuator's health endpoint (its "db" indicator flips to UP only once
+// Postgres is reachable), so Playwright waits for a fully wired stack before the run starts.
+const BACKEND_HEALTH = 'http://localhost:8080/actuator/health';
 
 // The Maven wrapper is invoked differently per OS; CI (Linux) uses ./mvnw.
 const mvnw =
@@ -48,7 +50,7 @@ export default defineConfig({
     {
       command: mvnw,
       cwd: '../backend',
-      url: BACKEND_PING,
+      url: BACKEND_HEALTH,
       timeout: 180_000,
       reuseExistingServer: !process.env.CI,
       // The session cookie is Secure by default (prod is HTTPS); the E2E stack is http, where a

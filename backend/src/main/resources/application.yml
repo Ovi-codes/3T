@@ -45,6 +45,14 @@ server:
         same-site: lax
         secure: ${SESSION_COOKIE_SECURE:true}
 
+# Actuator: the readiness probe. Expose only the health endpoint (E2E and the deploy smoke
+# check hit /actuator/health); its "db" indicator reports UP only once Postgres is reachable.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 # Application settings not owned by a Spring namespace.
 app:
   mail:
