@@ -69,8 +69,8 @@ stays local (charter §3).
   `POST /api/auth/logout` (204), `GET /api/auth/me` (200 or 401). Authorisation is deny-by-default;
   the public API (events, anonymous registration, signup/login, health) is enumerated in
   `SecurityConfig`. Sign-up captures the person's `name` alongside email + password (Increment 7,
-  #38); `/me` and `AccountResponse` carry it. `name` is nullable on `app_user` — accounts created
-  before Increment 7 hold none — so read it as optional everywhere.
+  #38); `/me` and `AccountResponse` carry it. `name` is `NOT NULL` on `app_user` and `@NotBlank` at
+  the API — every account has one.
 - **Registration linkage:** `POST /api/registrations` stays anonymous, but if the caller has a
   session the registration is attributed to that account (`registration.user_id`). Anonymous → null.
   For a signed-in user the registration form is prefilled from their account (name + email) so they

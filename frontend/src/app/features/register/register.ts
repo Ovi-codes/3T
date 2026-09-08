@@ -81,7 +81,7 @@ export class Register {
     effect(() => {
       const account = this.auth.user();
       if (account && this.form.pristine) {
-        this.form.patchValue({ name: account.name ?? '', email: account.email });
+        this.form.patchValue({ name: account.name, email: account.email });
       }
     });
 

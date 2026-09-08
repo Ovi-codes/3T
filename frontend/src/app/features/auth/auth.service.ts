@@ -6,8 +6,7 @@ import { Observable, catchError, map, of, tap } from 'rxjs';
 export interface Account {
   id: number;
   email: string;
-  /** The person's name; null for accounts created before names were captured (Increment 7). */
-  name: string | null;
+  name: string;
 }
 
 /**
