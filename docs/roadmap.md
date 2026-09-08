@@ -28,7 +28,6 @@ Increments 0–5 (see [`charter.md`](./charter.md) §4).
 ## Later — V3
 - Post-event time upload via Strava/Garmin screenshot + AI extraction (vision model reads pace + distance, validates ≥5k, computes time).
 - Azure stand up incl CSRF token layer and full-target soak toward ~5,000 concurrent
-- Clean up endpoints and other functionality which is no longer needed (ping?)
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).
 - Volunteering interest registration.
 - Medical waiver users must accept before registering for a run.

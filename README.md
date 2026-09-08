@@ -75,8 +75,8 @@ Windows, run `.\mvnw.cmd` instead.
 Check it is alive:
 
 ```bash
-curl localhost:8080/api/ping
-# {"status":"ok","appVersion":"0.0.1"}
+curl localhost:8080/actuator/health
+# {"status":"UP"}
 ```
 
 Database settings come from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and

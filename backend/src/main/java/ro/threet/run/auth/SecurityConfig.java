@@ -36,7 +36,6 @@ class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/registrations").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
-						.requestMatchers("/api/ping").permitAll()
 						.requestMatchers("/actuator/health").permitAll()
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf.disable())
