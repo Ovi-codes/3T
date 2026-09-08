@@ -15,8 +15,8 @@ import ro.threet.run.registration.RegistrationExport;
  */
 public record AccountDataExport(Account account, List<RegistrationExport> registrations) {
 
-	/** The account's own record — never the password hash. */
-	public record Account(Long id, String email, OffsetDateTime createdAt) {
+	/** The account's own record — name + email (personal data), never the password hash. */
+	public record Account(Long id, String email, String name, OffsetDateTime createdAt) {
 	}
 
 }

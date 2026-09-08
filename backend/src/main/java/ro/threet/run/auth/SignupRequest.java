@@ -5,11 +5,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * The sign-up payload. Validated at the controller boundary (@Valid), so a bad email or a too-short
- * password is a 400 with field errors before any account work happens. The 72-character ceiling is
- * BCrypt's own limit — it silently ignores bytes past 72, so we reject rather than quietly truncate.
+ * The sign-up payload. Validated at the controller boundary (@Valid), so a missing name, a bad
+ * email, or a too-short password is a 400 with field errors before any account work happens. The
+ * 72-character ceiling on the password is BCrypt's own limit — it silently ignores bytes past 72,
+ * so we reject rather than quietly truncate.
  */
 public record SignupRequest(
+
+		@NotBlank(message = "Enter your name.")
+		@Size(max = 120, message = "Name is too long.")
+		String name,
 
 		@NotBlank(message = "Enter your email.")
 		@Email(message = "Enter a valid email address.")

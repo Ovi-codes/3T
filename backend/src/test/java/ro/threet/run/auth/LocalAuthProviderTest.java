@@ -45,21 +45,23 @@ class LocalAuthProviderTest {
 		when(users.existsByEmail("ana@example.com")).thenReturn(false);
 		when(users.save(any(AppUser.class))).thenAnswer(call -> call.getArgument(0));
 
-		AccountPrincipal principal = provider().signup("  Ana@Example.com  ", "correct horse");
+		AccountPrincipal principal = provider().signup("  Ana@Example.com  ", "  Ana Pop  ", "correct horse");
 
 		verify(users).save(savedCaptor.capture());
 		AppUser saved = savedCaptor.getValue();
 		assertThat(saved.getEmail()).isEqualTo("ana@example.com");
+		assertThat(saved.getName()).isEqualTo("Ana Pop");
 		assertThat(saved.getPasswordHash()).isNotEqualTo("correct horse");
 		assertThat(passwordEncoder.matches("correct horse", saved.getPasswordHash())).isTrue();
 		assertThat(principal.email()).isEqualTo("ana@example.com");
+		assertThat(principal.name()).isEqualTo("Ana Pop");
 	}
 
 	@Test
 	void signupRejectsAnEmailThatAlreadyHasAnAccount() {
 		when(users.existsByEmail("ana@example.com")).thenReturn(true);
 
-		assertThatThrownBy(() -> provider().signup("ana@example.com", "correct horse"))
+		assertThatThrownBy(() -> provider().signup("ana@example.com", "Ana Pop", "correct horse"))
 				.isInstanceOf(EmailAlreadyUsedException.class);
 
 		verify(users, never()).save(any());
@@ -67,7 +69,7 @@ class LocalAuthProviderTest {
 
 	@Test
 	void loginSucceedsWithTheCorrectPassword() {
-		AppUser user = new AppUser("ana@example.com", passwordEncoder.encode("correct horse"));
+		AppUser user = new AppUser("ana@example.com", "Ana Pop", passwordEncoder.encode("correct horse"));
 		when(users.findByEmail("ana@example.com")).thenReturn(Optional.of(user));
 
 		AccountPrincipal principal = provider().login("  ANA@example.com ", "correct horse");
@@ -77,7 +79,7 @@ class LocalAuthProviderTest {
 
 	@Test
 	void loginRejectsAWrongPassword() {
-		AppUser user = new AppUser("ana@example.com", passwordEncoder.encode("correct horse"));
+		AppUser user = new AppUser("ana@example.com", "Ana Pop", passwordEncoder.encode("correct horse"));
 		when(users.findByEmail("ana@example.com")).thenReturn(Optional.of(user));
 
 		assertThatThrownBy(() -> provider().login("ana@example.com", "wrong"))

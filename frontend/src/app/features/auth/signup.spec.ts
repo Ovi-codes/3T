@@ -41,12 +41,36 @@ describe('Signup', () => {
 
     httpMock.expectNone('/api/auth/signup');
     const text = (fixture.nativeElement as HTMLElement).textContent;
+    expect(text).toContain('Enter your name.');
     expect(text).toContain('Enter your email.');
     expect(text).toContain('Choose a password.');
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it('rejects a name shorter than three characters', () => {
+    setInput('name', 'Ab');
+    setInput('email', 'ana@example.com');
+    setInput('password', 'correct horse');
+    submitForm();
+
+    httpMock.expectNone('/api/auth/signup');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Name must be at least 3 characters.',
+    );
+  });
+
+  it('rejects a name that is only numbers', () => {
+    setInput('name', '12345');
+    setInput('email', 'ana@example.com');
+    setInput('password', 'correct horse');
+    submitForm();
+
+    httpMock.expectNone('/api/auth/signup');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name can’t be only numbers.');
+  });
+
   it('rejects an email without a valid extension (e.g. a@a)', () => {
+    setInput('name', 'Ana Pop');
     setInput('email', 'a@a');
     setInput('password', 'correct horse');
     submitForm();
@@ -56,6 +80,7 @@ describe('Signup', () => {
   });
 
   it('rejects a password shorter than eight characters', () => {
+    setInput('name', 'Ana Pop');
     setInput('email', 'ana@example.com');
     setInput('password', 'short');
     submitForm();
@@ -67,18 +92,25 @@ describe('Signup', () => {
   });
 
   it('posts a valid signup and redirects to the dashboard', () => {
+    setInput('name', 'Ana Pop');
     setInput('email', 'ana@example.com');
     setInput('password', 'correct horse');
     submitForm();
 
     const request = httpMock.expectOne('/api/auth/signup');
     expect(request.request.method).toBe('POST');
-    request.flush({ id: 1, email: 'ana@example.com' });
+    expect(request.request.body).toEqual({
+      name: 'Ana Pop',
+      email: 'ana@example.com',
+      password: 'correct horse',
+    });
+    request.flush({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
 
     expect(navigate).toHaveBeenCalledWith('/dashboard');
   });
 
   it('surfaces a taken-email error against the email field and does not redirect', () => {
+    setInput('name', 'Ana Pop');
     setInput('email', 'ana@example.com');
     setInput('password', 'correct horse');
     submitForm();

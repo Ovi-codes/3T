@@ -8,6 +8,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 
 import { Register } from './register';
 import { EventItem } from '../events/events.service';
+import { AuthService } from '../auth/auth.service';
 
 const EVENT: EventItem = {
   id: 3,
@@ -56,6 +57,42 @@ describe('Register', () => {
     form.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
   }
+
+  /** Resolve /api/auth/me so the component sees a signed-in account. */
+  function signedInAs(name: string | null, email: string): void {
+    TestBed.inject(AuthService).loadCurrentUser().subscribe();
+    httpMock.expectOne('/api/auth/me').flush({ id: 1, email, name });
+  }
+
+  it('prefills name and email from the signed-in account (#38)', () => {
+    signedInAs('Ana Pop', 'ana@example.com');
+    loadEvent();
+
+    expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe('Ana Pop');
+    expect((fixture.nativeElement.querySelector('#email') as HTMLInputElement).value).toBe(
+      'ana@example.com',
+    );
+  });
+
+  it('leaves the form empty for an anonymous visitor', () => {
+    loadEvent();
+
+    expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe('');
+    expect((fixture.nativeElement.querySelector('#email') as HTMLInputElement).value).toBe('');
+  });
+
+  it('does not overwrite what a signed-in user has already typed', () => {
+    loadEvent();
+    // The user starts editing before their session resolves…
+    setInput('name', 'Someone Else');
+    // …then /me answers: the prefill must not clobber the edit.
+    signedInAs('Ana Pop', 'ana@example.com');
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe(
+      'Someone Else',
+    );
+  });
 
   it('blocks submission and shows field errors when the form is empty', () => {
     loadEvent();

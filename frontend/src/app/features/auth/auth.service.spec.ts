@@ -22,23 +22,27 @@ describe('AuthService', () => {
     expect(service.user()).toBeUndefined();
   });
 
-  it('signup posts credentials and records the returned account', () => {
-    service.signup('ana@example.com', 'correct horse').subscribe();
+  it('signup posts name + credentials and records the returned account', () => {
+    service.signup('Ana Pop', 'ana@example.com', 'correct horse').subscribe();
 
     const request = httpMock.expectOne('/api/auth/signup');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ email: 'ana@example.com', password: 'correct horse' });
-    request.flush({ id: 1, email: 'ana@example.com' });
+    expect(request.request.body).toEqual({
+      name: 'Ana Pop',
+      email: 'ana@example.com',
+      password: 'correct horse',
+    });
+    request.flush({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
 
-    expect(service.user()).toEqual({ id: 1, email: 'ana@example.com' });
+    expect(service.user()).toEqual({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
     expect(service.isSignedIn()).toBe(true);
   });
 
   it('login records the account', () => {
     service.login('ana@example.com', 'correct horse').subscribe();
-    httpMock.expectOne('/api/auth/login').flush({ id: 1, email: 'ana@example.com' });
+    httpMock.expectOne('/api/auth/login').flush({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
 
-    expect(service.user()).toEqual({ id: 1, email: 'ana@example.com' });
+    expect(service.user()).toEqual({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
   });
 
   it('logout clears the account', () => {

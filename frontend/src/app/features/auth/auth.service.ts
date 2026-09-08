@@ -2,10 +2,11 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 
-/** The signed-in account — mirrors the backend AccountResponse (id + email, nothing sensitive). */
+/** The signed-in account — mirrors the backend AccountResponse (id + email + name, nothing sensitive). */
 export interface Account {
   id: number;
   email: string;
+  name: string;
 }
 
 /**
@@ -27,9 +28,9 @@ export class AuthService {
   readonly isSignedIn = computed(() => !!this._user());
 
   /** CS-2: create the account; the server logs the new user in and returns them. */
-  signup(email: string, password: string): Observable<Account> {
+  signup(name: string, email: string, password: string): Observable<Account> {
     return this.http
-      .post<Account>('/api/auth/signup', { email, password })
+      .post<Account>('/api/auth/signup', { name, email, password })
       .pipe(tap((account) => this._user.set(account)));
   }
 

@@ -17,7 +17,7 @@ public interface AuthProvider {
 	 *
 	 * @throws EmailAlreadyUsedException if an account already exists for the email
 	 */
-	AccountPrincipal signup(String email, String rawPassword);
+	AccountPrincipal signup(String email, String name, String rawPassword);
 
 	/**
 	 * Verify credentials and return the principal.

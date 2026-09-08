@@ -11,21 +11,21 @@
 
 ---
 
-## Now — V1
+## Past — V1
 
-Increments 0–5 (see [`charter.md`](./charter.md) §4).
+~~Increments 0–5 (see [`charter.md`](./charter.md) §4).~~ ✓
 
-## Next — V2
-- Verify and refactor the separation of concerns across components, if needed, using Matt Pocock skill
+## Now — V2
+- ~~Verify and refactor the separation of concerns across components, if needed, using Matt Pocock skill~~ ✓ Increment 6 (#37)
 - Implement user roles - admins should be able to CRUD events
 - Create design theme and logo and implement new design language
-- Tidy up user experience - sign up should take name also and logged in users no longer enter registration info manually
+- ~~Tidy up user experience - sign up should take name also and logged in users no longer enter registration info manually~~ ✓ Increment 7 (#38)
 - Post-event time upload — runners manually enter their own finish time (AI screenshot extraction deferred to V3).
 - Leaderboards per run.
 - Personal stats: placement, time trend, graphs.
 - Integrate a free weather API that shows prediction for the next session.
 
-## Later — V3
+## Next — V3
 - Post-event time upload via Strava/Garmin screenshot + AI extraction (vision model reads pace + distance, validates ≥5k, computes time).
 - Azure stand up incl CSRF token layer and full-target soak toward ~5,000 concurrent
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).

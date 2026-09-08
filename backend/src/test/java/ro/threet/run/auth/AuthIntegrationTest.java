@@ -74,15 +74,28 @@ class AuthIntegrationTest {
 		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.email").value("ana@example.com"))
+				.andExpect(jsonPath("$.name").value("Ana Pop"))
 				.andExpect(jsonPath("$.id").isNumber())
 				.andReturn();
 
 		assertThat(users.count()).isEqualTo(1);
 
-		// The session opened by sign-up is authenticated: /me returns the same account.
+		// The session opened by sign-up is authenticated: /me returns the same account, name included.
 		mockMvc.perform(get("/api/auth/me").session(sessionOf(signup)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value("ana@example.com"));
+				.andExpect(jsonPath("$.email").value("ana@example.com"))
+				.andExpect(jsonPath("$.name").value("Ana Pop"));
+	}
+
+	@Test
+	void signupWithoutANameIsRejected() throws Exception {
+		mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email": "ana@example.com", "password": "correct horse"}"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.name").exists());
+
+		assertThat(users.count()).isZero();
 	}
 
 	@Test
@@ -180,9 +193,11 @@ class AuthIntegrationTest {
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder signupRequest(
 			String email, String password) {
+		// Name is required at the API from Increment 7; these credential tests don't vary it, so a
+		// fixed value keeps them focused on the email/password behaviour they assert.
 		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{"email": "%s", "password": "%s"}""".formatted(email, password));
+						{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder loginRequest(

@@ -145,7 +145,7 @@ class MyRegistrationsIntegrationTest {
 			String email, String password) {
 		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{"email": "%s", "password": "%s"}""".formatted(email, password));
+						{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 
 }

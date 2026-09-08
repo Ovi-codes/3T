@@ -68,9 +68,13 @@ stays local (charter §3).
 - **Endpoints:** `POST /api/auth/signup` (201, logs in), `POST /api/auth/login` (200),
   `POST /api/auth/logout` (204), `GET /api/auth/me` (200 or 401). Authorisation is deny-by-default;
   the public API (events, anonymous registration, signup/login, health) is enumerated in
-  `SecurityConfig`.
+  `SecurityConfig`. Sign-up captures the person's `name` alongside email + password (Increment 7,
+  #38); `/me` and `AccountResponse` carry it. `name` is `NOT NULL` on `app_user` and `@NotBlank` at
+  the API — every account has one.
 - **Registration linkage:** `POST /api/registrations` stays anonymous, but if the caller has a
   session the registration is attributed to that account (`registration.user_id`). Anonymous → null.
+  For a signed-in user the registration form is prefilled from their account (name + email) so they
+  don't retype it, but the fields stay editable and the anonymous form is unchanged (Increment 7, #38).
 - **CSRF:** Spring's CSRF token machinery is **off** for the JSON API — it's served same-origin and the
   `SameSite=Lax` session cookie blocks the cross-site form POST tokens defend against, without forcing
   a token round-trip onto the anonymous registration POST. A token-based CSRF layer is a **pre-go-live

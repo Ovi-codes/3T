@@ -12,6 +12,7 @@ import {
 
 import { EventItem, EventsService } from '../events/events.service';
 import { RegistrationResult, RegistrationsService } from './registrations.service';
+import { AuthService } from '../auth/auth.service';
 import { toFormErrors } from '../../core/form-errors';
 
 /**
@@ -35,7 +36,8 @@ type LoadState = 'loading' | 'ready' | 'missing';
  * Increment 2 (core loop): register for one upcoming run. Loads the event named in the route,
  * takes a name + email, and on success shows a confirmation view. Validation runs client-side
  * before submit; the server's field errors are surfaced against the same inputs, so a duplicate
- * or a rejected email reads the same way whether the browser or the API caught it. No auth.
+ * or a rejected email reads the same way whether the browser or the API caught it.
+ *
  */
 @Component({
   selector: 'app-register',
@@ -46,6 +48,7 @@ type LoadState = 'loading' | 'ready' | 'missing';
 export class Register {
   private readonly events$ = inject(EventsService);
   private readonly registrations$ = inject(RegistrationsService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
 
@@ -71,6 +74,17 @@ export class Register {
   private readonly confirmationHeading = viewChild<ElementRef<HTMLElement>>('confirmationHeading');
 
   constructor() {
+    // Prefill from the signed-in account so a logged-in user doesn't retype their details (#38).
+    // Runs when `user()` resolves (it starts undefined until /me answers) and only while the form is
+    // untouched, so a user's own edits are never overwritten and an anonymous visitor (user() null)
+    // keeps the empty form.
+    effect(() => {
+      const account = this.auth.user();
+      if (account && this.form.pristine) {
+        this.form.patchValue({ name: account.name, email: account.email });
+      }
+    });
+
     // On success the form is swapped for the confirmation; move focus to its heading so a
     // screen-reader / keyboard user is taken to the outcome rather than left on the vanished form.
     effect(() => {

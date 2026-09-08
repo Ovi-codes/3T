@@ -35,7 +35,7 @@ class AuthController {
 	@PostMapping("/signup")
 	public ResponseEntity<AccountResponse> signup(@Valid @RequestBody SignupRequest request,
 			HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-		AccountPrincipal principal = authProvider.signup(request.email(), request.password());
+		AccountPrincipal principal = authProvider.signup(request.email(), request.name(), request.password());
 		sessionAuthenticator.establishSession(principal, httpRequest, httpResponse);
 		return ResponseEntity.status(HttpStatus.CREATED).body(AccountResponse.from(principal));
 	}

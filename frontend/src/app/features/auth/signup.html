@@ -13,6 +13,21 @@
 
   <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="field">
+      <label for="name">Name</label>
+      <input
+        id="name"
+        type="text"
+        formControlName="name"
+        autocomplete="name"
+        [attr.aria-invalid]="controlError('name') ? 'true' : null"
+        [attr.aria-describedby]="controlError('name') ? 'name-error' : null"
+      />
+      @if (controlError('name'); as message) {
+        <p class="field-error" id="name-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="field">
       <label for="email">Email</label>
       <input
         id="email"
