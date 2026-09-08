@@ -1,0 +1,14 @@
+<!-- Layer 3 (the wavy fade to ink) sits behind the content; layers 1+2 (weave + ember) are the
+     host background in poster.css. preserveAspectRatio="none" stretches the wave to any size. -->
+<svg class="poster-wave" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <linearGradient [attr.id]="gradientId" x1="0" y1="0" x2="0" y2="1">
+      <stop class="poster-wave-top" offset="0" stop-opacity="0" />
+      <stop class="poster-wave-bottom" offset="0.5" stop-opacity="1" />
+    </linearGradient>
+  </defs>
+  <path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" [attr.fill]="'url(#' + gradientId + ')'" />
+</svg>
+<div class="poster-content">
+  <ng-content></ng-content>
+</div>

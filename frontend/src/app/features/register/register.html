@@ -1,79 +1,92 @@
-<main id="main-content" tabindex="-1" class="page">
+<main id="main-content" tabindex="-1">
   @if (loadState() === 'loading') {
-    <p class="state" aria-live="polite">Loading…</p>
+    <div class="page">
+      <p class="state" aria-live="polite">Loading…</p>
+    </div>
   } @else if (loadState() === 'missing') {
-    <header class="page-header">
-      <p class="eyebrow">Register</p>
-      <h1>Run not found</h1>
-      <p class="lede">That run isn’t open for registration. <a routerLink="/">See upcoming runs</a>.</p>
-    </header>
+    <div class="page">
+      <header class="page-header">
+        <p class="eyebrow">Register</p>
+        <h1>Run not found</h1>
+        <p class="lede">That run isn’t open for registration. <a routerLink="/">See upcoming runs</a>.</p>
+      </header>
+    </div>
   } @else if (confirmation(); as done) {
     <section data-testid="confirmation">
+      <app-poster class="hero">
+        <div class="hero-inner">
+          <p class="hero-eyebrow">See you at the start line</p>
+          <h1 #confirmationHeading tabindex="-1" class="hero-title"><span class="t">Y</span>OU’RE IN<span class="t">!</span></h1>
+        </div>
+      </app-poster>
+      <div class="page confirmation-body">
+        <p class="lede">
+          You’re registered for <strong>{{ done.eventName }}</strong>. We’ve sent a confirmation to
+          <strong>{{ done.email }}</strong>.
+        </p>
+        <a class="btn btn-primary" routerLink="/">
+          Back to upcoming runs
+          <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+      </div>
+    </section>
+  } @else {
+    <div class="page">
       <header class="page-header">
-        <p class="eyebrow">See you at the start line</p>
-        <h1 #confirmationHeading tabindex="-1">You're in!</h1>
+        <p class="eyebrow">Register</p>
+        <h1>{{ event()!.name }}</h1>
+        <p class="lede">
+          <time class="run-when" [attr.datetime]="event()!.startDateTime">
+            {{ event()!.startDateTime | date: 'EEE d MMM' }} · {{ event()!.startDateTime | date: 'HH:mm' }}
+          </time>
+          · {{ event()!.locationName }}, {{ event()!.city }}
+        </p>
       </header>
 
       <hr class="course-rule" aria-hidden="true" />
 
-      <p class="lede">
-        You’re registered for <strong>{{ done.eventName }}</strong>. We’ve sent a confirmation to
-        <strong>{{ done.email }}</strong>.
-      </p>
-      <p><a class="button" routerLink="/">Back to upcoming runs</a></p>
-    </section>
-  } @else {
-    <header class="page-header">
-      <p class="eyebrow">Register</p>
-      <h1>{{ event()!.name }}</h1>
-      <p class="lede">
-        <time class="run-when" [attr.datetime]="event()!.startDateTime">
-          {{ event()!.startDateTime | date: 'EEE d MMM' }} · {{ event()!.startDateTime | date: 'HH:mm' }}
-        </time>
-        · {{ event()!.locationName }}, {{ event()!.city }}
-      </p>
-    </header>
+      @if (formError(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
 
-    <hr class="course-rule" aria-hidden="true" />
+      <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="name">Name</label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            autocomplete="name"
+            [attr.aria-invalid]="controlError('name') ? 'true' : null"
+            [attr.aria-describedby]="controlError('name') ? 'name-error' : null"
+          />
+          @if (controlError('name'); as message) {
+            <p class="field-error" id="name-error">{{ message }}</p>
+          }
+        </div>
 
-    @if (formError(); as message) {
-      <p class="state-error" role="alert">{{ message }}</p>
-    }
+        <div class="field">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            [attr.aria-invalid]="controlError('email') ? 'true' : null"
+            [attr.aria-describedby]="controlError('email') ? 'email-error' : null"
+          />
+          @if (controlError('email'); as message) {
+            <p class="field-error" id="email-error">{{ message }}</p>
+          }
+        </div>
 
-    <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <div class="field">
-        <label for="name">Name</label>
-        <input
-          id="name"
-          type="text"
-          formControlName="name"
-          autocomplete="name"
-          [attr.aria-invalid]="controlError('name') ? 'true' : null"
-          [attr.aria-describedby]="controlError('name') ? 'name-error' : null"
-        />
-        @if (controlError('name'); as message) {
-          <p class="field-error" id="name-error">{{ message }}</p>
-        }
-      </div>
+        <p class="fine-print">We’ll email a confirmation. Registering shares only your name and email.</p>
 
-      <div class="field">
-        <label for="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          formControlName="email"
-          autocomplete="email"
-          [attr.aria-invalid]="controlError('email') ? 'true' : null"
-          [attr.aria-describedby]="controlError('email') ? 'email-error' : null"
-        />
-        @if (controlError('email'); as message) {
-          <p class="field-error" id="email-error">{{ message }}</p>
-        }
-      </div>
-
-      <button class="button" type="submit" [disabled]="submitting()" data-testid="register-submit">
-        {{ submitting() ? 'Registering…' : 'Register' }}
-      </button>
-    </form>
+        <button class="btn btn-primary btn-block" type="submit" [disabled]="submitting()" data-testid="register-submit">
+          {{ submitting() ? 'Registering…' : 'Register' }}
+          <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </button>
+      </form>
+    </div>
   }
 </main>

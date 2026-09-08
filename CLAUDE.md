@@ -84,32 +84,30 @@ stays local (charter §3).
 
 ## Design direction
 
-Light direction only — enough to keep the UI coherent and *not* look like a default template.
-Don't spend real design effort before flows settle (that's Increment 5); do apply the tokens and
-this direction consistently from Increment 1. All colours, fonts, spacing, and radii come from
-`frontend/src/styles/tokens.css` — **never hardcode a hex value or a raw px font size in a component.**
+The **"Floodlight"** theme is the finished V1 design language (Increment 8, #39). **Source of truth:
+[`docs/design/README.md`](./docs/design/README.md)** (the handoff, per-screen) and
+**[`docs/design/theme.css`](./docs/design/theme.css)** (every token + recipe). Read those before
+touching UI; the notes below are only the invariants that must hold in the code.
 
-**Palette** (see tokens for the values): deep **pine teal** as the brand/primary, a warm **sunrise
-amber** as the single accent (used sparingly — the next upcoming run, key marks), on a cool
-near-white surface. Avoid warm-cream backgrounds and terracotta accents — that combination is a
-common AI-generated tell.
-
-**Type.** Display **Bricolage Grotesque** (event names, headings), body **Hanken Grotesk** (UI, all-ages
-legibility), mono **JetBrains Mono** with tabular figures for **times, dates, distances** — the mono
-ties the interface to the timing/pace world. All three must load the **Latin Extended** subset so
-Romanian diacritics (ă â î ș ț) render.
-
-**Signature element.** A *course-line divider*: a thin rule with five kilometre ticks (0→5k), used
-sparingly as the section rule and as the anchor on the "next run" hero. It encodes something true (a
-5k course), so it's structure, not decoration — don't sprinkle it everywhere.
-
-**Quality floor (non-negotiable, already in the DoD).** Responsive to mobile, visible keyboard focus,
-`prefers-reduced-motion` respected, axe-core clean. Motion stays subtle. Accent amber needs **dark
-(ink) text on it**, never white — check contrast.
-
-**Copy.** Sentence case, active voice, name things by what the user does ("Register", "Sign in", not
-"Submit"). Empty states invite action ("No upcoming runs yet — check back soon"), errors say what
-happened and how to fix it. Keep it plain; the audience is runners of all ages, many non-technical.
+- **Tokens are law.** All colours, fonts, spacing, and radii come from `frontend/src/styles/tokens.css`
+  — **never hardcode a hex value or a raw px font size in a component.**
+- **Palette:** bright **orange `#ff6d00`** on a cool near-white ground, with dark **ink `#1a1918`**
+  poster/hero fields. Orange is for *fills* (with dark ink text) and accents on the dark poster; for
+  orange *text on the light ground* use `--color-primary-ink` (the AA-passing deeper orange). Flat,
+  **zero corner radius**, structure from strong 2px rules — no shadows. (Replaces the earlier
+  pine-teal / sunrise-amber placeholder.)
+- **Type:** **Archivo** throughout (400 body, 600 strong, 800 headings/labels), loading the **Latin +
+  Latin-Extended** subsets so Romanian diacritics (ă â î ș ț) render. Times, dates and distances use
+  tabular figures (`font-variant-numeric: tabular-nums`).
+- **Signature element:** the dark **poster / hero field** — reusable `<app-poster>` (diagonal weave +
+  top-left orange ember glow + wavy fade to ink), used by the events hero, the confirmation banner,
+  and the auth side panels. Don't sprinkle it everywhere; it anchors statement moments.
+- **Quality floor (non-negotiable, already in the DoD).** Responsive to mobile, visible keyboard focus,
+  `prefers-reduced-motion` respected, axe-core clean. Motion stays subtle. A solid orange fill needs
+  **dark (ink) text on it**, never white — check contrast.
+- **Copy.** Sentence case, active voice, name things by what the user does ("Register", "Sign in", not
+  "Submit"). Empty states invite action ("No upcoming runs yet — check back soon"), errors say what
+  happened and how to fix it. Keep it plain; the audience is runners of all ages, many non-technical.
 
 ## Azure deployment
 Azure is not fully up yet, so let's make sure we respect the following:

@@ -1,73 +1,93 @@
 /* 3T Run — design tokens (single source of truth for the frontend)
  *
+ * Theme: "Floodlight" — orange (#ff6d00) on ink (#1a1918), set in Archivo, flat, zero radius,
+ * strong 2px rules. Derived from the Modernist design system (see docs/design/). Replaces the
+ * earlier pine-teal / sunrise-amber placeholder.
+ *
  * Rules:
  *  - Components reference these variables; never hardcode a hex or raw px font size.
- *  - Values here are a considered *starting point*, tuned for a calm, dawn-park, all-ages
- *    feel. They can move during Increment 5 hardening — but the token names shouldn't.
- *  - Contrast note: --color-accent (sunrise amber) takes DARK text (--color-ink) on it,
- *    never white. Primary teal takes white/contrast text.
+ *  - Bright --color-primary (#ff6d00) is for FILLS (with dark ink text) and for accents on the
+ *    dark poster field — it fails contrast as small text on the light ground. For orange TEXT on
+ *    light, use --color-primary-ink (a deeper, AA-passing orange).
+ *  - Text on a solid orange button is DARK ink (--color-primary-contrast), never white.
  *
- * Fonts: load these three (Latin + Latin-Extended, for ă â î ș ț) in index.html <head>:
- *   Bricolage Grotesque (display), Hanken Grotesk (body), JetBrains Mono (data/times).
- *   e.g. <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap&subset=latin,latin-ext" rel="stylesheet">
+ * Fonts: Archivo 400 / 600 / 800 (Latin + Latin-Extended, for ă â î ș ț) — loaded in index.html.
  */
 
 :root {
-  /* ---- Color: text ---- */
-  --color-ink: #14201c;        /* near-black pine — primary text */
-  --color-ink-soft: #45564f;   /* muted/secondary text */
-  --color-ink-faint: #7a8a83;  /* captions, placeholders */
+  /* ---- Color: text (on the light ground) ---- */
+  --color-ink: #201e1d;        /* primary text */
+  --color-ink-soft: #57534f;   /* muted/secondary text (AA on ground) */
+  --color-ink-faint: #6b6560;  /* captions, placeholders (AA on ground) */
 
   /* ---- Color: surfaces ---- */
-  --color-surface: #fbfcfb;        /* page background (cool near-white, NOT cream) */
-  --color-surface-raised: #ffffff; /* cards */
-  --color-surface-sunk: #f1f5f2;   /* muted sections, table stripes */
-  --color-border: #dce6e0;         /* hairlines, card borders */
+  --color-surface: #f3f2f2;        /* page ground */
+  --color-surface-raised: #eae9e9; /* cards, inputs */
+  --color-surface-sunk: #e2e0df;   /* date chips, muted fills */
+  --color-border: rgba(32, 30, 29, 0.40); /* the 2px rules and 1px hairlines */
 
-  /* ---- Color: brand ---- */
-  --color-primary: #17564a;          /* pine teal — primary actions, brand */
-  --color-primary-hover: #0f433a;
-  --color-primary-contrast: #fbfcfb; /* text/icons on primary */
+  /* ---- Color: brand / primary (orange) ---- */
+  --color-primary: #ff6d00;          /* button fills, accents, the coloured T's */
+  --color-primary-hover: #e86400;
+  --color-primary-active: #c25200;
+  --color-primary-contrast: #201e1d; /* text/icon ON a solid orange fill — DARK, not white */
+  --color-primary-ink: #a8480a;      /* orange TEXT on the light ground (links, kickers) — AA */
 
-  /* ---- Color: accent (use sparingly — next run, key marks) ---- */
-  --color-accent: #f6a609;       /* sunrise amber — takes DARK text on it */
-  --color-accent-soft: #fdeac4;  /* amber tint for backgrounds/badges */
+  /* ---- Color: accent (same orange; the single accent — tints for tags) ---- */
+  --color-accent: #ff6d00;
+  --color-accent-soft: #fff1e6;   /* tint fill behind tags on ground */
+  --color-accent-strong: #7a3600; /* text on the tint fill */
 
-  /* ---- Color: status ---- */
-  --color-success: #2e7d5b;
-  --color-success-soft: #e2f1e9;
-  --color-danger: #c1483b;       /* errors — distinct from the amber accent */
-  --color-danger-soft: #f8e3e0;
+  /* ---- Color: the poster / hero field (dark ink statement blocks) ---- */
+  --color-poster: #1a1918;
+  --color-poster-weave-a: #252220;
+  --color-poster-weave-b: #161514;
+  --color-poster-text: #f3f2f2;   /* ground-white text on the poster */
+  --color-poster-muted: rgba(243, 242, 242, 0.62); /* dimmed on poster (AA) */
+
+  /* ---- Color: status ----
+   * Validation + load errors render in accessible orange (the theme folds alerts into the accent).
+   * --color-destructive stays red for the single irreversible action (delete account), so data
+   * loss reads as danger rather than as another CTA. */
+  --color-danger: #a8480a;       /* field + form error text (AA on ground and on the tint) */
+  --color-danger-soft: #fff1e6;  /* error-banner background */
+  --color-destructive: #b3261e;      /* delete-account controls only */
+  --color-destructive-soft: #f7e4e2;
 
   /* ---- Focus ---- */
-  --color-focus-ring: #17564a;   /* visible focus; pair with --focus-offset */
+  --color-focus-ring: #ff6d00;   /* visible focus; pair with --focus-offset */
   --focus-offset: 2px;
 
-  /* ---- Typography: families ---- */
-  --font-display: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
-  --font-body: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  /* ---- Typography: families (Archivo throughout) ---- */
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-body: "Archivo", system-ui, -apple-system, sans-serif;
+  --font-mono: "Archivo", system-ui, sans-serif; /* dates/times: Archivo + tabular-nums */
 
   /* ---- Typography: scale (rem) ---- */
-  --text-xs: 0.75rem;    /* 12 — captions, labels */
-  --text-sm: 0.875rem;   /* 14 */
-  --text-base: 1rem;     /* 16 — body default */
+  --text-xs: 0.6875rem;  /* 11 — kickers, tags, labels */
+  --text-sm: 0.8125rem;  /* 13 */
+  --text-base: 0.9375rem;/* 15 — body default */
   --text-lg: 1.125rem;   /* 18 */
   --text-xl: 1.375rem;   /* 22 */
   --text-2xl: 1.75rem;   /* 28 — card / section headings */
   --text-3xl: 2.25rem;   /* 36 */
-  --text-4xl: 3rem;      /* 48 — "next run" hero date */
+  --text-4xl: 3rem;      /* 48 — page h1 */
+  --text-poster: clamp(2.75rem, 9vw, 5.5rem); /* the display poster wordmark */
 
   /* ---- Typography: weights & leading ---- */
   --weight-regular: 400;
-  --weight-medium: 500;
+  --weight-medium: 600;
   --weight-semibold: 600;
-  --weight-bold: 700;
-  --leading-tight: 1.15;  /* display headings */
-  --leading-snug: 1.35;
+  --weight-bold: 800;
+  --weight-heading: 800;
+  --leading-tight: 1.12;  /* headings */
+  --leading-snug: 1.25;
   --leading-normal: 1.55; /* body copy */
+  --leading-poster: 0.9;  /* the stacked display wordmark */
+  --tracking-heading: -0.015em;
+  --tracking-poster: -0.03em;
 
-  /* Times/dates/distances: use --font-mono + tabular figures */
+  /* Times/dates/distances: use tabular figures */
   --numeric: "tnum" 1, "lnum" 1;
 
   /* ---- Spacing scale (4px base) ---- */
@@ -80,15 +100,15 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* ---- Radius (soft & friendly; not zero, not all-pill) ---- */
-  --radius-sm: 6px;
-  --radius-md: 10px;   /* cards, inputs */
-  --radius-lg: 14px;   /* hero panel */
-  --radius-pill: 999px;/* badges, chips */
+  /* ---- Radius (zero corners everywhere — flat) ---- */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-pill: 0;
 
-  /* ---- Elevation (low, soft) ---- */
-  --shadow-card: 0 1px 2px rgba(20, 32, 28, 0.06), 0 4px 16px rgba(20, 32, 28, 0.06);
-  --shadow-pop: 0 8px 32px rgba(20, 32, 28, 0.12);
+  /* ---- Elevation (flat: no shadows; structure comes from 2px rules) ---- */
+  --shadow-card: none;
+  --shadow-pop: none;
 
   /* ---- Motion (subtle; respect reduced-motion below) ---- */
   --dur-fast: 120ms;
@@ -96,35 +116,16 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* ---- Layout ---- */
-  --container-max: 68rem; /* content max-width */
+  --container-max: 72rem; /* content max-width */
 }
 
-/* Signature: course-line divider — a thin rule with 5 km ticks (0→5k).
- * Use sparingly (section rule, "next run" hero). It's structure, not decoration. */
+/* Signature is now the poster / hero field (see the <app-poster> component). This class, still used
+ * as a section rule in a few templates, is a plain strong 2px line. */
 .course-rule {
   height: 2px;
   border: 0;
   background: var(--color-border);
-  position: relative;
   margin: var(--space-8) 0;
-}
-.course-rule::before {
-  content: "";
-  position: absolute;
-  inset: -3px 0 auto 0;
-  height: 8px;
-  /* five ticks across the line */
-  background-image: linear-gradient(var(--color-primary), var(--color-primary));
-  background-size: 2px 8px;
-  background-repeat: repeat-x;
-  background-position: left;
-  /* space ticks at 0/25/50/75/100% via repeating gradient */
-  background: repeating-linear-gradient(
-    to right,
-    var(--color-primary) 0 2px,
-    transparent 2px calc(25% )
-  );
-  opacity: 0.7;
 }
 
 @media (prefers-reduced-motion: reduce) {

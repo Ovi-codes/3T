@@ -135,7 +135,7 @@ No new state. All state (events signal, register form + confirmation, auth user 
 |04 Sign up|`app/features/auth/signup.html`, `auth.css`|
 |05 Sign in|`app/features/auth/login.html`, `auth.css`|
 |06 Dashboard|`app/features/dashboard/dashboard.html`, `dashboard.css`|
-|Tokens (global)|`frontend/src/styles.css` (+ `frontend/tailwind.tokens.snippet.js` if Tailwind tokens are used)|
+|Tokens (global)|`frontend/src/styles/tokens.css` (imported by `frontend/src/styles.css`)|
 
 Keep every existing `data-testid`, `routerLink`, form control and HTTP call — the Playwright/axe suite (`e2e/`) and the charter's CS-1…6 scenarios must still pass.
 

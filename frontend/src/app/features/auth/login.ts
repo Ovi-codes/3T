@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AuthService } from './auth.service';
 import { toFormErrors } from '../../core/form-errors';
+import { Poster } from '../../shared/poster/poster';
 
 /**
  * Increment 3 (CS-3): sign in. Both fields are only required here — the server answers a wrong
@@ -13,7 +14,7 @@ import { toFormErrors } from '../../core/form-errors';
  */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Poster],
   templateUrl: './login.html',
   styleUrl: './auth.css',
 })

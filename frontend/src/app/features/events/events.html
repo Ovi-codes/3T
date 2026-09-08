@@ -1,38 +1,66 @@
-<main id="main-content" tabindex="-1" class="page">
-  <header class="page-header">
-    <p class="eyebrow">Bucharest</p>
-    <h1>Upcoming runs</h1>
-    <p class="lede">Free, weekly, timed 5k. Just turn up and have fun.</p>
-  </header>
-
-  <hr class="course-rule" aria-hidden="true" />
-
-  @if (error(); as message) {
-    <p class="state state-error" role="alert">{{ message }}</p>
-  } @else if (events() === null) {
-    <p class="state" aria-live="polite">Loading upcoming runs…</p>
-  } @else if (events()!.length === 0) {
-    <p class="state state-empty">No upcoming runs yet — check back soon.</p>
-  } @else {
-    <ul class="event-list" role="list">
-      @for (event of events(); track event.id) {
-        <li class="event-card" data-testid="event-item">
-          <time class="event-date" [attr.datetime]="event.startDateTime">
-            <span class="event-day">{{ event.startDateTime | date: 'EEE d MMM' }}</span>
-            <span class="event-time">{{ event.startDateTime | date: 'HH:mm' }}</span>
-          </time>
-          <div class="event-body">
-            <h2 class="event-name">{{ event.name }}</h2>
-            <p class="event-location">{{ event.locationName }}, {{ event.city }}</p>
-          </div>
-          <div class="event-actions">
-            @if ($first) {
-              <span class="next-badge">Next</span>
-            }
-            <a class="event-register" [routerLink]="['/register', event.id]">Register</a>
-          </div>
-        </li>
+<main id="main-content" tabindex="-1">
+  <app-poster class="hero">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">Free · Weekly · Timed 5k</p>
+      <h1 class="hero-title">
+        <span class="t">T</span>IME<br />
+        <span class="t">T</span>RIAL<br />
+        <span class="t">T</span>UESDAYS
+      </h1>
+      <p class="hero-sub">Bucharest · every Tuesday, 18:30</p>
+      @if (events(); as list) {
+        @if (list.length > 0) {
+          <a class="btn btn-primary hero-cta" [routerLink]="['/register', list[0].id]">
+            Register for Tuesday
+            <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
+        }
       }
-    </ul>
-  }
+    </div>
+  </app-poster>
+
+  <section class="page upcoming">
+    <div class="section-head">
+      <h2>Upcoming runs</h2>
+      <span class="section-note">Bucharest · every Tuesday</span>
+    </div>
+
+    @if (error(); as message) {
+      <p class="state state-error" role="alert">{{ message }}</p>
+    } @else if (events() === null) {
+      <p class="state" aria-live="polite">Loading upcoming runs…</p>
+    } @else if (events()!.length === 0) {
+      <p class="state state-empty">No upcoming runs yet — check back soon.</p>
+    } @else {
+      <ul class="event-grid" role="list">
+        @for (event of events(); track event.id) {
+          <li class="event-card" data-testid="event-item">
+            <div class="event-card-head">
+              <time class="event-kicker" [attr.datetime]="event.startDateTime">
+                {{ event.startDateTime | date: 'EEE d MMM' }} · {{ event.startDateTime | date: 'HH:mm' }}
+              </time>
+              @if ($first) {
+                <span class="tag tag-accent">Next</span>
+              }
+            </div>
+            <h3 class="event-name">{{ event.name }}</h3>
+            <p class="event-location">{{ event.locationName }} · {{ event.city }}</p>
+            <a
+              class="btn btn-block event-register"
+              [class.btn-primary]="$first"
+              [class.btn-secondary]="!$first"
+              [routerLink]="['/register', event.id]"
+            >
+              Register
+              <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
 </main>

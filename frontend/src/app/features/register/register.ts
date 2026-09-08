@@ -14,6 +14,7 @@ import { EventItem, EventsService } from '../events/events.service';
 import { RegistrationResult, RegistrationsService } from './registrations.service';
 import { AuthService } from '../auth/auth.service';
 import { toFormErrors } from '../../core/form-errors';
+import { Poster } from '../../shared/poster/poster';
 
 /**
  * A name has to look like a name: at least one letter, so "12345" (only digits) is rejected even
@@ -41,7 +42,7 @@ type LoadState = 'loading' | 'ready' | 'missing';
  */
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, Poster],
   templateUrl: './register.html',
   styleUrl: './register.css',
 })

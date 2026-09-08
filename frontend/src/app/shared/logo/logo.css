@@ -1,0 +1,28 @@
+:host {
+  display: inline-flex;
+}
+
+.logo {
+  display: block;
+  height: 1.5rem;
+  width: auto;
+}
+
+.logo text {
+  font-family: var(--font-display);
+  font-weight: var(--weight-heading);
+}
+
+/* "3T" in the bright brand orange; "RUN" in ink. A logotype, so the bright orange is intentional
+   (WCAG 1.4.3 exempts brand names from the text-contrast requirement). */
+.logo-3t {
+  fill: var(--color-primary);
+  font-size: 21px;
+  letter-spacing: -0.03em;
+}
+
+.logo-run {
+  fill: var(--color-ink);
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
