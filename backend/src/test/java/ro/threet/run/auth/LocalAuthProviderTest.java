@@ -50,7 +50,6 @@ class LocalAuthProviderTest {
 		verify(users).save(savedCaptor.capture());
 		AppUser saved = savedCaptor.getValue();
 		assertThat(saved.getEmail()).isEqualTo("ana@example.com");
-		// The name keeps its casing but is trimmed of surrounding whitespace.
 		assertThat(saved.getName()).isEqualTo("Ana Pop");
 		assertThat(saved.getPasswordHash()).isNotEqualTo("correct horse");
 		assertThat(passwordEncoder.matches("correct horse", saved.getPasswordHash())).isTrue();

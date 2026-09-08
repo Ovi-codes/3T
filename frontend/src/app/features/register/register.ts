@@ -38,9 +38,6 @@ type LoadState = 'loading' | 'ready' | 'missing';
  * before submit; the server's field errors are surfaced against the same inputs, so a duplicate
  * or a rejected email reads the same way whether the browser or the API caught it.
  *
- * The core loop stays anonymous — no sign-in required. But a signed-in user (Increment 7, issue
- * #38) shouldn't retype what their account already holds: the form is prefilled from their account
- * name + email. The fields stay editable, and an anonymous visitor sees the same empty form as before.
  */
 @Component({
   selector: 'app-register',
