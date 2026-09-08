@@ -33,7 +33,7 @@ public class AccountPrivacyService {
 		AppUser user = users.findById(userId)
 				.orElseThrow(() -> new IllegalStateException("Authenticated account not found: " + userId));
 		AccountDataExport.Account account = new AccountDataExport.Account(
-				user.getId(), user.getEmail(), user.getCreatedAt());
+				user.getId(), user.getEmail(), user.getName(), user.getCreatedAt());
 		return new AccountDataExport(account, registrations.exportForUser(userId));
 	}
 

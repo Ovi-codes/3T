@@ -26,12 +26,14 @@ class LocalAuthProvider implements AuthProvider {
 
 	@Override
 	@Transactional
-	public AccountPrincipal signup(String email, String rawPassword) {
+	public AccountPrincipal signup(String email, String name, String rawPassword) {
 		String normalised = normalise(email);
 		if (users.existsByEmail(normalised)) {
 			throw new EmailAlreadyUsedException("An account already exists for this email.");
 		}
-		AppUser saved = users.save(new AppUser(normalised, passwordEncoder.encode(rawPassword)));
+		// Email is normalised (the unique constraint dedupes on it); the name keeps its own casing,
+		// trimmed of surrounding whitespace.
+		AppUser saved = users.save(new AppUser(normalised, name.trim(), passwordEncoder.encode(rawPassword)));
 		return AccountPrincipal.of(saved);
 	}
 

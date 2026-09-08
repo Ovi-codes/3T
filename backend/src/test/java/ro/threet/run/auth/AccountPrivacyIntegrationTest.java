@@ -96,6 +96,7 @@ class AccountPrivacyIntegrationTest {
 				.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("attachment")))
 				.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("threet-run-my-data.json")))
 				.andExpect(jsonPath("$.account.email").value("ana@example.com"))
+				.andExpect(jsonPath("$.account.name").value("Ana Pop"))
 				.andExpect(jsonPath("$.account.id").value(userId))
 				// The password hash is never part of the export.
 				.andExpect(jsonPath("$.account.passwordHash").doesNotExist())
@@ -172,9 +173,10 @@ class AccountPrivacyIntegrationTest {
 	}
 
 	private static MockHttpServletRequestBuilder signupRequest(String email, String password) {
+		// Name is required at the API from Increment 7; a fixed value keeps these GDPR tests focused.
 		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{"email": "%s", "password": "%s"}""".formatted(email, password));
+						{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 
 }

@@ -22,14 +22,15 @@ test('CS-2: signing up creates an account, lands on the dashboard, and signing o
   const email = uniqueEmail();
 
   await page.goto('/signup');
+  await page.getByLabel('Name').fill('Ana Pop');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse battery');
   await page.getByTestId('signup-submit').click();
 
-  // Arrived at the dashboard, signed in.
+  // Arrived at the dashboard, signed in — and the name we signed up with round-tripped.
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByTestId('dashboard')).toBeVisible();
-  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hi, Ana Pop' })).toBeVisible();
 
   // Sign out returns to login…
   await page.getByTestId('logout').click();
@@ -45,7 +46,9 @@ test('CS-3: an existing account logs in and reaches the dashboard', async ({ pag
   const password = 'correct horse battery';
 
   // Seed the account straight through the API (its own session; the browser logs in fresh below).
-  const created = await request.post(`${BACKEND}/api/auth/signup`, { data: { email, password } });
+  const created = await request.post(`${BACKEND}/api/auth/signup`, {
+    data: { name: 'Ana Pop', email, password },
+  });
   expect(created.ok()).toBeTruthy();
 
   await page.goto('/login');
@@ -66,6 +69,7 @@ test('the header auth action persists across pages and flips after signing in', 
   await expect(page.getByTestId('nav-login')).toBeVisible();
 
   // Sign up, then the action flips to "My dashboard"…
+  await page.getByLabel('Name').fill('Ana Pop');
   await page.getByLabel('Email').fill(uniqueEmail());
   await page.getByLabel('Password').fill('correct horse battery');
   await page.getByTestId('signup-submit').click();

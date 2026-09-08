@@ -10,6 +10,7 @@ import AxeBuilder from '@axe-core/playwright';
  * to Mailpit on :1025 and this test reads it back on :8025. CI provides both as services.
  */
 const MAILPIT = 'http://localhost:8025';
+const BACKEND = 'http://localhost:8080';
 
 test('CS-1: an anonymous visitor registers and receives a confirmation email', async ({ page, request }) => {
   // Unique per run so re-runs (and the desktop/mobile projects) never hit the duplicate guard.
@@ -34,6 +35,32 @@ test('CS-1: an anonymous visitor registers and receives a confirmation email', a
     const body = await response.json();
     expect((body.messages ?? []).length).toBeGreaterThan(0);
   }).toPass({ timeout: 10_000 });
+});
+
+test('a signed-in visitor has the registration form prefilled from their account (#38)', async ({
+  page,
+  request,
+}) => {
+  const email = `runner-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
+  // Romanian diacritics (ă â î ș ț) so the account name exercises the latin-ext path end to end.
+  const name = 'Ștefan Câmpeanu';
+
+  // Seed the account through the API, then log in through the UI so the session cookie is set.
+  const created = await request.post(`${BACKEND}/api/auth/signup`, {
+    data: { name, email, password: 'correct horse battery' },
+  });
+  expect(created.ok()).toBeTruthy();
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('correct horse battery');
+  await page.getByTestId('login-submit').click();
+  await expect(page.getByTestId('dashboard')).toBeVisible();
+
+  // Open a run's registration page — the name + email are already filled from the account.
+  await page.goto('/');
+  await page.getByTestId('event-item').first().getByRole('link', { name: 'Register' }).click();
+  await expect(page.getByLabel('Name')).toHaveValue(name);
+  await expect(page.getByLabel('Email')).toHaveValue(email);
 });
 
 test('the registration form has no critical or serious accessibility violations', async ({ page }) => {

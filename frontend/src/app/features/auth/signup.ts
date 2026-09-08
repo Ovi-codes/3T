@@ -1,10 +1,26 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 
 import { AuthService } from './auth.service';
 import { toFormErrors } from '../../core/form-errors';
+
+/**
+ * A name has to look like a name: at least one letter, so "12345" (only digits) is rejected even
+ * though it clears the minimum length. Empty is left to the required validator. Mirrors the
+ * registration form's rule so the two name inputs behave identically.
+ */
+function nameNotOnlyNumbers(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value ?? '').trim();
+  return value && /^\d+$/.test(value) ? { onlyDigits: true } : null;
+}
 
 /**
  * Stricter than Angular's Validators.email (which accepts "a@a"): require a domain with a dot and a
@@ -37,12 +53,13 @@ export class Signup {
   protected readonly formError = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(3), nameNotOnlyNumbers]],
     email: ['', [Validators.required, Validators.pattern(EMAIL_PATTERN)]],
     password: ['', [Validators.required, Validators.minLength(MIN_PASSWORD)]],
   });
 
   /** The message to show under a field: server error first, else the client-side rule. */
-  protected controlError(field: 'email' | 'password'): string | null {
+  protected controlError(field: 'name' | 'email' | 'password'): string | null {
     const server = this.fieldErrors()[field];
     if (server) {
       return server;
@@ -52,7 +69,18 @@ export class Signup {
       return null;
     }
     if (control.hasError('required')) {
+      if (field === 'name') {
+        return 'Enter your name.';
+      }
       return field === 'email' ? 'Enter your email.' : 'Choose a password.';
+    }
+    if (field === 'name') {
+      if (control.hasError('minlength')) {
+        return 'Name must be at least 3 characters.';
+      }
+      if (control.hasError('onlyDigits')) {
+        return 'Name can’t be only numbers.';
+      }
     }
     if (field === 'email' && control.hasError('pattern')) {
       return 'Enter a valid email address.';
@@ -72,9 +100,9 @@ export class Signup {
 
     this.submitting.set(true);
     this.fieldErrors.set({});
-    const { email, password } = this.form.getRawValue();
+    const { name, email, password } = this.form.getRawValue();
 
-    this.auth.signup(email!, password!).subscribe({
+    this.auth.signup(name!, email!, password!).subscribe({
       next: () => this.router.navigateByUrl('/dashboard'),
       error: (response: HttpErrorResponse) => {
         this.submitting.set(false);

@@ -24,7 +24,9 @@ interface NewUser {
 
 async function signUpAndLogIn(page: Page, request: APIRequestContext): Promise<NewUser> {
   const user = { email: uniqueEmail(), password: 'correct horse battery' };
-  const created = await request.post(`${BACKEND}/api/auth/signup`, { data: user });
+  const created = await request.post(`${BACKEND}/api/auth/signup`, {
+    data: { name: 'Ana Pop', ...user },
+  });
   expect(created.ok()).toBeTruthy();
 
   await page.goto('/login');
@@ -56,6 +58,7 @@ test('a user can download all their data as a JSON file', async ({ page, request
   }
   const data = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
   expect(data.account.email).toBe(user.email);
+  expect(data.account.name).toBe('Ana Pop');
   expect(data.registrations.length).toBe(1);
 });
 

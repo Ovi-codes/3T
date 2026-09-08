@@ -15,10 +15,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
  *
  * Serializable because it lives in the (session-backed) SecurityContext.
  */
-public record AccountPrincipal(Long id, String email) implements Serializable {
+public record AccountPrincipal(Long id, String email, String name) implements Serializable {
 
 	static AccountPrincipal of(AppUser user) {
-		return new AccountPrincipal(user.getId(), user.getEmail());
+		return new AccountPrincipal(user.getId(), user.getEmail(), user.getName());
 	}
 
 	public Collection<? extends GrantedAuthority> authorities() {

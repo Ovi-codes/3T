@@ -31,7 +31,9 @@ interface NewUser {
 async function signUp(request: APIRequestContext): Promise<NewUser> {
   const email = uniqueEmail();
   const password = 'correct horse battery';
-  const response = await request.post(`${BACKEND}/api/auth/signup`, { data: { email, password } });
+  const response = await request.post(`${BACKEND}/api/auth/signup`, {
+    data: { name: 'Ana Pop', email, password },
+  });
   expect(response.ok()).toBeTruthy();
   const account = (await response.json()) as { id: number };
   return { id: account.id, email, password };
