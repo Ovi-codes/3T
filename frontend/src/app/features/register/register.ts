@@ -1,5 +1,5 @@
 import { Component, ElementRef, effect, inject, signal, viewChild } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -10,7 +10,9 @@ import {
   Validators,
 } from '@angular/forms';
 
-import { EventItem } from '../events/events';
+import { EventItem, EventsService } from '../events/events.service';
+import { RegistrationResult, RegistrationsService } from './registrations.service';
+import { toFormErrors } from '../../core/form-errors';
 
 /**
  * A name has to look like a name: at least one letter, so "12345" (only digits) is rejected even
@@ -27,15 +29,6 @@ function nameNotOnlyNumbers(control: AbstractControl): ValidationErrors | null {
  */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/** The successful POST /api/registrations response — mirrors the backend RegistrationResponse. */
-interface RegistrationResult {
-  eventName: string;
-  startDateTime: string;
-  locationName: string;
-  city: string;
-  email: string;
-}
-
 type LoadState = 'loading' | 'ready' | 'missing';
 
 /**
@@ -51,7 +44,8 @@ type LoadState = 'loading' | 'ready' | 'missing';
   styleUrl: './register.css',
 })
 export class Register {
-  private readonly http = inject(HttpClient);
+  private readonly events$ = inject(EventsService);
+  private readonly registrations$ = inject(RegistrationsService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
 
@@ -86,10 +80,9 @@ export class Register {
     });
 
     const eventId = Number(this.route.snapshot.paramMap.get('eventId'));
-    // /api/events only returns upcoming runs, so an unknown or past id simply isn't in the list.
-    this.http.get<EventItem[]>('/api/events').subscribe({
-      next: (events) => {
-        const match = events.find((event) => event.id === eventId);
+    // byId resolves to undefined for an unknown or no-longer-upcoming id.
+    this.events$.byId(eventId).subscribe({
+      next: (match) => {
         this.event.set(match ?? null);
         this.loadState.set(match ? 'ready' : 'missing');
       },
@@ -139,25 +132,20 @@ export class Register {
     this.fieldErrors.set({});
     const { name, email } = this.form.getRawValue();
 
-    this.http
-      .post<RegistrationResult>('/api/registrations', { eventId: event.id, name, email })
-      .subscribe({
-        next: (result) => {
-          this.confirmation.set(result);
-          this.submitting.set(false);
-        },
-        error: (response: HttpErrorResponse) => {
-          this.submitting.set(false);
-          const errors = response.error?.errors as Record<string, string> | undefined;
-          if (errors && typeof errors === 'object') {
-            const { eventId, ...fields } = errors;
-            this.fieldErrors.set(fields);
-            // An event-level rejection (past / unknown) has no field to sit under.
-            this.formError.set(eventId ?? null);
-          } else {
-            this.formError.set('Something went wrong — please try again.');
-          }
-        },
-      });
+    this.registrations$.create({ eventId: event.id, name: name!, email: email! }).subscribe({
+      next: (result) => {
+        this.confirmation.set(result);
+        this.submitting.set(false);
+      },
+      error: (response: HttpErrorResponse) => {
+        this.submitting.set(false);
+        const { fieldErrors, formError } = toFormErrors(response);
+        const { eventId, ...fields } = fieldErrors;
+        this.fieldErrors.set(fields);
+        // An event-level rejection (past / unknown) has no field to sit under; otherwise fall
+        // back to the generic message when the envelope was missing.
+        this.formError.set(eventId ?? formError);
+      },
+    });
   }
 }
