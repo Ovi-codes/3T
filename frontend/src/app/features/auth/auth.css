@@ -10,8 +10,13 @@
 .auth-panel {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: var(--space-16) var(--space-8);
+  justify-content: flex-start;
+  /* Left padding lines the poster copy up with the logo (the global content
+     gutter, which is space-4 until the viewport passes --container-max, then the
+     centring offset). Top padding drops the copy to roughly the middle of the
+     sign-in block opposite — both are top-anchored, so this holds at any height. */
+  padding: calc(var(--space-16) * 2 + var(--space-8)) var(--space-8) var(--space-16)
+    max(var(--space-4), calc((100vw - var(--container-max)) / 2));
 }
 
 .auth-panel-inner {
@@ -20,7 +25,7 @@
 
 .auth-panel-title {
   /* A touch smaller than the events hero wordmark — it shares a row with the form. */
-  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-size: clamp(5rem, 7vw, 5rem);
 }
 
 .auth-panel-sub {
