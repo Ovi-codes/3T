@@ -4,6 +4,9 @@
 
 html {
   box-sizing: border-box;
+  /* Always reserve the vertical scrollbar's space so short pages (e.g. login) and tall,
+     scrolling pages centre their content on the same axis — no horizontal shift between routes. */
+  scrollbar-gutter: stable;
 }
 
 *,
@@ -144,9 +147,11 @@ a:hover {
   padding: 3px 10px;
 }
 
+/* The "Next" indicator — a solid ink chip with light text, so it reads clearly against the light
+   card and doesn't compete with the orange "Register" button beside it. */
 .tag-accent {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-strong);
+  background: var(--color-ink);
+  color: var(--color-surface);
 }
 
 .tag-neutral {

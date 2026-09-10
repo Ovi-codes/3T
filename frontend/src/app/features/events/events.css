@@ -1,8 +1,23 @@
+/* ---- Hero ---- */
+/* ~10% less vertical space than the shared hero (space-12 → space-6 top/bottom); font sizes and
+   horizontal padding are unchanged. Scoped to this component, so the confirmation hero is untouched. */
+.hero {
+  padding-block: var(--space-6);
+}
+
+/* Small screens: the wordmark spans the full width, so drop the photo to keep the text legible. */
+@media (max-width: 48rem) {
+  .hero-photo {
+    display: none;
+  }
+}
+
 /* ---- Upcoming section ---- */
 .page {
   max-width: var(--container-max);
   margin: 0 auto;
-  padding: var(--space-12) var(--space-4) var(--space-16);
+  /* Tighter top gap to the hero (half of space-12); full space-16 below. */
+  padding: var(--space-6) var(--space-4) var(--space-16);
 }
 
 .section-head {

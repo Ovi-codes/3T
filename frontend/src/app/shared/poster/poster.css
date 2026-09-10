@@ -34,6 +34,16 @@
   stop-color: var(--color-poster);
 }
 
+/* Full-bleed media layer — sits above the weave/wave, below the content. The projected element
+   (e.g. a hero photo) is styled by the host component; this just gives it a clipped, positioned box. */
+.poster-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 /* Hero text sits above all three layers. */
 .poster-content {
   position: relative;

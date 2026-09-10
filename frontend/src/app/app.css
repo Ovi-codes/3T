@@ -22,9 +22,27 @@
 
 /* Persistent top bar above every route. Aligned to the same content column as the pages.
    A strong 2px bottom rule (Floodlight nav). */
+/* Light diagonal weave — the poster's dark weave mirrored (45deg vs the poster's 135deg) in light
+   greys, constant (no fade). Same 14/28px period so the two diagonals meet in scale at the seam.
+   A faint orange ember rises from the BOTTOM-left corner — the mirror of the poster's top-left
+   ember directly below, so the glow reads as continuous across the seam. */
 .app-header {
   border-bottom: 2px solid var(--color-border);
-  background: var(--color-surface);
+  /* Horizontal padding sits OUTSIDE the centred column (like .hero) so the logo lines up with the
+     hero's content edge, not 16px right of it. */
+  padding-inline: var(--space-4);
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(
+      75% 160% at -6% 112%,
+      color-mix(in srgb, var(--color-primary) 20%, transparent) 0%,
+      transparent 60%
+    ),
+    repeating-linear-gradient(
+      45deg,
+      var(--color-weave-light-a) 0 14px,
+      var(--color-weave-light-b) 14px 28px
+    );
 }
 
 .app-header-inner {
@@ -34,8 +52,9 @@
   gap: var(--space-4);
   max-width: var(--container-max);
   margin: 0 auto;
-  /* Match the pages' horizontal padding; min-height keeps the bar steady while the button resolves. */
-  padding: var(--space-4) var(--space-4);
+  /* Vertical padding only; horizontal padding is on .app-header (outside the column). min-height
+     keeps the bar steady while the button resolves. */
+  padding-block: var(--space-4);
   min-height: 3.5rem;
 }
 
@@ -56,7 +75,8 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   color: var(--color-ink);
-  background: transparent;
+  /* Solid chip so it stays clean over the header weave (opaque, not the stripes showing through). */
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   text-decoration: none;
@@ -66,7 +86,8 @@
 }
 
 .nav-button:hover {
-  background: color-mix(in srgb, var(--color-ink) 7%, transparent);
+  /* Opaque hover (mix over surface, not transparent) so the weave never shows through the chip. */
+  background: color-mix(in srgb, var(--color-ink) 7%, var(--color-surface));
   border-color: var(--color-ink);
 }
 
@@ -101,4 +122,21 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--color-primary-ink);
+}
+
+/* Mobile: match the poster's finer 13/26px weave so the seam scales stay aligned (ember kept). */
+@media (max-width: 40rem) {
+  .app-header {
+    background-image:
+      radial-gradient(
+        75% 160% at -6% 112%,
+        color-mix(in srgb, var(--color-primary) 20%, transparent) 0%,
+        transparent 60%
+      ),
+      repeating-linear-gradient(
+        45deg,
+        var(--color-weave-light-a) 0 13px,
+        var(--color-weave-light-b) 13px 26px
+      );
+  }
 }

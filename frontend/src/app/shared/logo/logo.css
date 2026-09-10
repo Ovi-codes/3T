@@ -4,7 +4,7 @@
 
 .logo {
   display: block;
-  height: 1.5rem;
+  height: 1.65rem; /* 10% larger than the base 1.5rem */
   width: auto;
 }
 
@@ -23,6 +23,6 @@
 
 .logo-run {
   fill: var(--color-ink);
-  font-size: 17px;
+  font-size: 21px;
   letter-spacing: -0.01em;
 }

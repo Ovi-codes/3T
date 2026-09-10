@@ -9,6 +9,11 @@
   </defs>
   <path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" [attr.fill]="'url(#' + gradientId + ')'" />
 </svg>
+<!-- Optional full-bleed media slot (behind the content, above the weave). Only heroes that pass a
+     [poster-media] element render anything here; other posters leave it empty. -->
+<div class="poster-media" aria-hidden="true">
+  <ng-content select="[poster-media]"></ng-content>
+</div>
 <div class="poster-content">
   <ng-content></ng-content>
 </div>

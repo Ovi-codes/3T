@@ -45,6 +45,12 @@
   --color-poster-text: #f3f2f2;   /* ground-white text on the poster */
   --color-poster-muted: rgba(243, 242, 242, 0.62); /* dimmed on poster (AA) */
 
+  /* ---- Color: the light weave (header) — the poster weave mirrored, in light greys.
+   * Same 14/28px period as the poster so the two diagonals line up in scale at the seam;
+   * constant (no fade). */
+  --color-weave-light-a: #e6e4e3;
+  --color-weave-light-b: #d3d0cf;
+
   /* ---- Color: status ----
    * Validation + load errors render in accessible orange (the theme folds alerts into the accent).
    * --color-destructive stays red for the single irreversible action (delete account), so data
@@ -116,7 +122,7 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* ---- Layout ---- */
-  --container-max: 72rem; /* content max-width */
+  --container-max: 100rem; /* content max-width — wide column, tight side gutters */
 }
 
 /* Signature is now the poster / hero field (see the <app-poster> component). This class, still used
