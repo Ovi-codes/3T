@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="modernist.css">
+<style>
+  body{margin:0;background:#d9d7d5;font-family:"Archivo",system-ui,sans-serif;color:#201e1d}
+  .doc{padding:40px 48px 64px;display:flex;flex-direction:column;gap:56px;max-width:1720px}
+  .dochd{border-bottom:2px solid rgba(32,30,29,.3);padding-bottom:18px}
+  .dochd .mk b{font-size:26px}.dochd .mk s{font-size:23px}
+  .dochd h1{font-size:30px;margin:14px 0 6px;letter-spacing:-.01em}
+  .dochd p{margin:0;color:rgba(32,30,29,.6);font-size:14px;max-width:70ch}
+  .screen{display:flex;flex-direction:column;gap:14px}
+  .scr-lbl{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid rgba(32,30,29,.25);padding-bottom:8px}
+  .scr-no{font:800 12px/1 "Archivo",monospace;background:#1a1918;color:#ff6d00;padding:5px 8px}
+  .scr-nm{font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .scr-note{font-size:13px;color:rgba(32,30,29,.55)}
+  .devrow{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+  .dev{display:flex;flex-direction:column;gap:7px}
+  .cap{font:800 9px/1 "Archivo",monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(32,30,29,.45)}
+  .frame{border:2px solid rgba(32,30,29,.4);overflow:hidden;background:#f3f2f2}
+  .scr{--color-accent:#ff6d00;--color-accent-600:#e86400;--color-accent-700:#c25200;--color-accent-100:#fff1e6;--color-accent-800:#7a3600;color:#201e1d;font-family:"Archivo",system-ui,sans-serif;background:#f3f2f2}
+  .scr .btn-primary{color:#201e1d}
+  .scr .card-kicker{font-size:10px}
+  .mk{display:inline-flex;align-items:center;gap:4px}
+  .mk b{font-weight:800;font-size:19px;letter-spacing:-.03em;color:var(--color-accent)}
+  .mk s{font-weight:800;font-size:16px;letter-spacing:-.01em;text-decoration:none}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent);font-weight:800;margin:0}
+  .hero{background:#1a1918;color:#f3f2f2}
+  .htitle{margin:0;font-weight:800;letter-spacing:-.03em;line-height:.9;color:#f3f2f2}
+  .htitle .t{color:var(--color-accent)}
+  .stripe{background:repeating-linear-gradient(45deg,#2a2827 0 11px,#211f1e 11px 22px);display:flex;align-items:center;justify-content:center}
+  .stripe.lite{background:repeating-linear-gradient(45deg,#cbc7c7 0 11px,#e2dfdf 11px 22px)}
+  .stripe span{font:400 10px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em;color:#b8b4b4;background:#1a1918;padding:3px 8px;border:1px solid rgba(255,255,255,.2);text-align:center}
+  .stripe.lite span{color:#5f5b5b;background:#f3f2f2;border-color:rgba(32,30,29,.25)}
+  .errbox{font-size:13px;font-weight:600;color:var(--color-accent);border:1px solid var(--color-accent);padding:10px 12px;margin:0 0 16px}
+  .ferr{font-size:12px;color:var(--color-accent);margin:5px 0 0}
+</style>
+</helmet>
+
+<div class="doc">
+  <div class="dochd">
+    <span class="mk"><b>3T</b><s>RUN</s></span>
+    <h1>V1 screens — Floodlight palette (2c)</h1>
+    <p>Every V1 screen from the charter, built on the Modernist system with orange (#ff6d00) as the main color on ink poster fields. Real flows from the Angular app: anonymous events list → register → confirmation, plus accounts and the signed-in dashboard. Copy, dates and names are placeholders. Desktop 1180 · mobile 390.</p>
+  </div>
+
+  <!-- ═══════════════ 01 · UPCOMING RUNS ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">01</span><span class="scr-nm">Upcoming runs — home</span><span class="scr-note">anonymous landing · GET /api/events</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Desktop · 1180</div>
+        <div class="frame" style="width:1180px">
+          <div class="scr">
+            <div class="nav"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a aria-current="page">Upcoming</a><a>Sign up</a><a class="btn btn-secondary">Log in</a></div>
+            <div class="hero" style="padding:52px 44px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;position:relative;background-color:#1a1918;background-image:radial-gradient(80% 80% at -6% -10%,rgba(255,109,0,.36) 0%,rgba(255,109,0,0) 56%),repeating-linear-gradient(135deg,#252220 0 14px,#161514 14px 28px)">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"><defs><linearGradient id="wfd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1918" stop-opacity="0"></stop><stop offset="0.5" stop-color="#1a1918" stop-opacity="1"></stop></linearGradient></defs><path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wfd)"></path></svg>
+              <div style="position:relative;z-index:1">
+                <p class="eyebrow" style="color:rgba(255,255,255,.55);margin:0 0 18px">Free · Weekly · Timed 5K</p>
+                <h1 class="htitle" style="font-size:74px"><span class="t">T</span>IME<br><span class="t">T</span>RIAL<br><span class="t">T</span>UESDAYS</h1>
+                <p style="margin:22px 0 26px;font-size:16px;color:rgba(255,255,255,.72)">Bucharest · every Tuesday, 18:30</p>
+                <div style="display:flex;gap:16px;align-items:center">
+                  <a class="btn btn-primary" style="font-size:15px;padding:12px 20px">Register for Tuesday<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+                  <a style="color:#f3f2f2;font-size:14px;text-underline-offset:3px">How it works</a>
+                </div>
+              </div>
+              <div class="stripe" style="height:300px;position:relative;z-index:1"><span>photo — the pack setting off<br>at the Herăstrău start line, b&amp;w</span></div>
+            </div>
+            <div style="padding:38px 44px 44px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--color-divider);padding-bottom:12px;margin-bottom:24px"><h2 style="margin:0;font-size:26px">Upcoming runs</h2><span class="text-muted" style="font-size:13px">Bucharest · next 4 Tuesdays</span></div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--color-divider)">
+                <div class="card" style="gap:10px;padding:20px;background:var(--color-bg)">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">Tue 8 Sep · 18:30</span><span class="tag tag-accent">This Tuesday</span></div>
+                  <div class="card-title" style="font-size:19px">Herăstrău Park 5K</div>
+                  <p class="card-body">Parcul Regele Mihai I · flat lakeside loop</p>
+                  <a class="btn btn-primary btn-block" style="justify-content:space-between">Register<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+                </div>
+                <div class="card" style="gap:10px;padding:20px;background:var(--color-bg)">
+                  <span class="card-kicker">Tue 15 Sep · 18:30</span>
+                  <div class="card-title" style="font-size:19px">Tineretului Park 5K</div>
+                  <p class="card-body">Parcul Tineretului · two-lap circuit</p>
+                  <a class="btn btn-secondary btn-block">Register</a>
+                </div>
+                <div class="card" style="gap:10px;padding:20px;background:var(--color-bg)">
+                  <span class="card-kicker">Tue 22 Sep · 18:30</span>
+                  <div class="card-title" style="font-size:19px">IOR Park 5K</div>
+                  <p class="card-body">Parcul Titan (IOR) · shaded out-and-back</p>
+                  <a class="btn btn-secondary btn-block">Register</a>
+                </div>
+                <div class="card" style="gap:10px;padding:20px;background:var(--color-bg)">
+                  <span class="card-kicker">Tue 29 Sep · 18:30</span>
+                  <div class="card-title" style="font-size:19px">Cișmigiu 5K</div>
+                  <p class="card-body">Grădina Cișmigiu · central gardens</p>
+                  <a class="btn btn-secondary btn-block">Register</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Mobile · 390</div>
+        <div class="frame" style="width:390px">
+          <div class="scr">
+            <div class="nav" style="padding:14px 16px;gap:12px"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a class="btn btn-secondary" style="font-size:13px">Log in</a></div>
+            <div class="hero" style="padding:26px 18px 28px;position:relative;background-color:#1a1918;background-image:radial-gradient(92% 72% at -8% -8%,rgba(255,109,0,.38) 0%,rgba(255,109,0,0) 58%),repeating-linear-gradient(135deg,#252220 0 13px,#161514 13px 26px)">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"><defs><linearGradient id="wfm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1918" stop-opacity="0"></stop><stop offset="0.5" stop-color="#1a1918" stop-opacity="1"></stop></linearGradient></defs><path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wfm)"></path></svg>
+              <div style="position:relative;z-index:1">
+              <p class="eyebrow" style="color:rgba(255,255,255,.6);margin:0 0 12px">Free · Weekly · 5K</p>
+              <h1 class="htitle" style="font-size:50px"><span class="t">T</span>IME<br><span class="t">T</span>RIAL<br><span class="t">T</span>UESDAYS</h1>
+              <p style="margin:16px 0 18px;font-size:13px;color:rgba(255,255,255,.72)">Bucharest · every Tuesday, 18:30</p>
+              <a class="btn btn-primary btn-block" style="justify-content:space-between">Register for Tuesday<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+              </div>
+            </div>
+            <div style="padding:22px 18px 26px">
+              <h2 style="margin:0 0 4px;font-size:20px;border-bottom:2px solid var(--color-divider);padding-bottom:10px">Upcoming runs</h2>
+              <div style="padding:16px 0 0;border-bottom:1px solid var(--color-divider)">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">Tue 8 Sep · 18:30</span><span class="tag tag-accent" style="font-size:10px;padding:2px 7px">This Tue</span></div>
+                <div style="font-size:19px;font-weight:800;letter-spacing:-.01em;margin:6px 0 12px">Herăstrău Park 5K</div>
+                <a class="btn btn-primary btn-block" style="justify-content:space-between;margin-bottom:16px">Register<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+              </div>
+              <div style="padding:16px 0 0">
+                <span class="card-kicker">Tue 15 Sep · 18:30</span>
+                <div style="font-size:19px;font-weight:800;letter-spacing:-.01em;margin:6px 0 12px">Tineretului Park 5K</div>
+                <a class="btn btn-secondary btn-block" style="margin-bottom:0">Register</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ 02 · REGISTER ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">02</span><span class="scr-nm">Register for a run — the core loop</span><span class="scr-note">name + email · no account needed · POST /api/registrations</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Desktop · 1180</div>
+        <div class="frame" style="width:1180px">
+          <div class="scr">
+            <div class="nav"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a>Upcoming</a><a>Sign up</a><a class="btn btn-secondary">Log in</a></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr">
+              <div style="padding:44px 44px 48px;border-right:2px solid var(--color-divider)">
+                <p class="eyebrow">Register</p>
+                <h1 style="margin:10px 0 8px;font-size:36px">Herăstrău Park 5K</h1>
+                <p class="text-muted" style="font-size:15px">Tue 8 Sep · 18:30 · Parcul Regele Mihai I, Bucharest</p>
+                <hr class="hr" style="margin:24px 0">
+                <form style="display:flex;flex-direction:column;gap:16px;max-width:400px">
+                  <div class="field"><label for="rn">Name</label><input id="rn" class="input" value="Ovidiu Popescu"></div>
+                  <div class="field"><label for="re">Email</label><input id="re" class="input" value="ovi@example.ro"></div>
+                  <a class="btn btn-primary" style="align-self:flex-start;margin-top:6px">Register<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+                </form>
+                <p class="text-muted" style="font-size:12px;margin-top:18px;max-width:46ch">We'll email a confirmation. Registering shares only your name and email — nothing else.</p>
+              </div>
+              <div class="stripe lite" style="min-height:100%"><span>photo — Herăstrău lake path<br>at golden hour, b&amp;w</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Mobile · 390 · with a field error</div>
+        <div class="frame" style="width:390px">
+          <div class="scr">
+            <div class="nav" style="padding:14px 16px;gap:12px"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a class="btn btn-secondary" style="font-size:13px">Log in</a></div>
+            <div style="padding:24px 18px 28px">
+              <p class="eyebrow">Register</p>
+              <h1 style="margin:9px 0 6px;font-size:26px">Herăstrău Park 5K</h1>
+              <p class="text-muted" style="font-size:13px">Tue 8 Sep · 18:30 · Parcul Regele Mihai I</p>
+              <hr class="hr" style="margin:20px 0">
+              <form style="display:flex;flex-direction:column;gap:16px">
+                <div class="field"><label for="rn2">Name</label><input id="rn2" class="input" value="Ovidiu Popescu"></div>
+                <div class="field"><label for="re2">Email</label><input id="re2" class="input" value="ovi@example" style="border-color:var(--color-accent)" aria-invalid="true"><p class="ferr">Enter a valid email address.</p></div>
+                <a class="btn btn-primary btn-block" style="justify-content:space-between;margin-top:2px">Register<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ 03 · CONFIRMATION ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">03</span><span class="scr-nm">You're in — registration confirmed</span><span class="scr-note">the success moment · confirmation email sent</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Desktop · 1180</div>
+        <div class="frame" style="width:1180px">
+          <div class="scr">
+            <div class="nav"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a>Upcoming</a><a>Sign up</a><a class="btn btn-secondary">Log in</a></div>
+            <div class="hero" style="padding:56px 44px 52px;position:relative;background-color:#1a1918;background-image:radial-gradient(80% 80% at -6% -10%,rgba(255,109,0,.36) 0%,rgba(255,109,0,0) 56%),repeating-linear-gradient(135deg,#252220 0 14px,#161514 14px 28px)">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"><defs><linearGradient id="wfc1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1918" stop-opacity="0"></stop><stop offset="0.5" stop-color="#1a1918" stop-opacity="1"></stop></linearGradient></defs><path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wfc1)"></path></svg>
+              <div style="position:relative;z-index:1">
+              <p class="eyebrow" style="color:rgba(255,255,255,.55);margin:0 0 14px">See you at the start line</p>
+              <h1 class="htitle" style="font-size:96px"><span class="t" style="color: var(--color-bg)">Y</span>OU'RE IN<span class="t">!</span></h1>
+              </div>
+            </div>
+            <div style="padding:36px 44px 48px;max-width:640px">
+              <p style="font-size:18px;line-height:1.5">You're registered for <strong>Herăstrău Park 5K</strong> — Tue 8 Sep, 18:30. We've sent a confirmation to <strong>ovi@example.ro</strong>.</p>
+              <div style="display:flex;gap:12px;margin-top:22px">
+                <a class="btn btn-primary">Back to upcoming runs</a>
+                <a class="btn btn-secondary">Add to calendar</a>
+              </div>
+              <hr class="hr" style="margin:28px 0 18px">
+              <p class="text-muted" style="font-size:13px;max-width:52ch">Want to keep track of every run? <a>Create an account</a> to see your upcoming and past runs on a dashboard.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Mobile · 390</div>
+        <div class="frame" style="width:390px">
+          <div class="scr">
+            <div class="nav" style="padding:14px 16px;gap:12px"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a class="btn btn-secondary" style="font-size:13px">Log in</a></div>
+            <div class="hero" style="padding:30px 18px 28px;position:relative;background-color:#1a1918;background-image:radial-gradient(92% 72% at -8% -8%,rgba(255,109,0,.38) 0%,rgba(255,109,0,0) 58%),repeating-linear-gradient(135deg,#252220 0 13px,#161514 13px 26px)">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"><defs><linearGradient id="wfc2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1918" stop-opacity="0"></stop><stop offset="0.5" stop-color="#1a1918" stop-opacity="1"></stop></linearGradient></defs><path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wfc2)"></path></svg>
+              <div style="position:relative;z-index:1">
+              <p class="eyebrow" style="color:rgba(255,255,255,.55);margin:0 0 12px">See you at the start line</p>
+              <h1 class="htitle" style="font-size:52px"><span class="t" style="color: var(--color-bg)">Y</span>OU'RE<br>IN<span class="t">!</span></h1>
+              </div>
+            </div>
+            <div style="padding:24px 18px 28px">
+              <p style="font-size:15px;line-height:1.5">You're registered for <strong>Herăstrău Park 5K</strong> — Tue 8 Sep, 18:30. Confirmation sent to <strong>ovi@example.ro</strong>.</p>
+              <a class="btn btn-primary btn-block" style="margin-top:18px">Back to upcoming runs</a>
+              <a class="btn btn-secondary btn-block" style="margin-top:8px">Add to calendar</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ 04 · SIGN UP ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">04</span><span class="scr-nm">Create an account</span><span class="scr-note">email + password · logs in on success → dashboard</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Desktop · 1180</div>
+        <div class="frame" style="width:1180px">
+          <div class="scr">
+            <div class="nav"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a>Upcoming</a><a aria-current="page">Sign up</a><a class="btn btn-secondary">Log in</a></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr">
+              <div class="hero" style="padding:52px 44px;display:flex;flex-direction:column;justify-content:center;position:relative;background-color:#1a1918;background-image:radial-gradient(80% 80% at -6% -10%,rgba(255,109,0,.36) 0%,rgba(255,109,0,0) 56%),repeating-linear-gradient(135deg,#252220 0 14px,#161514 14px 28px)">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"><defs><linearGradient id="wfs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1918" stop-opacity="0"></stop><stop offset="0.5" stop-color="#1a1918" stop-opacity="1"></stop></linearGradient></defs><path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wfs)"></path></svg>
+                <div style="position:relative;z-index:1">
+                <p class="eyebrow" style="color:rgba(255,255,255,.55);margin:0 0 16px">Accounts</p>
+                <h1 class="htitle" style="font-size:56px">Keep<br>every<br><span class="t">run.</span></h1>
+                <p style="margin: 22px 0 0; font-size: 15px; color: rgba(255,255,255,.72); max-width: 34ch; width: 500px; height: 46px">An account tracks your upcoming and past runs.</p>
+                </div>
+              </div>
+              <div style="padding:48px 44px">
+                <p class="eyebrow">Accounts</p>
+                <h1 style="margin:10px 0 8px;font-size:30px">Create your account</h1>
+                <p class="text-muted" style="font-size:15px">Track your upcoming and past runs. It takes a moment.</p>
+                <hr class="hr" style="margin:24px 0">
+                <form style="display:flex;flex-direction:column;gap:16px;max-width:400px">
+                  <div class="field"><label for="se">Email</label><input id="se" class="input" value="ovi@example.ro"></div>
+                  <div class="field"><label for="sp">Password</label><input id="sp" class="input" type="password" value="runrunrun"></div>
+                  <a class="btn btn-primary btn-block" style="margin-top:4px">Create account</a>
+                </form>
+                <p style="font-size:13px;margin-top:16px">Already have an account? <a>Sign in</a>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Mobile · 390</div>
+        <div class="frame" style="width:390px">
+          <div class="scr">
+            <div class="nav" style="padding:14px 16px;gap:12px"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a class="btn btn-secondary" style="font-size:13px">Log in</a></div>
+            <div style="padding:24px 18px 28px">
+              <p class="eyebrow">Accounts</p>
+              <h1 style="margin:9px 0 6px;font-size:28px">Create your account</h1>
+              <p class="text-muted" style="font-size:13px">Track your upcoming and past runs.</p>
+              <hr class="hr" style="margin:20px 0">
+              <form style="display:flex;flex-direction:column;gap:16px">
+                <div class="field"><label for="se2">Email</label><input id="se2" class="input" value="ovi@example.ro"></div>
+                <div class="field"><label for="sp2">Password</label><input id="sp2" class="input" type="password" value="runrunrun"></div>
+                <a class="btn btn-primary btn-block" style="margin-top:2px">Create account</a>
+              </form>
+              <p style="font-size:13px;margin-top:16px">Already have an account? <a>Sign in</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ 05 · LOG IN ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">05</span><span class="scr-nm">Sign in</span><span class="scr-note">shown with the wrong-credentials error state</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Desktop · 1180</div>
+        <div class="frame" style="width:1180px">
+          <div class="scr">
+            <div class="nav"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a>Upcoming</a><a>Sign up</a><a class="btn btn-secondary" aria-current="page">Log in</a></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr">
+              <div class="hero" style="padding:52px 44px;display:flex;flex-direction:column;justify-content:center;position:relative;background-color:#1a1918;background-image:radial-gradient(80% 80% at -6% -10%,rgba(255,109,0,.36) 0%,rgba(255,109,0,0) 56%),repeating-linear-gradient(135deg,#252220 0 14px,#161514 14px 28px)">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"><defs><linearGradient id="wfl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1918" stop-opacity="0"></stop><stop offset="0.5" stop-color="#1a1918" stop-opacity="1"></stop></linearGradient></defs><path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wfl)"></path></svg>
+                <div style="position:relative;z-index:1">
+                <p class="eyebrow" style="color:rgba(255,255,255,.55);margin:0 0 16px">Welcome back</p>
+                <h1 class="htitle" style="font-size:56px">Pick up<br>where you<br><span class="t" style="color: var(--color-bg)">left off.</span></h1>
+                </div>
+              </div>
+              <div style="padding:48px 44px">
+                <p class="eyebrow">Accounts</p>
+                <h1 style="margin:10px 0 8px;font-size:30px">Sign in</h1>
+                <p class="text-muted" style="font-size:15px">Welcome back. Pick up where you left off.</p>
+                <hr class="hr" style="margin:24px 0">
+                <p class="errbox" role="alert" style="max-width:400px">Email or password is incorrect.</p>
+                <form style="display:flex;flex-direction:column;gap:16px;max-width:400px">
+                  <div class="field"><label for="le">Email</label><input id="le" class="input" value="ovi@example.ro"></div>
+                  <div class="field"><label for="lp">Password</label><input id="lp" class="input" type="password" value="wrongpass"></div>
+                  <a class="btn btn-primary btn-block" style="margin-top:4px">Sign in</a>
+                </form>
+                <p style="font-size:13px;margin-top:16px">New here? <a>Create an account</a>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Mobile · 390</div>
+        <div class="frame" style="width:390px">
+          <div class="scr">
+            <div class="nav" style="padding:14px 16px;gap:12px"><span class="nav-brand"><span class="mk"><b style="font-size: 25px">3T</b><s style="font-size: 25px">RUN</s></span></span><a class="btn btn-secondary" style="font-size:13px" aria-current="page">Log in</a></div>
+            <div style="padding:24px 18px 28px">
+              <p class="eyebrow">Accounts</p>
+              <h1 style="margin:9px 0 6px;font-size:28px">Sign in</h1>
+              <p class="text-muted" style="font-size:13px">Welcome back. Pick up where you left off.</p>
+              <hr class="hr" style="margin:20px 0">
+              <form style="display:flex;flex-direction:column;gap:16px">
+                <div class="field"><label for="le2">Email</label><input id="le2" class="input" value="ovi@example.ro"></div>
+                <div class="field"><label for="lp2">Password</label><input id="lp2" class="input" type="password" value="runrunrun"></div>
+                <a class="btn btn-primary btn-block" style="margin-top:2px">Sign in</a>
+              </form>
+              <p style="font-size:13px;margin-top:16px">New here? <a>Create an account</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ 06 · DASHBOARD ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">06</span><span class="scr-nm">Dashboard — upcoming + past runs</span><span class="scr-note">signed-in · Increment 4 · results shape ready for V2 times</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Desktop · 1180</div>
+        <div class="frame" style="width:1180px">
+          <div class="scr">
+            <div class="nav"><span class="nav-brand"><span class="mk"><b>3T</b><s>RUN</s></span></span><a>Upcoming</a><a aria-current="page">My dashboard</a><a class="btn btn-secondary">Sign out</a></div>
+            <div style="padding:40px 44px 48px">
+              <p class="eyebrow">Your dashboard</p>
+              <h1 style="margin:10px 0 6px;font-size:36px">Hi, Ovidiu</h1>
+              <p class="text-muted" style="font-size:14px">ovi@example.ro · member since 2024 · 6 runs logged</p>
+              <hr class="hr" style="margin:26px 0 30px">
+
+              <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--color-divider);padding-bottom:10px;margin-bottom:18px"><h2 style="margin:0;font-size:22px">Upcoming</h2><span class="text-muted" style="font-size:13px">1 registered</span></div>
+              <div style="display:grid;grid-template-columns:150px 1fr auto;gap:28px;align-items:center;padding:18px 0;border-bottom:1px solid var(--color-divider)">
+                <div><div style="font-size:12px;font-weight:800;letter-spacing:.1em">TUE 8 SEP</div><div style="font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1">18:30</div></div>
+                <div><div style="font-size:20px;font-weight:800;letter-spacing:-.01em">Herăstrău Park 5K</div><div class="text-muted" style="font-size:13px">Parcul Regele Mihai I · Bucharest · Edition #212</div></div>
+                <div style="display:flex;align-items:center;gap:12px"><span class="tag tag-accent">Registered</span><a class="btn btn-secondary">Add to calendar</a><a class="btn btn-ghost">Cancel</a></div>
+              </div>
+
+              <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--color-divider);padding-bottom:10px;margin:34px 0 6px"><h2 style="margin:0;font-size:22px">Past runs</h2><span class="text-muted" style="font-size:13px">5 attended · finish times arrive in V2</span></div>
+              <table class="table">
+                <thead><tr><th style="width:150px">Date</th><th>Run</th><th style="width:120px">Edition</th><th style="width:140px">Result</th></tr></thead>
+                <tbody>
+                  <tr><td>Tue 26 Aug</td><td style="font-weight:600">Tineretului Park 5K</td><td class="text-muted">#211</td><td><span class="tag tag-neutral">Attended</span></td></tr>
+                  <tr><td>Tue 19 Aug</td><td style="font-weight:600">Herăstrău Park 5K</td><td class="text-muted">#210</td><td><span class="tag tag-neutral">Attended</span></td></tr>
+                  <tr><td>Tue 12 Aug</td><td style="font-weight:600">IOR Park 5K</td><td class="text-muted">#209</td><td><span class="tag tag-neutral">Attended</span></td></tr>
+                  <tr><td>Tue 5 Aug</td><td style="font-weight:600">Cișmigiu 5K</td><td class="text-muted">#208</td><td><span class="tag tag-neutral">Attended</span></td></tr>
+                  <tr><td>Tue 29 Jul</td><td style="font-weight:600">Herăstrău Park 5K</td><td class="text-muted">#207</td><td><span class="tag tag-neutral">Attended</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Mobile · 390</div>
+        <div class="frame" style="width:390px">
+          <div class="scr">
+            <div class="nav" style="padding:14px 16px;gap:12px"><span class="nav-brand"><span class="mk"><b>3T</b><s>RUN</s></span></span><a class="btn btn-secondary" style="font-size:13px">Sign out</a></div>
+            <div style="padding:24px 18px 28px">
+              <p class="eyebrow">Your dashboard</p>
+              <h1 style="margin:9px 0 6px;font-size:28px">Hi, Ovidiu</h1>
+              <p class="text-muted" style="font-size:13px">ovi@example.ro · 6 runs logged</p>
+              <hr class="hr" style="margin:20px 0 22px">
+              <h2 style="margin:0 0 4px;font-size:19px;border-bottom:2px solid var(--color-divider);padding-bottom:10px">Upcoming</h2>
+              <div style="padding:16px 0 0;border-bottom:2px solid var(--color-divider);padding-bottom:18px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">Tue 8 Sep · 18:30</span><span class="tag tag-accent" style="font-size:10px;padding:2px 7px">Registered</span></div>
+                <div style="font-size:19px;font-weight:800;letter-spacing:-.01em;margin:6px 0 12px">Herăstrău Park 5K</div>
+                <div style="display:flex;gap:8px"><a class="btn btn-secondary" style="font-size:13px;flex:1;justify-content:center">Add to calendar</a><a class="btn btn-ghost" style="font-size:13px">Cancel</a></div>
+              </div>
+              <h2 style="margin:24px 0 4px;font-size:19px;border-bottom:2px solid var(--color-divider);padding-bottom:10px">Past runs</h2>
+              <div style="padding:14px 0;border-bottom:1px solid var(--color-divider);display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-weight:600;font-size:14px">Tineretului Park 5K</div><div class="text-muted" style="font-size:12px">Tue 26 Aug · #211</div></div><span class="tag tag-neutral" style="font-size:10px">Attended</span></div>
+              <div style="padding:14px 0;border-bottom:1px solid var(--color-divider);display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-weight:600;font-size:14px">Herăstrău Park 5K</div><div class="text-muted" style="font-size:12px">Tue 19 Aug · #210</div></div><span class="tag tag-neutral" style="font-size:10px">Attended</span></div>
+              <div style="padding:14px 0;display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-weight:600;font-size:14px">IOR Park 5K</div><div class="text-muted" style="font-size:12px">Tue 12 Aug · #209</div></div><span class="tag tag-neutral" style="font-size:10px">Attended</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ 07 · STATES ═══════════════ -->
+  <div class="screen">
+    <div class="scr-lbl"><span class="scr-no">07</span><span class="scr-nm">Loading, empty, error &amp; not-found</span><span class="scr-note">every list and lookup fails visibly, never blankly</span></div>
+    <div class="devrow">
+
+      <div class="dev">
+        <div class="cap">Loading</div>
+        <div class="frame" style="width:340px">
+          <div class="scr" style="min-height:220px">
+            <div class="nav" style="padding:12px 16px"><span class="nav-brand"><span class="mk"><b>3T</b><s>RUN</s></span></span></div>
+            <div style="padding:24px 18px">
+              <p class="eyebrow">Bucharest · Tue 18:30</p>
+              <h1 style="margin:9px 0 18px;font-size:24px">Upcoming runs</h1>
+              <div style="display:flex;align-items:center;gap:10px;color:var(--color-accent)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path></svg>
+                <span style="font-size:14px;font-weight:600">Loading upcoming runs…</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Empty</div>
+        <div class="frame" style="width:340px">
+          <div class="scr" style="min-height:220px">
+            <div class="nav" style="padding:12px 16px"><span class="nav-brand"><span class="mk"><b>3T</b><s>RUN</s></span></span></div>
+            <div style="padding:24px 18px">
+              <p class="eyebrow">Bucharest · Tue 18:30</p>
+              <h1 style="margin:9px 0 16px;font-size:24px">Upcoming runs</h1>
+              <div style="border:2px solid var(--color-divider);padding:22px 18px">
+                <div style="font-size:16px;font-weight:800;margin-bottom:4px">No upcoming runs yet</div>
+                <p class="text-muted" style="font-size:13px;margin:0">Check back soon — the next Tuesday will be listed here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Error</div>
+        <div class="frame" style="width:340px">
+          <div class="scr" style="min-height:220px">
+            <div class="nav" style="padding:12px 16px"><span class="nav-brand"><span class="mk"><b>3T</b><s>RUN</s></span></span></div>
+            <div style="padding:24px 18px">
+              <p class="eyebrow">Bucharest · Tue 18:30</p>
+              <h1 style="margin:9px 0 16px;font-size:24px">Upcoming runs</h1>
+              <p class="errbox" role="alert" style="margin:0 0 14px">We couldn't load upcoming runs. Please try again shortly.</p>
+              <a class="btn btn-primary">Try again</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev">
+        <div class="cap">Run not found</div>
+        <div class="frame" style="width:340px">
+          <div class="scr" style="min-height:220px">
+            <div class="nav" style="padding:12px 16px"><span class="nav-brand"><span class="mk"><b>3T</b><s>RUN</s></span></span></div>
+            <div style="padding:24px 18px">
+              <p class="eyebrow">Register</p>
+              <h1 style="margin:9px 0 8px;font-size:24px">Run not found</h1>
+              <p class="text-muted" style="font-size:13px;margin:0 0 16px">That run isn't open for registration.</p>
+              <a class="btn btn-secondary">See upcoming runs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

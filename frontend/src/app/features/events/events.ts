@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { EventItem, EventsService } from './events.service';
+import { Poster } from '../../shared/poster/poster';
 
 /**
  * Increment 1: the anonymous upcoming-events list. Asks the events service for the upcoming runs
@@ -11,7 +12,7 @@ import { EventItem, EventsService } from './events.service';
  */
 @Component({
   selector: 'app-events',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, Poster],
   templateUrl: './events.html',
   styleUrl: './events.css',
 })

@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 
 import { AuthService } from './features/auth/auth.service';
+import { Logo } from './shared/logo/logo';
 
 /**
  * The app shell. Carries the persistent header (brand + a single auth action) that sits above every
@@ -10,7 +11,7 @@ import { AuthService } from './features/auth/auth.service';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, Logo],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

@@ -9,25 +9,23 @@
 }
 
 .eyebrow {
-  margin: 0 0 var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  letter-spacing: 0.08em;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary-ink);
 }
 
 h1 {
   margin: 0;
-  font-family: var(--font-display);
   font-size: var(--text-4xl);
-  line-height: var(--leading-tight);
   color: var(--color-ink);
   overflow-wrap: anywhere;
 }
 
 .lede {
-  margin: var(--space-2) 0 0;
+  margin: var(--space-3) 0 0;
   font-size: var(--text-lg);
   line-height: var(--leading-normal);
   color: var(--color-ink-soft);
@@ -51,9 +49,9 @@ h1 {
 
 .section-heading {
   margin: 0 0 var(--space-4);
-  font-family: var(--font-display);
   font-size: var(--text-2xl);
-  line-height: var(--leading-snug);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--color-border);
   color: var(--color-ink);
 }
 
@@ -65,29 +63,23 @@ h1 {
 
 .run-list {
   display: grid;
-  gap: var(--space-4);
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* Mirrors the upcoming-events card so a run reads the same wherever it appears. */
+/* Flat rows separated by 1px hairlines (Floodlight — no cards, no shadows). */
 .run-card {
-  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  padding: var(--space-4) var(--space-6);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
-/* Past runs are done — quieter, so the eye lands on what's ahead. */
 .run-card-past {
-  background: var(--color-surface);
-  box-shadow: none;
+  color: var(--color-ink-soft);
 }
 
 .run-date {
@@ -95,16 +87,15 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
-  min-width: 5.5rem;
+  min-width: 5rem;
   padding: var(--space-2) var(--space-3);
   background: var(--color-surface-sunk);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
 .run-day {
   font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
   color: var(--color-ink);
   text-align: center;
 }
@@ -120,7 +111,6 @@ h1 {
 
 .run-name {
   margin: 0;
-  font-family: var(--font-display);
   font-size: var(--text-xl);
   line-height: var(--leading-snug);
   color: var(--color-ink);
@@ -132,20 +122,6 @@ h1 {
   color: var(--color-ink-soft);
 }
 
-/* The next upcoming run — the single amber accent, dark ink on it (per design). */
-.next-badge {
-  flex-shrink: 0;
-  padding: var(--space-1) var(--space-2);
-  background: var(--color-accent);
-  border-radius: var(--radius-pill);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-ink);
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -153,44 +129,16 @@ h1 {
   margin-top: var(--space-12);
 }
 
-.button {
-  display: inline-block;
-  padding: var(--space-3) var(--space-6);
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  color: var(--color-primary-contrast);
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out);
-}
-
-.button:hover {
-  background: var(--color-primary-hover);
-}
-
-/* Secondary action — outlined, so "Sign out" reads as the quieter choice. */
-.button-ghost {
-  color: var(--color-primary);
+/* Destructive delete — the one deliberate off-palette accent: red, so irreversible data loss
+   reads as danger rather than as another orange CTA. */
+.btn.btn-danger {
+  color: var(--color-destructive);
   background: transparent;
+  border-color: var(--color-destructive);
 }
 
-.button-ghost:hover {
-  background: var(--color-surface-sunk);
-}
-
-/* Destructive action — outlined in danger red so it reads as weighty but not alarmist until pressed. */
-.button-danger {
-  color: var(--color-danger);
-  background: transparent;
-  border-color: var(--color-danger);
-}
-
-.button-danger:hover {
-  background: var(--color-danger);
+.btn.btn-danger:hover {
+  background: var(--color-destructive);
   color: var(--color-surface);
 }
 
@@ -204,7 +152,7 @@ h1 {
 
 .data-lede a,
 .confirm-text a {
-  color: var(--color-primary);
+  color: var(--color-primary-ink);
   font-weight: var(--weight-medium);
 }
 
@@ -219,9 +167,8 @@ h1 {
 
 .data-title {
   margin: 0;
-  font-family: var(--font-body);
   font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   color: var(--color-ink);
 }
 
@@ -231,7 +178,7 @@ h1 {
   color: var(--color-ink-soft);
 }
 
-.data-row .button {
+.data-row .btn {
   flex-shrink: 0;
 }
 
@@ -239,8 +186,8 @@ h1 {
 .confirm {
   margin-top: var(--space-4);
   padding: var(--space-4) var(--space-6);
-  background: var(--color-danger-soft);
-  border-radius: var(--radius-md);
+  background: var(--color-destructive-soft);
+  border: 1px solid var(--color-destructive);
 }
 
 .confirm-text {
@@ -261,17 +208,14 @@ h1 {
   color: var(--color-danger);
 }
 
-@media (max-width: 30rem) {
+@media (max-width: 40rem) {
   h1 {
     font-size: var(--text-3xl);
   }
 
   .actions {
     flex-direction: column;
-  }
-
-  .button {
-    text-align: center;
+    align-items: stretch;
   }
 
   /* Stack the label and its action so the button isn't squeezed on narrow screens. */
