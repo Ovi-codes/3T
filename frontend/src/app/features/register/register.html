@@ -13,10 +13,10 @@
     </div>
   } @else if (confirmation(); as done) {
     <section data-testid="confirmation">
-      <app-poster class="hero">
+      <app-poster class="hero" [solidStop]="0.9">
         <div class="hero-inner">
           <p class="hero-eyebrow">See you at the start line</p>
-          <h1 #confirmationHeading tabindex="-1" class="hero-title"><span class="t">Y</span>OU’RE IN<span class="t">!</span></h1>
+          <h1 #confirmationHeading tabindex="-1" class="hero-title">YOU’RE IN<span class="t">!</span></h1>
         </div>
       </app-poster>
       <div class="page confirmation-body">
