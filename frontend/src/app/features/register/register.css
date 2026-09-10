@@ -4,6 +4,44 @@
   padding: var(--space-8) var(--space-4) var(--space-16);
 }
 
+/* The register form branch, like the auth pages: a split of the ink poster panel (carrying the
+   run photo) and the form. Mobile collapses to the form only. */
+.register {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  min-height: calc(100vh - 12rem);
+}
+
+.register-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Padding sets the ink margin around the photo (the diagonal weave frames it); the photo is
+     centred vertically within the panel. */
+  padding: var(--space-12) var(--space-8);
+}
+
+.register-panel-inner {
+  width: 100%;
+  /* 15% larger than the previous 34rem. */
+  max-width: 39rem;
+  margin-inline: auto;
+}
+
+/* The run photo, framed by the poster field. Full colour to match the warm sunset moment. */
+.register-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.register-form {
+  padding: var(--space-12) var(--space-8);
+  max-width: 36rem;
+}
+
 .page-header {
   margin-bottom: var(--space-2);
 }
@@ -113,6 +151,23 @@ input[aria-invalid='true'] {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-ink-faint);
+}
+
+@media (max-width: 52rem) {
+  .register {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  /* Mobile: form only — the photo panel is dropped (matches the auth pages). */
+  .register-panel {
+    display: none;
+  }
+
+  .register-form {
+    padding: var(--space-8) var(--space-4) var(--space-16);
+    max-width: none;
+  }
 }
 
 @media (max-width: 40rem) {
