@@ -16,7 +16,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Unused until Increment 2 (confirmation email), wired now so the seam exists.
   mailpit:
     image: axllent/mailpit:v1.30.7
     container_name: 3t-mailpit
