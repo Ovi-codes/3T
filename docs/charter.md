@@ -8,18 +8,9 @@
 
 ## 1. Product overview
 
-**Vision.** A parkrun-style website for weekly free 5k running events, tailored to Romania. Runners view upcoming events, register for one, and (if they hold an account) track their past and upcoming runs on a dashboard.
+**Vision.** A parkrun-style website for weekly free 5k running events, tailored to Romania. 
 
-**Core loop (the riskiest, most valuable path).** A visitor registers for an upcoming run and receives a confirmation email. *No login required.*
-
-**V1 scope.**
-
-- Anonymous run registration + confirmation email (core loop).
-- Account sign-up and login.
-- Signed-in user dashboard: upcoming and past runs.
-- Anonymous users can register for runs but are prompted to create an account to unlock the dashboard.
-
-**V1 non-goals (explicitly out).** Results/timing upload, leaderboards, stats/graphs, multiple locations, kit closet, running tips, volunteering. All parked in the roadmap (see [`roadmap.md`](./roadmap.md)).
+Runners view upcoming events, register for one, and (if they hold an account) track their past and upcoming runs on a dashboard.
 
 ---
 
