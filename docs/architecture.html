@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3T Run Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* ============================================================
+     3T Run — architecture reference
+     Design language: "Floodlight" (docs/design/), applied to a document.
+     Orange #ff6d00 on ink #1a1918, near-white ground, Archivo, flat,
+     zero radius, structure from 2px rules. JetBrains Mono for code/paths.
+     ============================================================ */
+
+  :root {
+    /* surfaces + ink (light ground) */
+    --ink: #201e1d;
+    --ink-soft: #57534f;
+    --ink-faint: #6b6560;
+    --ground: #f3f2f2;
+    --raised: #eae9e9;
+    --sunk: #e2e0df;
+    --rule: rgba(32, 30, 29, 0.40);
+    --hair: rgba(32, 30, 29, 0.14);
+
+    /* brand */
+    --orange: #ff6d00;
+    --orange-ink: #a8480a;   /* orange text on light ground (AA) */
+    --orange-tint: #fff1e6;
+    --orange-tint-ink: #7a3600;
+
+    /* poster field (dark statement blocks) */
+    --poster: #1a1918;
+    --poster-weave-a: #252220;
+    --poster-weave-b: #161514;
+    --poster-text: #f3f2f2;
+    --poster-muted: rgba(243, 242, 242, 0.62);
+
+    /* diagram semantic roles */
+    --node-fill: #eae9e9;
+    --node-stroke: rgba(32, 30, 29, 0.40);
+    --ext-fill: #e2e0df;      /* external system */
+    --db-fill: #fff1e6;       /* datastore */
+    --flow: rgba(32, 30, 29, 0.55);
+
+    --font-body: "Archivo", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+    --maxw: 1080px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #ece9e7;
+      --ink-soft: #b0a9a3;
+      --ink-faint: #948d87;
+      --ground: #121110;
+      --raised: #1e1c1b;
+      --sunk: #262322;
+      --rule: rgba(236, 233, 231, 0.34);
+      --hair: rgba(236, 233, 231, 0.12);
+      --orange: #ff7d1a;
+      --orange-ink: #ff9f52;
+      --orange-tint: #2a1c10;
+      --orange-tint-ink: #ffb877;
+      --poster: #0b0a0a;
+      --poster-weave-a: #1c1917;
+      --poster-weave-b: #070606;
+      --node-fill: #201d1b;
+      --node-stroke: rgba(236, 233, 231, 0.34);
+      --ext-fill: #2a2624;
+      --db-fill: #2a1c10;
+      --flow: rgba(236, 233, 231, 0.50);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ece9e7;
+    --ink-soft: #b0a9a3;
+    --ink-faint: #948d87;
+    --ground: #121110;
+    --raised: #1e1c1b;
+    --sunk: #262322;
+    --rule: rgba(236, 233, 231, 0.34);
+    --hair: rgba(236, 233, 231, 0.12);
+    --orange: #ff7d1a;
+    --orange-ink: #ff9f52;
+    --orange-tint: #2a1c10;
+    --orange-tint-ink: #ffb877;
+    --poster: #0b0a0a;
+    --poster-weave-a: #1c1917;
+    --poster-weave-b: #070606;
+    --node-fill: #201d1b;
+    --node-stroke: rgba(236, 233, 231, 0.34);
+    --ext-fill: #2a2624;
+    --db-fill: #2a1c10;
+    --flow: rgba(236, 233, 231, 0.50);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- hero / poster ---------- */
+  .hero {
+    position: relative;
+    background-color: var(--poster);
+    background-image:
+      radial-gradient(120% 90% at 12% 0%, rgba(255,109,0,0.30), rgba(255,109,0,0) 46%),
+      repeating-linear-gradient(45deg, var(--poster-weave-a) 0 14px, var(--poster-weave-b) 14px 28px);
+    color: var(--poster-text);
+    overflow: hidden;
+    border-bottom: 3px solid var(--orange);
+  }
+  .hero::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0; height: 90px;
+    background: linear-gradient(to bottom, rgba(26,25,24,0), var(--poster));
+    pointer-events: none;
+  }
+  .hero-inner { max-width: var(--maxw); margin: 0 auto; padding: 60px 24px 54px; position: relative; z-index: 1; }
+  .kicker {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--orange); margin: 0 0 18px;
+  }
+  .brandline { display: flex; align-items: baseline; gap: 6px; }
+  .hero h1 {
+    font-size: clamp(2.6rem, 7vw, 4.2rem); font-weight: 800; line-height: 0.98;
+    letter-spacing: -0.02em; margin: 0; text-wrap: balance;
+  }
+  .hero h1 .t { color: var(--orange); }
+  .hero .sub {
+    margin: 20px 0 0; max-width: 60ch; font-size: 1.06rem; line-height: 1.55;
+    color: var(--poster-muted);
+  }
+  .hero .sub strong { color: var(--poster-text); font-weight: 600; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 0; margin-top: 34px;
+    border: 1px solid rgba(243,242,242,0.22);
+  }
+  .meta div {
+    flex: 1 1 140px; padding: 12px 16px;
+    border-right: 1px solid rgba(243,242,242,0.16);
+  }
+  .meta div:last-child { border-right: 0; }
+  .meta dt { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange); font-weight: 800; }
+  .meta dd { margin: 4px 0 0; font-size: 0.92rem; color: var(--poster-text); font-weight: 500; }
+
+  /* ---------- sections ---------- */
+  section { padding: 52px 0; border-bottom: 2px solid var(--rule); }
+  section:last-of-type { border-bottom: 0; }
+  .eyebrow {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--orange-ink); margin: 0 0 6px;
+  }
+  .eyebrow .num { font-family: var(--font-mono); font-weight: 600; color: var(--ink-faint); font-size: 12px; letter-spacing: 0; }
+  h2 { font-size: clamp(1.6rem, 3.5vw, 2.15rem); font-weight: 800; letter-spacing: -0.015em; margin: 0 0 14px; line-height: 1.05; text-wrap: balance; }
+  h3 { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; margin: 30px 0 10px; }
+  .lead { font-size: 1.04rem; color: var(--ink-soft); max-width: 66ch; margin: 0 0 8px; }
+  p { max-width: 68ch; }
+  a { color: var(--orange-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+  p code, li code, td code {
+    background: var(--sunk); padding: 1px 5px; color: var(--ink);
+    border: 1px solid var(--hair);
+  }
+
+  /* ---------- figure frame ---------- */
+  figure { margin: 26px 0 8px; }
+  .fig {
+    border: 2px solid var(--rule); background: var(--raised);
+    padding: 26px 22px 18px; overflow-x: auto;
+  }
+  figcaption {
+    font-size: 12px; color: var(--ink-faint); margin-top: 10px;
+    font-family: var(--font-mono); letter-spacing: 0.01em;
+  }
+  figcaption b { color: var(--ink-soft); font-weight: 600; }
+  svg { display: block; max-width: 100%; height: auto; }
+  svg text { font-family: var(--font-body); }
+  .svg-mono { font-family: var(--font-mono); }
+
+  /* diagram fills via tokens */
+  .n-fill { fill: var(--node-fill); }
+  .n-stroke { stroke: var(--node-stroke); }
+  .ext-fill { fill: var(--ext-fill); }
+  .db-fill { fill: var(--db-fill); }
+  .accent-fill { fill: var(--orange); }
+  .t-ink { fill: var(--ink); }
+  .t-soft { fill: var(--ink-soft); }
+  .t-faint { fill: var(--ink-faint); }
+  .t-orange { fill: var(--orange-ink); }
+  .flow-stroke { stroke: var(--flow); }
+
+  /* ---------- legend ---------- */
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 14px 0 0; font-size: 12px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 16px; height: 12px; border: 1.5px solid var(--rule); display: inline-block; }
+
+  /* ---------- stack grid ---------- */
+  .grid { display: grid; gap: 2px; background: var(--rule); border: 2px solid var(--rule); margin: 24px 0; }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .cell { background: var(--ground); padding: 16px 18px; }
+  .cell .lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; color: var(--orange-ink); }
+  .cell .val { font-size: 1.02rem; font-weight: 600; margin-top: 4px; }
+  .cell .note { font-size: 0.82rem; color: var(--ink-faint); margin-top: 3px; line-height: 1.45; }
+  @media (max-width: 720px) { .cols-3 { grid-template-columns: 1fr 1fr; } .cols-2 { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .cols-3, .cols-2 { grid-template-columns: 1fr; } }
+
+  /* ---------- endpoint table ---------- */
+  .tbl-scroll { overflow-x: auto; margin: 22px 0; border: 2px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 560px; }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  thead th {
+    background: var(--poster); color: var(--poster-text);
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 800;
+    border-bottom: 0;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td .path { font-family: var(--font-mono); font-size: 0.84rem; font-weight: 600; }
+  .verb { font-family: var(--font-mono); font-weight: 600; font-size: 0.76rem; padding: 2px 6px; border: 1.5px solid currentColor; }
+  .verb.get { color: var(--orange-ink); }
+  .verb.post { color: var(--ink); }
+  .verb.del { color: var(--ink); }
+  .pill {
+    display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 8px; border: 1.5px solid var(--rule);
+  }
+  .pill.pub { background: var(--orange); color: var(--poster); border-color: var(--orange); }
+  .pill.auth { background: transparent; color: var(--ink-soft); }
+
+  /* ---------- callout ---------- */
+  .note-box {
+    border-left: 3px solid var(--orange); background: var(--orange-tint);
+    padding: 14px 18px; margin: 22px 0; font-size: 0.92rem; color: var(--orange-tint-ink);
+  }
+  .note-box b { color: var(--orange-ink); }
+  :root[data-theme="dark"] .note-box, :root:not([data-theme="light"]) .note-box { color: var(--ink); }
+
+  /* ---------- seam list ---------- */
+  ul.clean { list-style: none; padding: 0; margin: 18px 0; }
+  ul.clean li { padding: 12px 0 12px 26px; border-bottom: 1px solid var(--hair); position: relative; max-width: 74ch; }
+  ul.clean li:last-child { border-bottom: 0; }
+  ul.clean li::before { content: "→"; position: absolute; left: 0; color: var(--orange); font-weight: 800; }
+  ul.clean li b { font-weight: 800; }
+
+  /* ---------- footer ---------- */
+  footer { padding: 34px 0 60px; color: var(--ink-faint); font-size: 12px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline; }
+  footer a { color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    a { transition: color 120ms ease; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Architecture reference</p>
+    <div class="brandline">
+      <h1>3T Run<span class="t">.</span></h1>
+    </div>
+    <dl class="meta">
+      <div><dt>Backend</dt><dd>Spring Boot 4 · Java 21</dd></div>
+      <div><dt>Frontend</dt><dd>Angular · standalone</dd></div>
+      <div><dt>Data</dt><dd>PostgreSQL 16 · Flyway</dd></div>
+      <div><dt>Cloud</dt><dd>Azure · EU region</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===================== SYSTEM CONTEXT ===================== -->
+  <section id="overview">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">01</span> System at a glance</p>
+      <p class="lead">The Angular app is served as static files and talks only to <code>/api</code> — through a
+        dev proxy locally, same-origin in production. Spring Boot owns all logic and data; a single Postgres
+        instance holds every table. Email is the one outbound dependency.</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 860 380" role="img" aria-labelledby="ctx-title">
+            <title id="ctx-title">Container diagram: browser to Angular SPA to Spring Boot API to Postgres and SMTP</title>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--flow)"></path>
+              </marker>
+            </defs>
+
+            <!-- actor -->
+            <g class="svg-mono">
+              <circle cx="70" cy="130" r="16" class="n-fill n-stroke" stroke-width="2"></circle>
+              <line x1="70" y1="146" x2="70" y2="182" class="n-stroke" stroke-width="2"></line>
+              <line x1="46" y1="160" x2="94" y2="160" class="n-stroke" stroke-width="2"></line>
+              <line x1="70" y1="182" x2="52" y2="208" class="n-stroke" stroke-width="2"></line>
+              <line x1="70" y1="182" x2="88" y2="208" class="n-stroke" stroke-width="2"></line>
+            </g>
+            <text x="70" y="232" text-anchor="middle" class="t-ink" font-size="14" font-weight="600">Runner</text>
+            <text x="70" y="250" text-anchor="middle" class="t-faint" font-size="11">browser · mobile + desktop</text>
+
+            <!-- SPA -->
+            <rect x="180" y="120" width="200" height="120" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="180" y="120" width="200" height="6" class="accent-fill"></rect>
+            <text x="280" y="152" text-anchor="middle" class="t-ink" font-size="15" font-weight="800">Angular SPA</text>
+            <text x="280" y="174" text-anchor="middle" class="t-soft" font-size="11.5">standalone components</text>
+            <text x="280" y="192" text-anchor="middle" class="t-soft" font-size="11.5">events · register · auth</text>
+            <text x="280" y="210" text-anchor="middle" class="t-soft" font-size="11.5">dashboard · privacy</text>
+            <text x="280" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">Static Web Apps</text>
+
+            <!-- API -->
+            <rect x="470" y="120" width="210" height="120" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="470" y="120" width="210" height="6" class="accent-fill"></rect>
+            <text x="575" y="152" text-anchor="middle" class="t-ink" font-size="15" font-weight="800">Spring Boot API</text>
+            <text x="575" y="174" text-anchor="middle" class="t-soft" font-size="11.5">Web · Security · Data JPA</text>
+            <text x="575" y="192" text-anchor="middle" class="t-soft" font-size="11.5">domain services + Flyway</text>
+            <text x="575" y="210" text-anchor="middle" class="t-soft" font-size="11.5">session cookie auth</text>
+            <text x="575" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">App Service</text>
+
+            <!-- DB -->
+            <g>
+              <path d="M735,285 a55,14 0 0,0 110,0 v-70 a55,14 0 0,0 -110,0 z" class="db-fill n-stroke" stroke-width="2"></path>
+              <path d="M735,215 a55,14 0 0,0 110,0" fill="none" class="n-stroke" stroke-width="2"></path>
+              <text x="790" y="258" text-anchor="middle" class="t-ink" font-size="14" font-weight="800">PostgreSQL</text>
+              <text x="790" y="276" text-anchor="middle" class="t-faint svg-mono" font-size="10">Flexible Server</text>
+            </g>
+
+            <!-- SMTP / email -->
+            <rect x="470" y="300" width="210" height="60" class="ext-fill n-stroke" stroke-width="2"></rect>
+            <text x="575" y="326" text-anchor="middle" class="t-ink" font-size="13.5" font-weight="700">Email (SMTP)</text>
+            <text x="575" y="345" text-anchor="middle" class="t-faint svg-mono" font-size="10">Mailpit dev · ACS prod</text>
+
+            <!-- flows -->
+            <g class="flow-stroke" stroke-width="2" fill="none">
+              <line x1="98" y1="165" x2="176" y2="180" marker-end="url(#arrow)"></line>
+              <line x1="384" y1="180" x2="466" y2="180" marker-end="url(#arrow)"></line>
+              <line x1="684" y1="200" x2="748" y2="222" marker-end="url(#arrow)"></line>
+              <line x1="575" y1="244" x2="575" y2="296" marker-end="url(#arrow)"></line>
+            </g>
+            <text x="137" y="158" text-anchor="middle" class="t-faint svg-mono" font-size="10">HTTPS</text>
+            <text x="425" y="172" text-anchor="middle" class="t-orange svg-mono" font-size="10.5" font-weight="600">/api · JSON</text>
+            <text x="726" y="198" text-anchor="middle" class="t-faint svg-mono" font-size="10">JPA</text>
+            <text x="605" y="278" text-anchor="middle" class="t-faint svg-mono" font-size="10">confirmation</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background:var(--node-fill)"></i> Owned service</span>
+            <span><i class="swatch" style="background:var(--ext-fill)"></i> External system</span>
+            <span><i class="swatch" style="background:var(--db-fill)"></i> Datastore</span>
+            <span><i class="swatch" style="background:var(--orange)"></i> Our code</span>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== STACK ===================== -->
+  <section id="stack">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">02</span> The stack</p>
+      <div class="grid cols-3">
+        <div class="cell"><div class="lbl">Backend</div><div class="val">Spring Boot 4.x</div><div class="note">Java 21, Maven wrapper. Web + Data JPA + Flyway.</div></div>
+        <div class="cell"><div class="lbl">Frontend</div><div class="val">Angular</div><div class="note">Standalone components, <code>@if</code>/<code>@for</code>. Node 24 LTS, npm.</div></div>
+        <div class="cell"><div class="lbl">Database</div><div class="val">PostgreSQL 16</div><div class="note">Flyway migrations on startup. Testcontainers in tests.</div></div>
+        <div class="cell"><div class="lbl">Auth</div><div class="val">Spring Security</div><div class="note">Email + BCrypt behind an <code>AuthProvider</code> seam.</div></div>
+        <div class="cell"><div class="lbl">Email</div><div class="val">SMTP</div><div class="note">Mailpit in dev/tests; a transactional provider in prod.</div></div>
+        <div class="cell"><div class="lbl">CI / CD</div><div class="val">GitHub Actions</div><div class="note">Build, lint, all test layers, deploy on green.</div></div>
+      </div>
+      <p>Everything runs locally first: <code>docker compose up -d</code> brings up Postgres + Mailpit,
+        <code>./mvnw verify</code> runs unit and Testcontainers integration tests, <code>npm test</code> runs
+        Vitest, and <code>npx playwright test</code> runs the E2E suite across desktop and mobile viewports.</p>
+    </div>
+  </section>
+
+  <!-- ===================== BACKEND DOMAIN ===================== -->
+  <section id="backend">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">03</span> Backend, by domain</p>
+      <p class="lead">Code under <code>ro.threet.run</code> is organised by domain, not by layer — each package
+        carries its own entity, repository, service, controller, and DTOs. Cross-cutting concerns
+        (<code>web</code>, <code>config</code>) sit apart.</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 860 300" role="img" aria-labelledby="pkg-title">
+            <title id="pkg-title">Backend packages and their dependencies</title>
+            <defs>
+              <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--flow)"></path>
+              </marker>
+            </defs>
+
+            <!-- event -->
+            <rect x="30" y="40" width="180" height="86" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="30" y="40" width="6" height="86" class="accent-fill"></rect>
+            <text x="48" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">event</text>
+            <text x="48" y="86" class="t-soft" font-size="11">Event · Location ref</text>
+            <text x="48" y="103" class="t-soft" font-size="11">upcoming-events read</text>
+            <text x="48" y="119" class="t-faint svg-mono" font-size="10">Controller · Service · Repo</text>
+
+            <!-- registration -->
+            <rect x="340" y="40" width="200" height="86" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="340" y="40" width="6" height="86" class="accent-fill"></rect>
+            <text x="358" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">registration</text>
+            <text x="358" y="86" class="t-soft" font-size="11">core loop + "my runs"</text>
+            <text x="358" y="103" class="t-soft" font-size="11">ConfirmationEmail</text>
+            <text x="358" y="119" class="t-faint svg-mono" font-size="10">anon or attributed</text>
+
+            <!-- location -->
+            <rect x="30" y="180" width="180" height="76" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="30" y="180" width="6" height="76" class="accent-fill"></rect>
+            <text x="48" y="204" class="t-orange svg-mono" font-size="11" font-weight="600">location</text>
+            <text x="48" y="226" class="t-soft" font-size="11">first-class entity</text>
+            <text x="48" y="243" class="t-faint svg-mono" font-size="10">multi-site seam (V4)</text>
+
+            <!-- auth -->
+            <rect x="340" y="180" width="200" height="76" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="340" y="180" width="6" height="76" class="accent-fill"></rect>
+            <text x="358" y="204" class="t-orange svg-mono" font-size="11" font-weight="600">auth</text>
+            <text x="358" y="226" class="t-soft" font-size="11">AuthProvider · Security</text>
+            <text x="358" y="243" class="t-faint svg-mono" font-size="10">AppUser · privacy (GDPR)</text>
+
+            <!-- email -->
+            <rect x="660" y="40" width="170" height="76" class="ext-fill n-stroke" stroke-width="2"></rect>
+            <text x="745" y="70" text-anchor="middle" class="t-orange svg-mono" font-size="11" font-weight="600">email</text>
+            <text x="745" y="92" text-anchor="middle" class="t-soft" font-size="11">EmailSender</text>
+            <text x="745" y="108" text-anchor="middle" class="t-faint svg-mono" font-size="10">SmtpEmailSender</text>
+
+            <!-- web + config -->
+            <rect x="660" y="180" width="170" height="76" class="ext-fill n-stroke" stroke-width="2"></rect>
+            <text x="745" y="210" text-anchor="middle" class="t-ink svg-mono" font-size="11" font-weight="600">web · config</text>
+            <text x="745" y="232" text-anchor="middle" class="t-soft" font-size="11">ApiExceptionHandler</text>
+            <text x="745" y="248" text-anchor="middle" class="t-faint svg-mono" font-size="10">ClockConfig</text>
+
+            <g class="flow-stroke" stroke-width="2" fill="none">
+              <line x1="210" y1="90" x2="336" y2="90" marker-end="url(#arrow2)"></line>
+              <line x1="120" y1="180" x2="120" y2="130" marker-end="url(#arrow2)"></line>
+              <line x1="440" y1="180" x2="440" y2="130" marker-end="url(#arrow2)"></line>
+              <line x1="540" y1="84" x2="656" y2="80" marker-end="url(#arrow2)"></line>
+            </g>
+            <text x="273" y="82" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">reads events</text>
+            <text x="600" y="75" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">sends</text>
+          </svg>
+          <figcaption>Arrows show the direction of dependency.</figcaption>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== DATA MODEL ===================== -->
+  <section id="data">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">04</span> Data model</p>
+      <p class="lead">Two seams are deliberately built into the schema now (charter §3):
+        <code>location</code> is a first-class entity, and <code>registration</code> is stored in a
+        leaderboard-friendly shape — one row per <em>(event, participant)</em> with <code>finish_time</code>
+        and <code>user_id</code> nullable. Both make V2 additive, not a migration.</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 860 400" role="img" aria-labelledby="erd-title">
+            <title id="erd-title">Entity relationship diagram for location, event, registration, and app_user</title>
+            <defs>
+              <marker id="crow" viewBox="0 0 16 16" refX="2" refY="8" markerWidth="15" markerHeight="15" orient="auto">
+                <path d="M14,8 L2,2 M14,8 L2,8 M14,8 L2,14" fill="none" stroke="var(--flow)" stroke-width="1.4"></path>
+              </marker>
+              <marker id="one" viewBox="0 0 16 16" refX="8" refY="8" markerWidth="15" markerHeight="15" orient="auto">
+                <path d="M8,3 L8,13" fill="none" stroke="var(--flow)" stroke-width="1.4"></path>
+              </marker>
+            </defs>
+
+            <!-- location -->
+            <g class="svg-mono">
+              <rect x="40" y="150" width="180" height="110" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="40" y="150" width="180" height="26" class="accent-fill"></rect>
+              <text x="52" y="168" fill="var(--poster)" font-size="12.5" font-weight="600">location</text>
+              <text x="52" y="196" class="t-ink" font-size="11">🔑 id</text>
+              <text x="52" y="216" class="t-soft" font-size="11">name</text>
+              <text x="52" y="234" class="t-soft" font-size="11">city</text>
+              <text x="52" y="252" class="t-faint" font-size="11">created_at</text>
+            </g>
+
+            <!-- event -->
+            <g class="svg-mono">
+              <rect x="330" y="140" width="200" height="130" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="330" y="140" width="200" height="26" class="accent-fill"></rect>
+              <text x="342" y="158" fill="var(--poster)" font-size="12.5" font-weight="600">event</text>
+              <text x="342" y="186" class="t-ink" font-size="11">🔑 id</text>
+              <text x="342" y="206" class="t-orange" font-size="11">↳ location_id</text>
+              <text x="342" y="224" class="t-soft" font-size="11">name</text>
+              <text x="342" y="242" class="t-soft" font-size="11">start_datetime ⌁idx</text>
+              <text x="342" y="260" class="t-faint" font-size="11">created_at</text>
+            </g>
+
+            <!-- registration -->
+            <g class="svg-mono">
+              <rect x="640" y="120" width="190" height="170" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="640" y="120" width="190" height="26" class="accent-fill"></rect>
+              <text x="652" y="138" fill="var(--poster)" font-size="12.5" font-weight="600">registration</text>
+              <text x="652" y="166" class="t-ink" font-size="11">🔑 id</text>
+              <text x="652" y="184" class="t-orange" font-size="11">↳ event_id</text>
+              <text x="652" y="202" class="t-orange" font-size="11">↳ user_id ∅</text>
+              <text x="652" y="220" class="t-soft" font-size="11">name · email</text>
+              <text x="652" y="238" class="t-soft" font-size="11">finish_time ∅</text>
+              <text x="652" y="258" class="t-faint" font-size="11">created_at</text>
+              <text x="652" y="278" class="t-faint" font-size="10">uq(event_id, email)</text>
+            </g>
+
+            <!-- app_user -->
+            <g class="svg-mono">
+              <rect x="330" y="310" width="200" height="80" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="330" y="310" width="200" height="26" class="accent-fill"></rect>
+              <text x="342" y="328" fill="var(--poster)" font-size="12.5" font-weight="600">app_user</text>
+              <text x="342" y="356" class="t-ink" font-size="11">🔑 id · email uq</text>
+              <text x="342" y="374" class="t-soft" font-size="11">name · password_hash</text>
+            </g>
+
+            <!-- relations -->
+            <g class="flow-stroke" stroke-width="1.6" fill="none">
+              <line x1="220" y1="205" x2="330" y2="205" marker-start="url(#one)" marker-end="url(#crow)"></line>
+              <line x1="530" y1="190" x2="640" y2="190" marker-start="url(#one)" marker-end="url(#crow)"></line>
+              <path d="M530,350 C580,350 600,260 640,235" marker-start="url(#one)" marker-end="url(#crow)"></path>
+            </g>
+            <text x="275" y="198" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">has many</text>
+            <text x="585" y="183" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">has many</text>
+            <text x="600" y="312" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">0..1 (anon = ∅)</text>
+          </svg>
+          <div class="legend">
+            <span><b class="mono" style="color:var(--ink)">🔑</b> primary key</span>
+            <span><b class="mono" style="color:var(--orange-ink)">↳</b> foreign key</span>
+            <span><b class="mono">∅</b> nullable</span>
+            <span><b class="mono">⌁idx</b> indexed</span>
+          </div>
+        </div>
+      </figure>
+      <div class="note-box">
+        <b>Why nullable everywhere it counts.</b> An anonymous registration carries <code>name</code> + <code>email</code> with a null <code>user_id</code>;
+        a signed-in one is attributed to the account. V2 results write into <code>finish_time</code>. Neither needs a schema change — the columns already exist.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CORE LOOP ===================== -->
+  <section id="core-loop">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">05</span> The core loop</p>
+      <h2>Register for a run, get a confirmation email</h2>
+      <p class="lead">The riskiest, most valuable path — and it stays anonymous. If the caller happens to have a
+        session, the registration is quietly attributed to their account; if not, <code>user_id</code> is null.
+        Either way, one email goes out.</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 860 340" role="img" aria-labelledby="seq-title">
+            <title id="seq-title">Sequence: registration POST recorded then confirmation email sent</title>
+            <defs>
+              <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--flow)"></path>
+              </marker>
+            </defs>
+            <!-- lifelines -->
+            <g class="svg-mono">
+              <text x="90" y="30" text-anchor="middle" class="t-ink" font-size="12" font-weight="600">SPA</text>
+              <text x="300" y="30" text-anchor="middle" class="t-ink" font-size="12" font-weight="600">Controller</text>
+              <text x="500" y="30" text-anchor="middle" class="t-ink" font-size="12" font-weight="600">Service</text>
+              <text x="680" y="30" text-anchor="middle" class="t-ink" font-size="12" font-weight="600">Postgres</text>
+              <text x="810" y="30" text-anchor="middle" class="t-ink" font-size="12" font-weight="600">SMTP</text>
+            </g>
+            <g class="n-stroke" stroke-width="1.5" stroke-dasharray="3 4">
+              <line x1="90" y1="42" x2="90" y2="320"></line>
+              <line x1="300" y1="42" x2="300" y2="320"></line>
+              <line x1="500" y1="42" x2="500" y2="320"></line>
+              <line x1="680" y1="42" x2="680" y2="320"></line>
+              <line x1="810" y1="42" x2="810" y2="320"></line>
+            </g>
+
+            <g class="flow-stroke" stroke-width="2" fill="none">
+              <line x1="90" y1="75" x2="298" y2="75" marker-end="url(#arrow3)"></line>
+              <line x1="300" y1="120" x2="498" y2="120" marker-end="url(#arrow3)"></line>
+              <line x1="500" y1="160" x2="678" y2="160" marker-end="url(#arrow3)"></line>
+              <line x1="500" y1="215" x2="808" y2="215" marker-end="url(#arrow3)"></line>
+              <line x1="500" y1="258" x2="302" y2="258" marker-end="url(#arrow3)" stroke-dasharray="5 4"></line>
+              <line x1="300" y1="298" x2="92" y2="298" marker-end="url(#arrow3)" stroke-dasharray="5 4"></line>
+            </g>
+
+            <text x="195" y="68" text-anchor="middle" class="t-soft svg-mono" font-size="10.5">POST /api/registrations</text>
+            <text x="400" y="113" text-anchor="middle" class="t-soft svg-mono" font-size="10.5">validate + attribute</text>
+            <text x="590" y="153" text-anchor="middle" class="t-soft svg-mono" font-size="10.5">INSERT (uq event+email)</text>
+            <text x="655" y="208" text-anchor="middle" class="t-orange svg-mono" font-size="10.5" font-weight="600">send confirmation</text>
+            <text x="400" y="251" text-anchor="middle" class="t-faint svg-mono" font-size="10.5">RegistrationResponse</text>
+            <text x="196" y="291" text-anchor="middle" class="t-faint svg-mono" font-size="10.5">201 → confirmation page</text>
+          </svg>
+          <figcaption><b>Guarded by the DB.</b> <code>uq_registration_event_email</code> rejects a second registration for the same email + event; an invalid email fails validation and no email is sent.</figcaption>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== API + SECURITY ===================== -->
+  <section id="api">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">06</span> API &amp; security</p>
+      <h2>Deny-by-default, with the public surface enumerated</h2>
+      <p class="lead">Authorisation is deny-by-default in <code>SecurityConfig</code>: anything not listed is
+        <code>authenticated()</code>, so a new endpoint is closed until deliberately opened. A protected hit
+        without a session is a plain <code>401</code> — this is an API; the SPA owns the login UI.</p>
+
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr><th>Endpoint</th><th>Purpose</th><th>Access</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/events</span></td><td>Upcoming events, ordered by date</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb post">POST</span> <span class="path">/api/registrations</span></td><td>Register for a run — anonymous or attributed</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb post">POST</span> <span class="path">/api/auth/signup</span></td><td>Create account (captures name), logs in · 201</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb post">POST</span> <span class="path">/api/auth/login</span></td><td>Log in · 200</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb post">POST</span> <span class="path">/api/auth/logout</span></td><td>Invalidate session, expire cookie · 204</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/auth/me</span></td><td>Current account or 401</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/me/registrations</span></td><td>Dashboard: upcoming + past runs</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/me/export</span></td><td>GDPR access — account + registrations as JSON</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb del">DELETE</span> <span class="path">/api/me</span></td><td>GDPR erasure — hard-delete account + data</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/actuator/health</span></td><td>Liveness probe</td><td><span class="pill pub">Public</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-box">
+        <b>Session, not a token in JS.</b> An httpOnly <code>JSESSIONID</code> cookie — <code>SameSite=Lax</code>,
+        <code>Secure</code> on by default (dropped only for local http). Rotated on login (fixation defence).
+        Spring's CSRF tokens are <em>off</em>: the API is same-origin and <code>SameSite=Lax</code> blocks the
+        cross-site form POST, keeping the anonymous registration token-free. A token-based CSRF layer is a
+        tracked pre-go-live hardening item.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== AUTH SEAM ===================== -->
+  <section id="auth">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">07</span> The auth seam</p>
+      <p class="lead">Everything above <code>AuthProvider</code> deals in <code>AccountPrincipal</code> — never in
+        the users table or BCrypt. Credential logic and session mechanics are split so an OIDC provider that
+        manages its own session drops in without edits across the app.</p>
+      <ul class="clean">
+        <li><b>AuthProvider</b> — credential logic only. Today's one implementation is <code>LocalAuthProvider</code> (email + BCrypt on <code>app_user</code>). A future Entra provider is a new <code>AuthProvider</code> + a <code>SecurityConfig</code> change, not edits across the app.</li>
+        <li><b>SessionAuthenticator</b> — session mechanics live in the web layer, kept out of the provider, so a provider that owns its own session slots in cleanly.</li>
+        <li><b>AccountPrincipal</b> — the currency above the seam. The rest of the app knows this, not rows or hashes.</li>
+        <li><b>Registration linkage</b> — <code>POST /api/registrations</code> stays anonymous, but a session attributes the row to its account; a signed-in registration form prefills from the account (still editable).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== TESTING ===================== -->
+  <section id="testing">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">08</span> Testing &amp; the release gate</p>
+      <h2>Acceptance-test-driven RAD</h2>
+      <p class="lead">Requirements stay thin on purpose; rigour goes into tests. Six core E2E scenarios
+        (CS-1…6) are the release contract — green before every release.</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 860 300" role="img" aria-labelledby="pyr-title">
+            <title id="pyr-title">Test pyramid from unit to end-to-end, and the six-scenario release gate</title>
+            <!-- pyramid -->
+            <polygon points="70,250 350,250 310,190 110,190" class="n-fill n-stroke" stroke-width="2"></polygon>
+            <polygon points="110,190 310,190 275,130 145,130" class="n-fill n-stroke" stroke-width="2"></polygon>
+            <polygon points="145,130 275,130 240,70 180,70" class="n-fill n-stroke" stroke-width="2"></polygon>
+            <polygon points="180,70 240,70 210,20 210,20" class="accent-fill n-stroke" stroke-width="2"></polygon>
+            <text x="210" y="226" text-anchor="middle" class="t-ink svg-mono" font-size="12" font-weight="600">Unit — JUnit 5 + Mockito · Vitest</text>
+            <text x="210" y="166" text-anchor="middle" class="t-ink svg-mono" font-size="11.5">Integration — Testcontainers</text>
+            <text x="210" y="106" text-anchor="middle" class="t-ink svg-mono" font-size="11">API — MockMvc</text>
+            <text x="210" y="52" text-anchor="middle" fill="var(--poster)" class="svg-mono" font-size="10" font-weight="600">E2E</text>
+
+            <!-- gate -->
+            <line x1="410" y1="30" x2="410" y2="270" class="n-stroke" stroke-width="2"></line>
+            <text x="450" y="52" class="t-orange" font-size="13" font-weight="800">RELEASE GATE · CS-1…6 (Playwright)</text>
+            <g class="svg-mono" font-size="11.5">
+              <text x="450" y="88" class="t-ink">CS-1 · core loop — anon register → email</text>
+              <text x="450" y="116" class="t-ink">CS-2 · sign-up creates account, logs in</text>
+              <text x="450" y="144" class="t-ink">CS-3 · login reaches dashboard</text>
+              <text x="450" y="172" class="t-ink">CS-4 · signed-in run under "Upcoming"</text>
+              <text x="450" y="200" class="t-ink">CS-5 · attended run under "Past"</text>
+              <text x="450" y="228" class="t-ink">CS-6 · anon dashboard → sign-up/login</text>
+              <text x="450" y="262" class="t-faint">+ axe-core a11y · k6 perf (p95 &lt; 20% regression)</text>
+            </g>
+          </svg>
+          <figcaption><b>E2E suites:</b> events · registration · auth · dashboard · gdpr · a11y. Perf gate is a required check on <code>main</code>.</figcaption>
+        </div>
+      </figure>
+      <div class="note-box">
+        <b>Definition of Done (charter §6).</b> Vertical slice complete · new logic unit-tested · endpoint integration-tested against real Postgres · affected CS scenario updated · axe-core clean at mobile + desktop · CI green · merged to <code>main</code>, incomplete work behind a feature flag.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>3T Run — architecture reference</span>
+    <span>·</span>
+    <span>Generated from the codebase &amp; <code>docs/charter.md</code></span>
+    <span>·</span>
+    <span>Floodlight theme</span>
+  </div>
+</footer>
+
+</body>
+</html>

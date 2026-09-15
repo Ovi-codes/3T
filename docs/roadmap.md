@@ -37,6 +37,7 @@
 ## Later - V4
 - Attempting to register twice prompts the user to create an account so they can see their existing registration
 - Multi-location expansion *(cheap if `Location` is first-class from day one — see charter §3)*.
+- Implement a segregated customisable notification system using Kafka
 ---
 
 **Architectural pre-work already scheduled into V1** so V2 is additive, not disruptive: `Location` entity, leaderboard-shaped results table, abstracted auth boundary.
