@@ -11,6 +11,7 @@ import {
 
 import { AuthService } from './auth.service';
 import { toFormErrors } from '../../core/form-errors';
+import { Poster } from '../../shared/poster/poster';
 
 /**
  * A name has to look like a name: at least one letter, so "12345" (only digits) is rejected even
@@ -39,7 +40,7 @@ const MIN_PASSWORD = 8;
  */
 @Component({
   selector: 'app-signup',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Poster],
   templateUrl: './signup.html',
   styleUrl: './auth.css',
 })

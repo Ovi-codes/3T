@@ -1,0 +1,134 @@
+/* ============================================================================
+   3T Run — "Floodlight" theme tokens & recipes
+   Portable CSS. Drop the :root block into frontend/src/styles.css (or map the
+   values into frontend/tailwind.tokens.snippet.js). Everything else is a
+   copy-paste recipe for the components. Font: Archivo (400 / 600 / 800).
+   Derived from the Modernist design system, recoloured orange-on-ink.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');
+
+:root {
+  /* Ground / ink */
+  --ground:      #f3f2f2;  /* page background */
+  --surface:     #eae9e9;  /* cards, inputs   */
+  --ink:         #1a1918;  /* poster / hero fields (the dark statement blocks) */
+  --text:        #201e1d;  /* body + headings on ground */
+
+  /* Accent — orange (replaces the system's red) */
+  --accent:      #ff6d00;  /* primary actions, kickers, the coloured T's       */
+  --accent-600:  #e86400;  /* hover  */
+  --accent-700:  #c25200;  /* active */
+  --accent-100:  #fff1e6;  /* tint fill behind tags on ground */
+  --accent-800:  #7a3600;  /* text on the tint fill */
+  --on-accent:   #201e1d;  /* text/icon ON a solid orange button — DARK, not white */
+
+  /* Structure */
+  --divider:     rgba(32, 30, 29, .40); /* the 2px rules and 1px row lines */
+  --radius:      0px;                    /* zero corners everywhere */
+
+  /* Type */
+  --font:        "Archivo", system-ui, sans-serif;
+  --fw-body:     400;
+  --fw-strong:   600;
+  --fw-heading:  800;
+
+  /* Spacing scale (px) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px;
+}
+
+/* ---- base ---------------------------------------------------------------- */
+body { background: var(--ground); color: var(--text); font-family: var(--font); margin: 0; }
+h1,h2,h3,h4 { font-family: var(--font); font-weight: var(--fw-heading); letter-spacing: -0.015em; line-height: 1.12; }
+a { color: var(--accent-700); text-underline-offset: 3px; }         /* orange links, deep step for contrast */
+a:hover { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } /* never the default blue ring */
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.hr { height: 2px; border: 0; background: var(--divider); margin: var(--s4) 0; } /* strong rule */
+
+/* ---- brand mark (no box; 3T orange, RUN ink; tucked together) ------------ */
+/* <span class="mk"><b>3T</b><span>RUN</span></span> */
+.mk { display: inline-flex; align-items: center; gap: 4px; }
+.mk b        { font-weight: 800; font-size: 19px; letter-spacing: -.03em; color: var(--accent); }
+.mk > span   { font-weight: 800; font-size: 16px; letter-spacing: -.01em; }
+
+/* ---- buttons (labels flush-left in block buttons; zero radius) ----------- */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px;
+       font-family:var(--font); font-weight:800; font-size:14px; line-height:1.2;
+       padding:8px 14px; border:1px solid transparent; border-radius:var(--radius);
+       cursor:pointer; text-decoration:none; color:var(--text); background:transparent; }
+.btn-primary   { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover  { background: var(--accent-600); }
+.btn-primary:active { background: var(--accent-700); }
+.btn-secondary { border-color: var(--divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+.btn-ghost     { color: var(--accent); padding-inline: 4px; }
+.btn-block     { width: 100%; justify-content: flex-start; }  /* wide buttons: label starts at the left edge */
+.btn:disabled  { opacity: .45; cursor: not-allowed; }
+
+/* ---- tags ---------------------------------------------------------------- */
+.tag          { display:inline-flex; align-items:center; font-size:11px; padding:3px 10px; border-radius:0; }
+.tag-accent   { background: var(--accent-100); color: var(--accent-800); }   /* "This Tuesday", "Registered" */
+.tag-outline  { border: 1px solid var(--accent); color: var(--accent); }
+.tag-neutral  { background: #f8f4f4; color: #444141; }                        /* "Attended" */
+
+/* ---- inputs -------------------------------------------------------------- */
+.input { width:100%; min-height:36px; padding:6px 10px; font:inherit; font-size:14px;
+         color:var(--text); caret-color:var(--accent); background:var(--surface);
+         border:1px solid var(--divider); border-radius:var(--radius); }
+.input:focus-visible { border-color: var(--accent); outline-offset: 0; }
+.input[aria-invalid="true"] { border-color: var(--accent); }   /* field-error state */
+.field > label { display:block; font-size:12px; margin-bottom:5px; color: color-mix(in srgb, var(--text) 70%, transparent); }
+.field-error   { font-size:12px; color: var(--accent); margin:5px 0 0; }
+/* whole-form error banner (login wrong-credentials, list load error) */
+.form-error { font-size:13px; font-weight:600; color:var(--accent); border:1px solid var(--accent); padding:10px 12px; margin:0 0 16px; }
+
+/* ============================================================================
+   THE HERO / POSTER FIELD  — the signature element.
+   A dark ink block carrying display type, built from THREE layers:
+     1) a diagonal "weave" of near-black stripes,
+     2) an orange "ember" glow bleeding from the TOP-LEFT corner,
+     3) a wavy fade to solid black across the lower half (an inline <svg>),
+        so display type + CTA sit on clean ink.
+   ============================================================================ */
+
+/* Layers 1 + 2 go on the hero element's background. */
+.hero {
+  position: relative;                     /* the wave <svg> is absolutely positioned inside */
+  background-color: var(--ink);
+  background-image:
+    radial-gradient(80% 80% at -6% -10%, rgba(255,109,0,.36) 0%, rgba(255,109,0,0) 56%), /* ember, top-left */
+    repeating-linear-gradient(135deg, #252220 0 14px, #161514 14px 28px);                 /* diagonal weave */
+  color: var(--ground);
+}
+/* Mobile weave is slightly finer: 0 13px, 13px 26px, and the ember uses .38 / -8% -8%. */
+
+/* Layer 3 — paste this <svg> as the FIRST child of every .hero, then wrap the
+   hero's text content in <div style="position:relative;z-index:1"> so it sits above.
+   preserveAspectRatio="none" stretches the wave to any hero size. Give each
+   instance a unique gradient id.
+
+   <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"
+        style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none">
+     <defs>
+       <linearGradient id="wave" x1="0" y1="0" x2="0" y2="1">
+         <stop offset="0"   stop-color="#1a1918" stop-opacity="0"/>
+         <stop offset="0.5" stop-color="#1a1918" stop-opacity="1"/>
+       </linearGradient>
+     </defs>
+     <path d="M0,40 C22,24 40,24 52,36 C64,48 80,48 100,30 L100,100 L0,100 Z" fill="url(#wave)"/>
+   </svg>
+
+   Notes: the crest sits ~1/3 down (fade "starts under the wordmark"); it is fully
+   black by ~mid-height (behind the CTA). An Angular re-theme can express this as a
+   reusable <app-poster> component that renders the svg + <ng-content>.  */
+
+.htitle    { margin:0; font-weight:800; letter-spacing:-.03em; line-height:.9; color:var(--ground); } /* display poster type */
+.htitle .t { color: var(--accent); }   /* the leading T of each word — TIME / TRIAL / TUESDAYS */
+.eyebrow   { font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-weight:800; color:var(--accent); margin:0; }
+/* On ink fields the eyebrow is dimmed to rgba(255,255,255,.55). */
+
+/* ---- image placeholders --------------------------------------------------- */
+/* All photography is GRAYSCALE. In the mocks, photo slots are striped placeholders
+   labelled with what belongs there (e.g. "the pack at the Herăstrău start line").
+   Replace with real b&w photos via: filter: grayscale(1) contrast(1.08); */

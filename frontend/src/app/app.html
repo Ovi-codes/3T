@@ -4,7 +4,9 @@
 
 <header class="app-header">
   <nav class="app-header-inner" aria-label="Primary">
-    <a class="brand" routerLink="/">3T Run</a>
+    <a class="brand" routerLink="/" aria-label="3T Run, home">
+      <app-logo />
+    </a>
 
     <!-- One auth action; hidden until the session check settles, so it never shows the wrong one. -->
     @if (user(); as account) {

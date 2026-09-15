@@ -4,39 +4,84 @@
   padding: var(--space-8) var(--space-4) var(--space-16);
 }
 
+/* The register form branch, like the auth pages: a split of the ink poster panel (carrying the
+   run photo) and the form. Mobile collapses to the form only. */
+.register {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  min-height: calc(100vh - 12rem);
+}
+
+.register-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Padding sets the ink margin around the photo (the diagonal weave frames it); the photo is
+     centred vertically within the panel. */
+  padding: var(--space-12) var(--space-8);
+}
+
+.register-panel-inner {
+  width: 100%;
+  /* 15% larger than the previous 34rem. */
+  max-width: 39rem;
+  margin-inline: auto;
+}
+
+/* The run photo, framed by the poster field. Full colour to match the warm sunset moment. */
+.register-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.register-form {
+  padding: var(--space-12) var(--space-8);
+  max-width: 36rem;
+}
+
 .page-header {
   margin-bottom: var(--space-2);
 }
 
 .eyebrow {
-  margin: 0 0 var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  letter-spacing: 0.08em;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary-ink);
 }
 
-h1 {
+/* Scoped to the page-header so it never overrides the confirmation hero title, which sits on the
+   dark poster and takes its light colour from the global .hero-title recipe. */
+.page-header h1 {
   margin: 0;
-  font-family: var(--font-display);
   font-size: var(--text-4xl);
-  line-height: var(--leading-tight);
   color: var(--color-ink);
 }
 
 .lede {
-  margin: var(--space-2) 0 0;
+  margin: var(--space-3) 0 0;
   font-size: var(--text-lg);
   line-height: var(--leading-normal);
   color: var(--color-ink-soft);
 }
 
-/* The run's date/time on the register header — mono + tabular, like the event chip. */
+/* The run's date/time on the register header — tabular figures, like the event kicker. */
 .run-when {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--color-ink);
+}
+
+/* Confirmation: the copy + actions sit below the poster; a little breathing room from it. */
+.confirmation-body {
+  padding-top: var(--space-8);
+  display: grid;
+  gap: var(--space-6);
+  justify-items: start;
 }
 
 .state {
@@ -46,12 +91,15 @@ h1 {
   color: var(--color-ink-soft);
 }
 
-.state-error {
+/* Whole-form error (network, or a rejection not tied to a field) — orange, boxed (Floodlight). */
+.form-error {
   margin: 0 0 var(--space-4);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-danger-soft);
-  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 /* ---- Form ---- */
@@ -69,21 +117,28 @@ h1 {
 label {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  color: var(--color-ink);
+  color: var(--color-ink-soft);
 }
 
 input {
-  padding: var(--space-3) var(--space-4);
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-3);
   font-family: var(--font-body);
   font-size: var(--text-base);
   color: var(--color-ink);
+  caret-color: var(--color-primary);
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
+input:focus-visible {
+  border-color: var(--color-primary);
+  outline-offset: 0;
+}
+
 input[aria-invalid='true'] {
-  border-color: var(--color-danger);
+  border-color: var(--color-primary);
 }
 
 .field-error {
@@ -92,39 +147,31 @@ input[aria-invalid='true'] {
   color: var(--color-danger);
 }
 
-/* Primary action — pine teal with contrast text (amber is reserved for the "next" accent). */
-.button {
-  display: inline-block;
-  justify-self: start;
-  padding: var(--space-3) var(--space-6);
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  color: var(--color-primary-contrast);
-  background: var(--color-primary);
-  border: 0;
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out);
+.fine-print {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-faint);
 }
 
-.button:hover {
-  background: var(--color-primary-hover);
-}
-
-.button:disabled {
-  opacity: 0.6;
-  cursor: progress;
-}
-
-@media (max-width: 30rem) {
-  h1 {
-    font-size: var(--text-3xl);
+@media (max-width: 52rem) {
+  .register {
+    grid-template-columns: 1fr;
+    min-height: 0;
   }
 
-  .button {
-    justify-self: stretch;
-    text-align: center;
+  /* Mobile: form only — the photo panel is dropped (matches the auth pages). */
+  .register-panel {
+    display: none;
+  }
+
+  .register-form {
+    padding: var(--space-8) var(--space-4) var(--space-16);
+    max-width: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .page-header h1 {
+    font-size: var(--text-3xl);
   }
 }
