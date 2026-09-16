@@ -50,6 +50,8 @@
         </p>
       </header>
 
+      <app-forecast class="register-weather on-light" [eventId]="event()!.id" />
+
       <hr class="course-rule" aria-hidden="true" />
 
       @if (formError(); as message) {
