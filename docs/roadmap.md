@@ -23,7 +23,7 @@
 - Post-event time upload — runners manually enter their own finish time (AI screenshot extraction deferred to V3).
 - Leaderboards per run.
 - Personal stats: placement, time trend, graphs.
-- Integrate a free weather API that shows prediction for the next session.
+- ~~Integrate a free weather API that shows prediction for the next session.~~ ✓ Increment 9 (#40)
 
 ## Next — V3
 - Post-event time upload via Strava/Garmin screenshot + AI extraction (vision model reads pace + distance, validates ≥5k, computes time).

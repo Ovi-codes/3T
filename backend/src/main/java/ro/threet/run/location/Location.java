@@ -1,5 +1,6 @@
 package ro.threet.run.location;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
@@ -28,6 +29,13 @@ public class Location {
 	@Column(nullable = false, length = 120)
 	private String city;
 
+	// Nullable: a location without coordinates simply has no forecast
+	@Column
+	private BigDecimal latitude;
+
+	@Column
+	private BigDecimal longitude;
+
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private OffsetDateTime createdAt;
 
@@ -45,6 +53,16 @@ public class Location {
 
 	public String getCity() {
 		return city;
+	}
+
+	/** WGS84 latitude, or {@code null} when this location has no coordinates yet. */
+	public BigDecimal getLatitude() {
+		return latitude;
+	}
+
+	/** WGS84 longitude, or {@code null} when this location has no coordinates yet. */
+	public BigDecimal getLongitude() {
+		return longitude;
 	}
 
 	public OffsetDateTime getCreatedAt() {

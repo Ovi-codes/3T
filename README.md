@@ -86,6 +86,9 @@ The confirmation email uses `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
 All defaults match the Compose services above, so locally you need none of them; 
 a prod SMTP provider sets the mail ones.
 
+The next-run weather forecast calls [Open-Meteo](https://open-meteo.com) (free, no API key,
+EU-hosted). It uses `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS` and `WEATHER_CACHE_TTL`.
+
 The account session cookie is `Secure` by default (prod is HTTPS). To sign in over local
 **http**, opt out so the browser will store the cookie:
 

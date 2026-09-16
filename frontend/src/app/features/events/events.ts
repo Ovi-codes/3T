@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { EventItem, EventsService } from './events.service';
+import { ForecastWidget } from './forecast';
 import { Poster } from '../../shared/poster/poster';
 
 /**
@@ -12,7 +13,7 @@ import { Poster } from '../../shared/poster/poster';
  */
 @Component({
   selector: 'app-events',
-  imports: [DatePipe, RouterLink, Poster],
+  imports: [DatePipe, RouterLink, Poster, ForecastWidget],
   templateUrl: './events.html',
   styleUrl: './events.css',
 })
