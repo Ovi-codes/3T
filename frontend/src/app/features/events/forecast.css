@@ -1,0 +1,69 @@
+/* The host is a flex item on the hero (beside the CTA) and a block under the register CTA; either
+   way it carries no layout margin of its own — the container sets the spacing. */
+:host {
+  display: inline-flex;
+}
+
+/* The next-run forecast, sitting on the dark poster hero. Poster text tokens for the words, the
+   orange accent for the icon (an accent on the dark field is on-theme; see tokens.css). Flat, no
+   shadow — it reads as a quiet line beside the CTA, not a card. Sized to the hero sub-line. */
+.forecast {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  /* 15% below the hero sub-line scale; the em-sized icon follows automatically. */
+  font-size: calc(var(--text-lg) * 0.85);
+  color: var(--color-poster-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.forecast-icon {
+  display: inline-flex;
+  color: var(--color-primary);
+}
+
+/* Sized in em so the orange icon scales with the forecast text. */
+.wx {
+  width: 1.6em;
+  height: 1.6em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* On a light surface (the register form) the poster tokens would wash out; switch the words to ink.
+   The orange icon reads on either field, so it's left alone. */
+:host(.on-light) .forecast {
+  color: var(--color-ink-soft);
+}
+
+:host(.on-light) .forecast-temp,
+:host(.on-light) .forecast-desc {
+  color: var(--color-ink);
+}
+
+.forecast-temp {
+  color: var(--color-poster-text);
+  font-weight: var(--weight-medium);
+}
+
+.forecast-desc {
+  color: var(--color-poster-text);
+}
+
+/* Screen-reader-only prefix, so the line announces what it is without cluttering the visual. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

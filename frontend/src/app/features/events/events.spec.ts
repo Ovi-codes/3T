@@ -8,6 +8,7 @@ import { provideRouter } from '@angular/router';
 
 import { Events } from './events';
 import { EventItem } from './events.service';
+import { FORECAST_UNAVAILABLE } from './forecast.service';
 
 describe('Events', () => {
   let fixture: ComponentFixture<Events>;
@@ -37,6 +38,8 @@ describe('Events', () => {
       { id: 1, name: 'Morning 5k', startDateTime: '2026-09-05T06:00:00Z', locationName: 'Tineretului Park', city: 'Bucharest' },
       { id: 2, name: 'Evening 5k', startDateTime: '2026-09-12T17:00:00Z', locationName: 'Tineretului Park', city: 'Bucharest' },
     ]);
+    // The hero's forecast widget loads the first event's forecast; answer it so the request verifies.
+    httpMock.expectOne('/api/events/1/forecast').flush(FORECAST_UNAVAILABLE);
 
     const cards = fixture.nativeElement.querySelectorAll('[data-testid="event-item"]');
     expect(cards.length).toBe(2);

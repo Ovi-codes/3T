@@ -8,6 +8,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 
 import { Register } from './register';
 import { EventItem } from '../events/events.service';
+import { FORECAST_UNAVAILABLE } from '../events/forecast.service';
 import { AuthService } from '../auth/auth.service';
 
 const EVENT: EventItem = {
@@ -40,9 +41,12 @@ describe('Register', () => {
 
   afterEach(() => httpMock.verify());
 
-  /** Resolve the event lookup so the form renders. */
-  function loadEvent(): void {
+  /** Resolve the event lookup so the form renders, then answer the widget's forecast request. */
+  async function loadEvent(): Promise<void> {
     httpMock.expectOne('/api/events').flush([EVENT]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    httpMock.expectOne('/api/events/3/forecast').flush(FORECAST_UNAVAILABLE);
     fixture.detectChanges();
   }
 
@@ -64,9 +68,9 @@ describe('Register', () => {
     httpMock.expectOne('/api/auth/me').flush({ id: 1, email, name });
   }
 
-  it('prefills name and email from the signed-in account (#38)', () => {
+  it('prefills name and email from the signed-in account (#38)', async () => {
     signedInAs('Ana Pop', 'ana@example.com');
-    loadEvent();
+    await loadEvent();
 
     expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe('Ana Pop');
     expect((fixture.nativeElement.querySelector('#email') as HTMLInputElement).value).toBe(
@@ -74,15 +78,15 @@ describe('Register', () => {
     );
   });
 
-  it('leaves the form empty for an anonymous visitor', () => {
-    loadEvent();
+  it('leaves the form empty for an anonymous visitor', async () => {
+    await loadEvent();
 
     expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe('');
     expect((fixture.nativeElement.querySelector('#email') as HTMLInputElement).value).toBe('');
   });
 
-  it('does not overwrite what a signed-in user has already typed', () => {
-    loadEvent();
+  it('does not overwrite what a signed-in user has already typed', async () => {
+    await loadEvent();
     // The user starts editing before their session resolves…
     setInput('name', 'Someone Else');
     // …then /me answers: the prefill must not clobber the edit.
@@ -94,8 +98,8 @@ describe('Register', () => {
     );
   });
 
-  it('blocks submission and shows field errors when the form is empty', () => {
-    loadEvent();
+  it('blocks submission and shows field errors when the form is empty', async () => {
+    await loadEvent();
 
     submitForm();
 
@@ -106,8 +110,8 @@ describe('Register', () => {
     expect(text).toContain('Enter your email.');
   });
 
-  it('shows an inline error for a malformed email without calling the API', () => {
-    loadEvent();
+  it('shows an inline error for a malformed email without calling the API', async () => {
+    await loadEvent();
 
     setInput('name', 'Ana Pop');
     setInput('email', 'not-an-email');
@@ -117,8 +121,8 @@ describe('Register', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
   });
 
-  it('rejects a name shorter than three characters', () => {
-    loadEvent();
+  it('rejects a name shorter than three characters', async () => {
+    await loadEvent();
 
     setInput('name', 'Ab');
     setInput('email', 'ana.pop@example.com');
@@ -128,8 +132,8 @@ describe('Register', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name must be at least 3 characters.');
   });
 
-  it('rejects a name that is only numbers', () => {
-    loadEvent();
+  it('rejects a name that is only numbers', async () => {
+    await loadEvent();
 
     setInput('name', '12345');
     setInput('email', 'ana.pop@example.com');
@@ -139,8 +143,8 @@ describe('Register', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name can’t be only numbers.');
   });
 
-  it('rejects an email without a valid extension (e.g. a@a)', () => {
-    loadEvent();
+  it('rejects an email without a valid extension (e.g. a@a)', async () => {
+    await loadEvent();
 
     setInput('name', 'Ana Pop');
     setInput('email', 'a@a');
@@ -150,8 +154,8 @@ describe('Register', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
   });
 
-  it('posts a valid registration and shows the confirmation', () => {
-    loadEvent();
+  it('posts a valid registration and shows the confirmation', async () => {
+    await loadEvent();
 
     setInput('name', 'Ana Pop');
     setInput('email', 'ana.pop@example.com');
@@ -180,7 +184,7 @@ describe('Register', () => {
     // The element must be in the document for focus() to register as the active element.
     document.body.appendChild(fixture.nativeElement);
     try {
-      loadEvent();
+      await loadEvent();
       setInput('name', 'Ana Pop');
       setInput('email', 'ana.pop@example.com');
       submitForm();
@@ -203,8 +207,8 @@ describe('Register', () => {
     }
   });
 
-  it('surfaces a server field error against the email input', () => {
-    loadEvent();
+  it('surfaces a server field error against the email input', async () => {
+    await loadEvent();
 
     setInput('name', 'Ana Pop');
     setInput('email', 'ana.pop@example.com');

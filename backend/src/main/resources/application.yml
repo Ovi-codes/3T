@@ -58,3 +58,10 @@ app:
   mail:
     # The From address on confirmation emails. Overridden per environment.
     from: ${MAIL_FROM:no-reply@3trun.ro}
+  weather:
+    # Open-Meteo forecast endpoint (free, no API key, EU-hosted).
+    api-url: ${WEATHER_API_URL:https://api.open-meteo.com/v1/forecast}
+    # How far ahead a forecast is fetched. Cap at 8 days for accuracy.
+    forecast-horizon-days: ${WEATHER_FORECAST_HORIZON_DAYS:8}
+    # Server-side forecast cache TTL. ISO-8601 duration.
+    cache-ttl: ${WEATHER_CACHE_TTL:PT1H}

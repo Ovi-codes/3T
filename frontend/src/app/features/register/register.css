@@ -153,6 +153,17 @@ input[aria-invalid='true'] {
   color: var(--color-ink-faint);
 }
 
+/* The next-run forecast under the date/location line — the same widget as the hero, in ink tones
+   for the light form. */
+.register-weather {
+  margin-top: var(--space-2);
+}
+
+/* Pull the divider up tight under the forecast line (the shared rule sits on a larger margin). */
+.register-weather + .course-rule {
+  margin-top: var(--space-4);
+}
+
 @media (max-width: 52rem) {
   .register {
     grid-template-columns: 1fr;

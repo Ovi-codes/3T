@@ -5,6 +5,16 @@
   padding-block: var(--space-6);
 }
 
+/* The Register CTA and the next-run forecast share one row; the forecast is centred to the button's
+   middle, with generous space between the button and the orange weather icon. */
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-6);
+}
+
 /* Small screens: the wordmark spans the full width, so drop the photo to keep the text legible. */
 @media (max-width: 48rem) {
   .hero-photo {
