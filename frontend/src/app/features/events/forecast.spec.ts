@@ -13,9 +13,8 @@ const AVAILABLE: Forecast = {
   date: '2026-09-18',
   condition: 'rain',
   description: 'Light rain',
-  temperatureMaxC: 22.4,
-  temperatureMinC: 11.9,
-  precipitationProbabilityMax: 55,
+  temperatureC: 16,
+  precipitationProbability: 55,
 };
 
 describe('ForecastWidget', () => {
@@ -48,8 +47,7 @@ describe('ForecastWidget', () => {
     const widget = fixture.nativeElement.querySelector('[data-testid="forecast"]');
     expect(widget).not.toBeNull();
     const text = (widget as HTMLElement).textContent ?? '';
-    expect(text).toContain('22°');
-    expect(text).toContain('12°'); // 11.9 rounded
+    expect(text).toContain('16°');
     expect(text).toContain('Light rain');
     expect(text).toContain('55% rain');
   });

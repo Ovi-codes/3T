@@ -12,9 +12,10 @@ export interface Forecast {
   /** Lowercase condition name (e.g. "rain"), for picking an icon. Null when unavailable. */
   condition: string | null;
   description: string | null;
-  temperatureMaxC: number | null;
-  temperatureMinC: number | null;
-  precipitationProbabilityMax: number | null;
+  /** Temperature at the event hour, whole °C. Null when unavailable or upstream had no value. */
+  temperatureC: number | null;
+  /** Chance of precipitation at the event hour, percent. Null when unavailable. */
+  precipitationProbability: number | null;
 }
 
 /** A forecast with nothing to show — the graceful-degradation value (upstream down, or off-horizon). */
@@ -23,9 +24,8 @@ export const FORECAST_UNAVAILABLE: Forecast = {
   date: null,
   condition: null,
   description: null,
-  temperatureMaxC: null,
-  temperatureMinC: null,
-  precipitationProbabilityMax: null,
+  temperatureC: null,
+  precipitationProbability: null,
 };
 
 /**

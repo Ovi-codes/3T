@@ -24,7 +24,7 @@ class WeatherConfig {
 	@Value("${app.weather.api-url}")
 	private String apiUrl;
 
-	/** How many days ahead the provider will ask for a forecast (Open-Meteo free reaches ~16). */
+	/** How many days ahead the provider will ask for a forecast (capped below Open-Meteo's ~16 for accuracy). */
 	@Value("${app.weather.forecast-horizon-days}")
 	private int horizonDays;
 

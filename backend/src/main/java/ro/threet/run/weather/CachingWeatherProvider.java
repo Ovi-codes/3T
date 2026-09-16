@@ -1,7 +1,7 @@
 package ro.threet.run.weather;
 
 import java.time.Duration;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -21,7 +21,7 @@ import com.github.benmanes.caffeine.cache.Ticker;
  */
 class CachingWeatherProvider implements WeatherProvider {
 
-	private record Key(double latitude, double longitude, LocalDate date) {
+	private record Key(double latitude, double longitude, LocalDateTime dateTime) {
 	}
 
 	private final WeatherProvider delegate;
@@ -41,13 +41,13 @@ class CachingWeatherProvider implements WeatherProvider {
 	}
 
 	@Override
-	public Optional<Forecast> forecast(double latitude, double longitude, LocalDate date) {
-		Key key = new Key(latitude, longitude, date);
+	public Optional<Forecast> forecast(double latitude, double longitude, LocalDateTime dateTime) {
+		Key key = new Key(latitude, longitude, dateTime);
 		Forecast cached = cache.getIfPresent(key);
 		if (cached != null) {
 			return Optional.of(cached);
 		}
-		Optional<Forecast> fresh = delegate.forecast(latitude, longitude, date);
+		Optional<Forecast> fresh = delegate.forecast(latitude, longitude, dateTime);
 		fresh.ifPresent(forecast -> cache.put(key, forecast));
 		return fresh;
 	}

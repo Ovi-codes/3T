@@ -9,9 +9,8 @@ const FORECAST: Forecast = {
   date: '2026-09-18',
   condition: 'rain',
   description: 'Light rain',
-  temperatureMaxC: 22.4,
-  temperatureMinC: 11.9,
-  precipitationProbabilityMax: 55,
+  temperatureC: 16,
+  precipitationProbability: 55,
 };
 
 describe('ForecastService', () => {

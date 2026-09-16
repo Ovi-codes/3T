@@ -3,6 +3,7 @@ package ro.threet.run.weather;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
@@ -29,6 +30,7 @@ class OpenMeteoWeatherProviderTest {
 	private static final Clock FIXED = Clock.fixed(Instant.parse("2026-09-15T09:00:00Z"), ZoneOffset.UTC);
 	private static final double LAT = 44.41;
 	private static final double LON = 26.1;
+	private static final LocalDateTime DATE_TIME = LocalDateTime.parse("2026-09-18T09:00");
 
 	private RestClient.Builder builder;
 	private MockRestServiceServer server;
@@ -38,19 +40,19 @@ class OpenMeteoWeatherProviderTest {
 	void setUp() {
 		builder = RestClient.builder();
 		server = MockRestServiceServer.bindTo(builder).build();
-		provider = new OpenMeteoWeatherProvider(builder.baseUrl("https://weather.test/forecast").build(), FIXED, 16);
+		provider = new OpenMeteoWeatherProvider(builder.baseUrl("https://weather.test/forecast").build(), FIXED, 8);
 	}
 
 	@Test
-	void parsesTheDailyForecastForAnInHorizonDate() {
+	void parsesTheForecastAtTheEventHour() {
+		// Three hourly slots; the 09:00 one is the run's hour and the only reading that should surface.
 		String body = """
 				{
-				  "daily": {
-				    "time": ["2026-09-18"],
-				    "weather_code": [61],
-				    "temperature_2m_max": [22.4],
-				    "temperature_2m_min": [11.9],
-				    "precipitation_probability_max": [55]
+				  "hourly": {
+				    "time": ["2026-09-18T08:00", "2026-09-18T09:00", "2026-09-18T10:00"],
+				    "weather_code": [3, 61, 80],
+				    "temperature_2m": [12.1, 15.6, 18.2],
+				    "precipitation_probability": [20, 55, 70]
 				  }
 				}
 				""";
@@ -61,23 +63,70 @@ class OpenMeteoWeatherProviderTest {
 				.andExpect(queryParam("end_date", "2026-09-18"))
 				.andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
 
-		Optional<Forecast> forecast = provider.forecast(LAT, LON, LocalDate.parse("2026-09-18"));
+		Optional<Forecast> forecast = provider.forecast(LAT, LON, DATE_TIME);
 
 		server.verify();
 		assertThat(forecast).hasValueSatisfying(f -> {
 			assertThat(f.date()).isEqualTo(LocalDate.parse("2026-09-18"));
 			assertThat(f.condition()).isEqualTo(WeatherCondition.RAIN);
 			assertThat(f.description()).isEqualTo("Light rain");
-			assertThat(f.temperatureMaxC()).isEqualTo(22.4);
-			assertThat(f.temperatureMinC()).isEqualTo(11.9);
-			assertThat(f.precipitationProbabilityMax()).isEqualTo(55);
+			assertThat(f.temperatureC()).isEqualTo(16); // 15.6 rounded
+			assertThat(f.precipitationProbability()).isEqualTo(55);
 		});
+	}
+
+	@Test
+	void fallsBackToTheNearestFutureHourWhenTheEventHourIsAbsent() {
+		// No 09:00 slot: the run reads 10:00 (the nearest hour still ahead), not the earlier 08:00.
+		String body = """
+				{
+				  "hourly": {
+				    "time": ["2026-09-18T08:00", "2026-09-18T10:00"],
+				    "weather_code": [3, 80],
+				    "temperature_2m": [12.1, 18.2],
+				    "precipitation_probability": [20, 70]
+				  }
+				}
+				""";
+		server.expect(method(GET)).andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+
+		Optional<Forecast> forecast = provider.forecast(LAT, LON, DATE_TIME);
+
+		server.verify();
+		assertThat(forecast).hasValueSatisfying(f -> {
+			assertThat(f.condition()).isEqualTo(WeatherCondition.RAIN);
+			assertThat(f.description()).isEqualTo("Light showers");
+			assertThat(f.temperatureC()).isEqualTo(18); // 18.2 rounded, from the 10:00 slot
+			assertThat(f.precipitationProbability()).isEqualTo(70);
+		});
+	}
+
+	@Test
+	void returnsEmptyWhenNoHourAtOrAfterTheEventHourIsAvailable() {
+		// Only earlier slots came back — nothing ahead of the run to show, so degrade rather than
+		// reach backwards to a stale past hour.
+		String body = """
+				{
+				  "hourly": {
+				    "time": ["2026-09-18T07:00", "2026-09-18T08:00"],
+				    "weather_code": [3, 3],
+				    "temperature_2m": [10.0, 12.1],
+				    "precipitation_probability": [10, 20]
+				  }
+				}
+				""";
+		server.expect(method(GET)).andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+
+		Optional<Forecast> forecast = provider.forecast(LAT, LON, DATE_TIME);
+
+		server.verify();
+		assertThat(forecast).isEmpty();
 	}
 
 	@Test
 	void returnsEmptyWithoutCallingUpstreamWhenDateIsBeyondHorizon() {
 		// No server expectation set: if any request were made, verify() would fail.
-		Optional<Forecast> forecast = provider.forecast(LAT, LON, LocalDate.parse("2026-10-30"));
+		Optional<Forecast> forecast = provider.forecast(LAT, LON, LocalDateTime.parse("2026-10-30T09:00"));
 
 		server.verify();
 		assertThat(forecast).isEmpty();
@@ -85,7 +134,7 @@ class OpenMeteoWeatherProviderTest {
 
 	@Test
 	void returnsEmptyWithoutCallingUpstreamForAPastDate() {
-		Optional<Forecast> forecast = provider.forecast(LAT, LON, LocalDate.parse("2026-09-14"));
+		Optional<Forecast> forecast = provider.forecast(LAT, LON, LocalDateTime.parse("2026-09-14T09:00"));
 
 		server.verify();
 		assertThat(forecast).isEmpty();
@@ -95,7 +144,7 @@ class OpenMeteoWeatherProviderTest {
 	void degradesToEmptyWhenUpstreamFails() {
 		server.expect(method(GET)).andRespond(withServerError());
 
-		Optional<Forecast> forecast = provider.forecast(LAT, LON, LocalDate.parse("2026-09-18"));
+		Optional<Forecast> forecast = provider.forecast(LAT, LON, DATE_TIME);
 
 		server.verify();
 		assertThat(forecast).isEmpty();

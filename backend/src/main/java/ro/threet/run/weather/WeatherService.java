@@ -1,6 +1,6 @@
 package ro.threet.run.weather;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 
@@ -18,7 +18,7 @@ import ro.threet.run.location.Location;
 @Service
 public class WeatherService {
 
-	/** V1 is Bucharest-only; the forecast day is the event's calendar day in its local zone. */
+	/** V1 is Bucharest-only; the forecast hour is the event's start in its local zone. */
 	private static final ZoneId EVENT_ZONE = ZoneId.of("Europe/Bucharest");
 
 	private final EventRepository eventRepository;
@@ -44,9 +44,9 @@ public class WeatherService {
 		if (location.getLatitude() == null || location.getLongitude() == null) {
 			return ForecastResponse.unavailable();
 		}
-		LocalDate date = event.getStartDateTime().atZoneSameInstant(EVENT_ZONE).toLocalDate();
+		LocalDateTime startLocal = event.getStartDateTime().atZoneSameInstant(EVENT_ZONE).toLocalDateTime();
 		return weatherProvider
-				.forecast(location.getLatitude().doubleValue(), location.getLongitude().doubleValue(), date)
+				.forecast(location.getLatitude().doubleValue(), location.getLongitude().doubleValue(), startLocal)
 				.map(ForecastResponse::of)
 				.orElseGet(ForecastResponse::unavailable);
 	}

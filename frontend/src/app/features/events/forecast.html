@@ -50,14 +50,12 @@
         }
       </span>
 
-      <span class="forecast-temp">
-        {{ round(f.temperatureMaxC) }}°<span class="forecast-low"> / {{ round(f.temperatureMinC) }}°</span>
-      </span>
+      <span class="forecast-temp">{{ round(f.temperatureC) }}°</span>
       <span class="forecast-sep" aria-hidden="true">·</span>
       <span class="forecast-desc">{{ f.description }}</span>
-      @if (f.precipitationProbabilityMax !== null) {
+      @if (f.precipitationProbability !== null) {
         <span class="forecast-sep" aria-hidden="true">·</span>
-        <span class="forecast-precip">{{ f.precipitationProbabilityMax }}% rain</span>
+        <span class="forecast-precip">{{ f.precipitationProbability }}% rain</span>
       }
     </p>
   }

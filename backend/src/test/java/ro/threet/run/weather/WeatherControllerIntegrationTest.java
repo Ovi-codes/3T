@@ -1,6 +1,7 @@
 package ro.threet.run.weather;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class WeatherControllerIntegrationTest {
 	@Test
 	void returnsTheForecastWhenOneIsAvailable() throws Exception {
 		Forecast forecast = new Forecast(
-				LocalDate.parse("2026-09-18"), WeatherCondition.RAIN, "Light rain", 22.4, 11.9, 55);
+				LocalDate.parse("2026-09-18"), WeatherCondition.RAIN, "Light rain", 16, 55);
 		when(weatherProvider.forecast(anyDouble(), anyDouble(), any())).thenReturn(Optional.of(forecast));
 
 		mockMvc.perform(get("/api/events/{id}/forecast", anEventId()))
@@ -56,9 +57,8 @@ class WeatherControllerIntegrationTest {
 				.andExpect(jsonPath("$.available").value(true))
 				.andExpect(jsonPath("$.condition").value("rain"))
 				.andExpect(jsonPath("$.description").value("Light rain"))
-				.andExpect(jsonPath("$.temperatureMaxC").value(22.4))
-				.andExpect(jsonPath("$.temperatureMinC").value(11.9))
-				.andExpect(jsonPath("$.precipitationProbabilityMax").value(55));
+				.andExpect(jsonPath("$.temperatureC").value(16))
+				.andExpect(jsonPath("$.precipitationProbability").value(55));
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class WeatherControllerIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.available").value(false))
 				.andExpect(jsonPath("$.condition").doesNotExist())
-				.andExpect(jsonPath("$.temperatureMaxC").doesNotExist());
+				.andExpect(jsonPath("$.temperatureC").doesNotExist());
 	}
 
 	@Test
@@ -79,19 +79,20 @@ class WeatherControllerIntegrationTest {
 	}
 
 	@Test
-	void sendsTheEventsCoordinatesAndDateUpstreamAndNothingElse() throws Exception {
-		// Guards the GDPR promise: only the location's coordinates + the event date cross the seam.
+	void sendsTheEventsCoordinatesAndTimeUpstreamAndNothingElse() throws Exception {
+		// Guards the GDPR promise: only the location's coordinates + the event time cross the seam.
 		when(weatherProvider.forecast(anyDouble(), anyDouble(), any())).thenReturn(Optional.empty());
 
 		mockMvc.perform(get("/api/events/{id}/forecast", anEventId())).andExpect(status().isOk());
 
 		var latitude = org.mockito.ArgumentCaptor.forClass(Double.class);
 		var longitude = org.mockito.ArgumentCaptor.forClass(Double.class);
-		var date = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
-		org.mockito.Mockito.verify(weatherProvider).forecast(latitude.capture(), longitude.capture(), date.capture());
+		var dateTime = org.mockito.ArgumentCaptor.forClass(LocalDateTime.class);
+		org.mockito.Mockito.verify(weatherProvider)
+				.forecast(latitude.capture(), longitude.capture(), dateTime.capture());
 		assertThat(latitude.getValue()).isEqualTo(44.4085);
 		assertThat(longitude.getValue()).isEqualTo(26.1039);
-		assertThat(date.getValue()).isNotNull();
+		assertThat(dateTime.getValue()).isNotNull();
 	}
 
 }

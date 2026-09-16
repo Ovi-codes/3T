@@ -46,19 +46,9 @@
   color: var(--color-ink);
 }
 
-:host(.on-light) .forecast-low {
-  color: var(--color-ink-soft);
-}
-
 .forecast-temp {
   color: var(--color-poster-text);
   font-weight: var(--weight-medium);
-}
-
-/* The overnight low is secondary to the day's high. */
-.forecast-low {
-  color: var(--color-poster-muted);
-  font-weight: var(--weight-regular);
 }
 
 .forecast-desc {
