@@ -90,4 +90,9 @@ public class AppUser {
 		roles.add(role);
 	}
 
+	/** Revoke a role by name (no-op if not held); drops the join row when the account is saved. */
+	public void removeRole(String roleName) {
+		roles.removeIf(role -> role.getName().equals(roleName));
+	}
+
 }

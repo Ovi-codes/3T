@@ -1,6 +1,5 @@
 package ro.threet.run.auth;
 
-import java.util.Locale;
 import java.util.Set;
 
 import org.springframework.security.authentication.BadCredentialsException;
@@ -35,7 +34,7 @@ class LocalAuthProvider implements AuthProvider {
 	@Override
 	@Transactional
 	public AccountPrincipal signup(String email, String name, String rawPassword) {
-		String normalised = normalise(email);
+		String normalised = Emails.normalise(email);
 		if (users.existsByEmail(normalised)) {
 			throw new EmailAlreadyUsedException("An account already exists for this email.");
 		}
@@ -51,15 +50,11 @@ class LocalAuthProvider implements AuthProvider {
 	public AccountPrincipal login(String email, String rawPassword) {
 		// One generic failure for "unknown email" and "wrong password" alike — don't disclose
 		// whether an address has an account.
-		AppUser user = users.findByEmail(normalise(email))
+		AppUser user = users.findByEmail(Emails.normalise(email))
 				.filter(candidate -> passwordEncoder.matches(rawPassword, candidate.getPasswordHash()))
 				.orElseThrow(() -> new BadCredentialsException("Email or password is incorrect."));
 		Set<String> roles = roleService.ensureRolesFor(user);
 		return AccountPrincipal.of(user, roles);
-	}
-
-	private static String normalise(String email) {
-		return email.trim().toLowerCase(Locale.ROOT);
 	}
 
 }

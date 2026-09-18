@@ -81,6 +81,36 @@ class RoleServiceTest {
 	}
 
 	@Test
+	void anAccountRemovedFromTheAdminConfigLosesTheAdminRoleOnReauthentication() {
+		// Previously an admin (holds both roles from an earlier login), now dropped from ADMIN_EMAILS.
+		given(adminEmails.isAdmin("boss@example.com")).willReturn(false);
+		AppUser user = new AppUser("boss@example.com", "Boss", "hash");
+		user.addRole(userRole);
+		user.addRole(adminRole);
+
+		Set<String> granted = roleService().ensureRolesFor(user);
+
+		assertThat(granted).containsExactly("ROLE_USER");
+		assertThat(user.getRoles()).extracting(Role::getName).containsExactly("ROLE_USER");
+		// The demotion is persisted (the ROLE_ADMIN join row is dropped).
+		verify(users, org.mockito.Mockito.atLeastOnce()).save(user);
+	}
+
+	@Test
+	void aSteadyStateAdminReauthenticatesWithoutAnyWrite() {
+		// Still configured and already holding both roles — nothing to grant or revoke.
+		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
+		AppUser user = new AppUser("boss@example.com", "Boss", "hash");
+		user.addRole(userRole);
+		user.addRole(adminRole);
+
+		Set<String> granted = roleService().ensureRolesFor(user);
+
+		assertThat(granted).containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
+		verify(users, never()).save(any(AppUser.class));
+	}
+
+	@Test
 	void aNewlyGrantedRoleIsPersisted() {
 		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
 		AppUser user = new AppUser("boss@example.com", "Boss", "hash");

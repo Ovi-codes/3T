@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface AppUserRepository extends JpaRepository<AppUser, Long> {
+interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
 	/** Emails are stored lower-cased, so an exact match is a case-insensitive lookup. */
 	Optional<AppUser> findByEmail(String email);

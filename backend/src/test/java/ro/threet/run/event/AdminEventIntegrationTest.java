@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,7 +17,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import ro.threet.run.TestcontainersConfiguration;
-import ro.threet.run.auth.AppUserRepository;
 import ro.threet.run.email.EmailSender;
 import ro.threet.run.registration.RegistrationRepository;
 
@@ -52,13 +52,13 @@ class AdminEventIntegrationTest {
 	private MockMvc mockMvc;
 
 	@Autowired
-	private AppUserRepository users;
-
-	@Autowired
 	private RegistrationRepository registrations;
 
 	@Autowired
 	private EventRepository events;
+
+	@Autowired
+	private JdbcTemplate jdbc;
 
 	// Nothing in this slice sends email; stub it so the context needs no SMTP server.
 	@MockitoBean
@@ -66,8 +66,12 @@ class AdminEventIntegrationTest {
 
 	@BeforeEach
 	void reset() {
-		registrations.deleteAll(); // FK to app_user — clear children first
-		users.deleteAll();
+		// Children first (FK to app_user), then the accounts — so each test signs up fresh emails
+		// without tripping the unique-email rule against a prior test's rows. Cleared via JdbcTemplate
+		// so this event-package test needs no cross-package handle on the auth repository.
+		registrations.deleteAll();
+		jdbc.update("delete from user_roles");
+		jdbc.update("delete from app_user");
 	}
 
 	@Test
