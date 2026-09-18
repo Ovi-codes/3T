@@ -18,10 +18,9 @@ import jakarta.persistence.Table;
 /**
  * A registered account. Owned by the local {@link AuthProvider} — the only fields stored are the
  * person's name, their email, and a BCrypt hash of the password (GDPR data minimisation, charter
- * §7); the plaintext password never lives here. If auth later moves to Entra External ID, this
- * table goes with the local provider and the rest of the app keeps talking to {@link AccountPrincipal}.
- * Every account has a {@code name} (captured at sign-up since Increment 7, issue #38, and validated
- * at the API).
+ * §7). If auth later moves to Entra External ID, this table goes with the local provider and the
+ * rest of the app keeps talking to {@link AccountPrincipal}.
+ * Every account has a {@code name} (captured at sign-up and validated at the API).
  */
 @Entity
 @Table(name = "app_user")
@@ -43,7 +42,7 @@ public class AppUser {
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private OffsetDateTime createdAt;
 
-	// Eager because roles are resolved into the principal at authentication time (a tiny set), and
+	// Eager because roles are resolved into the principal at authentication time, and
 	// the principal is then self-describing in the session — no per-request DB hit for authorities.
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "user_roles",

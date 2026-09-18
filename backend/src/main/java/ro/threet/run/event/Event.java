@@ -43,8 +43,7 @@ public class Event {
 	}
 
 	/**
-	 * Create a new run at a location. {@code createdAt} is set by the DB default on insert. Used by
-	 * admin event creation (issue #57); the fields are otherwise immutable.
+	 * Create a new run at a location. {@code createdAt} is set by the DB default on insert.
 	 */
 	public Event(Location location, String name, OffsetDateTime startDateTime) {
 		this.location = location;

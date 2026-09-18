@@ -56,7 +56,7 @@ management:
 # Application settings not owned by a Spring namespace.
 app:
   # Comma-separated emails granted ROLE_ADMIN lazily on sign-up/login (issue #57). Empty by default,
-  # so a deploy has no admins until the var is set — no hardcoded accounts (charter Azure config).
+  # so a deploy has no admins until the var is set
   admin:
     emails: ${ADMIN_EMAILS:}
   mail:

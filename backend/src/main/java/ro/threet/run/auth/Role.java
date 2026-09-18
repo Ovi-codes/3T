@@ -8,10 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * A grantable authority (e.g. {@code ROLE_USER}, {@code ROLE_ADMIN}). The rows are seeded by the V7
- * migration; the app only ever looks them up by name and links them to an {@link AppUser}. Kept in
- * the auth package because roles are part of "who is signed in", which the {@link AuthProvider} seam
- * owns (charter §3).
+ * A grantable authority (e.g. {@code ROLE_USER}, {@code ROLE_ADMIN}). The app looks them up by name
+ * and links them to an {@link AppUser}. Kept in * the auth package because roles are part of "who is signed in".
  */
 @Entity
 @Table(name = "role")

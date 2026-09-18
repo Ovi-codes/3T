@@ -26,7 +26,6 @@ class AdminEmails {
 				.collect(Collectors.toUnmodifiableSet());
 	}
 
-	/** True when the given email is configured as an admin. */
 	boolean isAdmin(String email) {
 		return email != null && emails.contains(normalise(email));
 	}
