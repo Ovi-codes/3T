@@ -42,6 +42,16 @@ public class Event {
 		// for JPA
 	}
 
+	/**
+	 * Create a new run at a location. {@code createdAt} is set by the DB default on insert. Used by
+	 * admin event creation (issue #57); the fields are otherwise immutable.
+	 */
+	public Event(Location location, String name, OffsetDateTime startDateTime) {
+		this.location = location;
+		this.name = name;
+		this.startDateTime = startDateTime;
+	}
+
 	public Long getId() {
 		return id;
 	}

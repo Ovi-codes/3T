@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ro.threet.run.auth.EmailAlreadyUsedException;
+import ro.threet.run.event.EventValidationException;
 import ro.threet.run.registration.RegistrationException;
 
 /**
@@ -41,6 +42,13 @@ public class ApiExceptionHandler {
 		HttpStatus status = exception.status();
 		Map<String, String> errors = Map.of(exception.field(), exception.getMessage());
 		return ResponseEntity.status(status).body(new ApiErrors(errors));
+	}
+
+	/** An admin event failed a business rule (e.g. a past start) — a 400 tied to its field. */
+	@ExceptionHandler(EventValidationException.class)
+	public ResponseEntity<ApiErrors> onEventValidation(EventValidationException exception) {
+		Map<String, String> errors = Map.of(exception.field(), exception.getMessage());
+		return ResponseEntity.badRequest().body(new ApiErrors(errors));
 	}
 
 	/** Sign-up hit a taken email — a 409 tied to the email field. */
