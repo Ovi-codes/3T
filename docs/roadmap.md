@@ -17,7 +17,8 @@
 
 ## Now — V2
 - ~~Verify and refactor the separation of concerns across components, if needed, using Matt Pocock skill~~ ✓ Increment 6 (#37)
-- Implement user roles - admins should be able to CRUD events
+- Implement user roles - admins should be able to CRUD events — *in progress:* Increment 10a (#57)
+  landed the role model (`ROLE_ADMIN` via `ADMIN_EMAILS`) + **create** an event; read/update/delete follow.
 - ~~Create design theme and logo and implement new design language~~ ✓ Increment 8 (#39) — "Floodlight" theme; see [`docs/design/`](./design/)
 - ~~Tidy up user experience - sign up should take name also and logged in users no longer enter registration info manually~~ ✓ Increment 7 (#38)
 - Post-event time upload — runners manually enter their own finish time (AI screenshot extraction deferred to V3).

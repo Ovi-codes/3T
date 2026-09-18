@@ -9,6 +9,9 @@ signed-in users track past/upcoming runs on a dashboard.
 - **`docs/charter.md`** — scope, architecture decisions, RAD increment plan, testing strategy, Definition of Done, GDPR. **Consult before planning or implementing any feature.**
 - **`docs/roadmap.md`** — V1/V2/V3 summary. Live tracking is in GitHub Milestones + the Project board.
 - Increment task lists (e.g. Increment 0) are tracked as **GitHub issues** under the relevant milestone.
+- **`docs/adr/`** — architecture decision records for hard-to-reverse, non-obvious calls. E.g.
+  [`0001-cancel-vs-hard-delete-events.md`](./docs/adr/0001-cancel-vs-hard-delete-events.md)
+  (why deleting an event and cancelling it are different actions).
 
 Don't duplicate facts from those docs here — link to them so nothing drifts.
 
@@ -56,7 +59,8 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 ## Auth
 
 See [`docs/implementation_details/auth.md`](./docs/implementation_details/auth.md) for the session
-model, the `AuthProvider` seam, endpoints, registration linkage, and CSRF stance.
+model, the `AuthProvider` seam, endpoints, registration linkage, roles (`ROLE_ADMIN`/`ROLE_USER`,
+`ADMIN_EMAILS`, the `/api/admin/**` boundary), and CSRF stance.
 
 ## Weather
 
@@ -75,8 +79,9 @@ for the "Floodlight" theme invariants — tokens, palette, type, the poster elem
 
 ## Azure deployment
 Azure is not fully up yet, so let's make sure we respect the following:
-- All config (DB URL/creds, SMTP host, mail-from, weather API URL/TTL) via env vars, never hardcoded.
-  Weather vars: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL` (all defaulted;
-  the defaults hit the public Open-Meteo endpoint, so prod works with none set).
+- All config (DB URL/creds, SMTP host, mail-from, weather API URL/TTL, admin emails) via env vars,
+  never hardcoded. Weather vars: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL`
+  (all defaulted; the defaults hit the public Open-Meteo endpoint, so prod works with none set).
+  `ADMIN_EMAILS`: comma-separated accounts granted `ROLE_ADMIN` (defaulted empty — no admin unless set).
 - Flyway migrations run on startup so a fresh Azure DB self-provisions.
 - No localhost-baked URLs in app code; the Angular app talks to /api (proxy in dev, same-origin in prod).
