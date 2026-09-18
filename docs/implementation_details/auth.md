@@ -24,16 +24,24 @@ stays local (charter §3).
   don't retype it, but the fields stay editable and the anonymous form is unchanged (Increment 7, #38).
 - **Roles (Increment 10a, #57):** authorities come from a local `user_roles` table (`role` +
   `user_roles`, a many-to-many with a FK to `app_user`), which is the real authority and stays after
-  the future Entra swap
-  `ADMIN_EMAILS` (comma-separated, defaulted empty) names the admin accounts. On **sign-up and login**
-  `RoleService` lazily ensures the account's grants: baseline `ROLE_USER` for everyone, plus
-  `ROLE_ADMIN` when the email is configured — so an admin gets its `ROLE_ADMIN` row the first time it
-  authenticates after being listed.
+  the future Entra swap. `ADMIN_EMAILS` (comma-separated, defaulted empty) names the admin accounts.
+  On **sign-up and login** `RoleService` reconciles the account's grants against config: baseline
+  `ROLE_USER` for everyone, plus `ROLE_ADMIN` when the email is configured — so an admin gets its
+  `ROLE_ADMIN` row the first time it authenticates after being listed. The resolved roles are put on
+  the `AccountPrincipal` and returned in `AccountResponse` (so `/me`, login and sign-up all carry
+  `roles`); `AccountPrincipal.authorities()` maps them to Spring `GrantedAuthority`s. Roles resolve at
+  authentication time and live in the session principal, so authorisation costs no per-request DB hit.
+- **`ADMIN_EMAILS` is the source of truth — revocation included:** the reconcile runs on **every**
+  authentication, not just the first, so removing an account from `ADMIN_EMAILS` **revokes** its
+  `ROLE_ADMIN` (the join row is dropped) the next time it authenticates. A steady-state login with no
+  change writes nothing. Demoting an admin is therefore: drop them from the config, and their next
+  sign-in (or their session expiring) settles it — no manual row surgery.
 - **Admin surface:** `/api/admin/**` requires `ROLE_ADMIN` in `SecurityConfig` — the real boundary. A
-  non-admin gets **403**, an anonymous caller **401** 
-  The Angular role guard only *hides* the controls; it is never the guard.
-  Today the surface is `POST /api/admin/events` (create an event — name + future start; the location
-  auto-binds to the sole Bucharest row and the entered time is read as Europe/Bucharest).
+  non-admin gets **403**, an anonymous caller **401** (the deny-by-default 401, since this API has no
+  login page to redirect to). The Angular role guard only *hides* the controls; it is never the guard.
+  Today the surface is `POST /api/admin/events` (create an event — name ≤160 + future start; the
+  location auto-binds to the sole Bucharest row and the entered wall-clock time is read as
+  Europe/Bucharest, then persisted as an `OffsetDateTime`).
 - **CSRF:** Spring's CSRF token machinery is **off** for the JSON API — it's served same-origin and the
   `SameSite=Lax` session cookie blocks the cross-site form POST tokens defend against, without forcing
   a token round-trip onto the anonymous registration POST. A token-based CSRF layer is a **pre-go-live

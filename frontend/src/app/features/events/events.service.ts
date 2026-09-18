@@ -12,6 +12,16 @@ export interface EventItem {
 }
 
 /**
+ * The admin create-event payload (issue #57). `startDateTime` is a wall-clock local date-time
+ * (`YYYY-MM-DDTHH:mm`, no zone) — the server reads it as Europe/Bucharest time. `location` is not
+ * sent: the server binds the sole Bucharest location.
+ */
+export interface CreateEventInput {
+  name: string;
+  startDateTime: string;
+}
+
+/**
  * Owns the events resource and its DTO. The one home for the events API contract, so components
  * hold view state only and never build `/api` URLs themselves.
  */
@@ -32,5 +42,13 @@ export class EventsService {
    */
   byId(id: number): Observable<EventItem | undefined> {
     return this.list().pipe(map((events) => events.find((event) => event.id === id)));
+  }
+
+  /**
+   * Admin-only: create an event (issue #57). Posts to `/api/admin/events`, which the server gates on
+   * `ROLE_ADMIN`; a non-admin or anonymous caller is refused there (403 / 401), not here.
+   */
+  create(input: CreateEventInput): Observable<EventItem> {
+    return this.http.post<EventItem>('/api/admin/events', input);
   }
 }

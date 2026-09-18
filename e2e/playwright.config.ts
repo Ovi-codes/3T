@@ -54,7 +54,13 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       // The session cookie is Secure by default (prod is HTTPS); the E2E stack is http, where a
       // Secure cookie is never stored — so login wouldn't stick. Opt out for the test run.
-      env: { ...process.env, SESSION_COOKIE_SECURE: 'false' },
+      // ADMIN_EMAILS grants ROLE_ADMIN to the account admin.spec.ts drives; keep it in sync with the
+      // ADMIN_EMAIL constant there.
+      env: {
+        ...process.env,
+        SESSION_COOKIE_SECURE: 'false',
+        ADMIN_EMAILS: 'admin@e2e.threet.ro',
+      },
     },
     {
       command: 'npm start',

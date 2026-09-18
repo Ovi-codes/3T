@@ -23,6 +23,79 @@
     </div>
   </app-poster>
 
+  @if (isAdmin()) {
+    <section class="page admin-create" data-testid="admin-create" aria-labelledby="admin-create-title">
+      <div class="section-head">
+        <h2 id="admin-create-title">Create a run</h2>
+      </div>
+
+      @if (justCreated(); as name) {
+        <p class="state-success" role="status" aria-live="polite" data-testid="create-success">
+          “{{ name }}” is now on the schedule.
+        </p>
+      }
+
+      @if (formError(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+
+      <form class="create-form" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
+        <div class="field field-name">
+          <label for="create-name">Name</label>
+          <input
+            id="create-name"
+            type="text"
+            formControlName="name"
+            maxlength="160"
+            data-testid="create-name"
+            [attr.aria-invalid]="nameFieldError() ? 'true' : null"
+            [attr.aria-describedby]="nameFieldError() ? 'create-name-error' : null"
+          />
+          @if (nameFieldError(); as message) {
+            <p class="field-error" id="create-name-error">{{ message }}</p>
+          }
+        </div>
+
+        <fieldset class="field field-when" [attr.aria-describedby]="startFieldError() ? 'create-when-error' : null">
+          <legend>Start (Bucharest time)</legend>
+          <div class="when-inputs">
+            <input
+              id="create-date"
+              type="date"
+              formControlName="date"
+              data-testid="create-date"
+              aria-label="Date"
+              [attr.aria-invalid]="startFieldError() ? 'true' : null"
+            />
+            <select formControlName="hour" data-testid="create-hour" aria-label="Hour">
+              @for (hour of hours; track hour) {
+                <option [value]="hour">{{ hour }}</option>
+              }
+            </select>
+            <span class="when-sep" aria-hidden="true">:</span>
+            <select formControlName="minute" data-testid="create-minute" aria-label="Minute">
+              @for (minute of minutes; track minute) {
+                <option [value]="minute">{{ minute }}</option>
+              }
+            </select>
+          </div>
+          @if (startFieldError(); as message) {
+            <p class="field-error" id="create-when-error">{{ message }}</p>
+          }
+        </fieldset>
+
+        <button
+          class="btn btn-primary create-submit"
+          type="submit"
+          [disabled]="creating()"
+          data-testid="create-submit"
+        >
+          {{ creating() ? 'Creating…' : 'Create run' }}
+        </button>
+      </form>
+    </section>
+  }
+
   <section class="page upcoming">
     <div class="section-head">
       <h2>Upcoming runs</h2>
@@ -30,13 +103,13 @@
 
     @if (error(); as message) {
       <p class="state state-error" role="alert">{{ message }}</p>
-    } @else if (events() === null) {
+    } @else if (visibleEvents() === null) {
       <p class="state" aria-live="polite">Loading upcoming runs…</p>
-    } @else if (events()!.length === 0) {
+    } @else if (visibleEvents()!.length === 0) {
       <p class="state state-empty">No upcoming runs yet — check back soon.</p>
     } @else {
       <ul class="event-grid" role="list">
-        @for (event of events(); track event.id) {
+        @for (event of visibleEvents(); track event.id) {
           <li class="event-card" data-testid="event-item">
             <div class="event-card-head">
               <time class="event-kicker" [attr.datetime]="event.startDateTime">
@@ -60,6 +133,9 @@
               </svg>
             </a>
           </li>
+        }
+        @for (filler of fillers(); track filler) {
+          <li class="event-card event-card-filler" aria-hidden="true"></li>
         }
       </ul>
     }

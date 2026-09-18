@@ -2,11 +2,13 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 
-/** The signed-in account — mirrors the backend AccountResponse (id + email + name, nothing sensitive). */
+/** The signed-in account — mirrors the backend AccountResponse (id + email + name + roles). */
 export interface Account {
   id: number;
   email: string;
   name: string;
+  /** Authorities granted to the account (e.g. `ROLE_USER`, `ROLE_ADMIN`); absent on older payloads. */
+  roles?: string[];
 }
 
 /**
@@ -26,6 +28,11 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   /** Convenience for templates: a definite signed-in boolean. */
   readonly isSignedIn = computed(() => !!this._user());
+  /**
+   * Whether the signed-in account holds `ROLE_ADMIN`. Only hides/shows admin UI — the real boundary
+   * is server-side (`/api/admin/**` requires the role), so this is convenience, never security.
+   */
+  readonly isAdmin = computed(() => (this._user()?.roles ?? []).includes('ROLE_ADMIN'));
 
   /** CS-2: create the account; the server logs the new user in and returns them. */
   signup(name: string, email: string, password: string): Observable<Account> {
