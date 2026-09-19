@@ -40,7 +40,7 @@ class SecurityConfig {
 						// Admin surface (issue #57): the real boundary is here, not the hidden UI. An
 						// authenticated non-admin gets 403; an anonymous caller gets the deny-by-default
 						// 401 above (this API has no login page to redirect to).
-						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers("/api/admin/**").hasRole(Roles.ADMIN)
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf.disable())
 				// A protected endpoint hit without a session is a plain 401, not a redirect to a

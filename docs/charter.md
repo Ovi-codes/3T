@@ -54,7 +54,7 @@ Repo, CI pipeline, Spring Boot + Angular "hello", Postgres via Testcontainers, o
 
 ### Increment 1 — Upcoming events list (anonymous)
 
-Seeded events for the Bucharest location; anonymous visitor sees a list of upcoming events.
+Seeded events for the Bucharest location; anonymous visitor sees a curated list of upcoming events (filtered/capped at what is relevant).
 
 - *Given* upcoming events exist, *when* a visitor opens the events page, *then* they see them ordered by date.
 

@@ -85,6 +85,11 @@ public class AppUser {
 		return roles;
 	}
 
+	/** Whether this account already holds the named role. */
+	public boolean hasRole(String roleName) {
+		return roles.stream().anyMatch(role -> role.getName().equals(roleName));
+	}
+
 	/** Grant a role (idempotent — the underlying set dedupes). */
 	public void addRole(Role role) {
 		roles.add(role);

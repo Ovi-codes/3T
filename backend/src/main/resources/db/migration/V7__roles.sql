@@ -3,7 +3,7 @@
 -- A ROLE_ADMIN is conferred by config (the ADMIN_EMAILS env var): when a configured account signs up
 -- or logs in, the app lazily ensures its row here. This local `user_roles` table is the real
 -- authority and stays even after a future Microsoft Entra External ID swap
--- (docs/research/entra-external-id-roles.md) — the seam will then map a token claim to these
+-- the seam will then map a token claim to these
 -- authorities, joining on oid+tid. Those columns are deliberately NOT added yet.
 --
 -- GDPR (§7): role assignment is not sensitive personal data.

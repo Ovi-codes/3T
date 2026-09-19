@@ -44,19 +44,18 @@ class RoleService {
 	 */
 	@Transactional
 	Set<String> ensureRolesFor(AppUser user) {
-		grant(user, "ROLE_USER");
+		grant(user, Roles.ROLE_USER);
 		if (adminEmails.isAdmin(user.getEmail())) {
-			grant(user, "ROLE_ADMIN");
+			grant(user, Roles.ROLE_ADMIN);
 		} else {
-			revoke(user, "ROLE_ADMIN");
+			revoke(user, Roles.ROLE_ADMIN);
 		}
 		return user.getRoles().stream().map(Role::getName)
 				.collect(Collectors.toCollection(TreeSet::new));
 	}
 
 	private void grant(AppUser user, String roleName) {
-		boolean alreadyHeld = user.getRoles().stream().anyMatch(role -> role.getName().equals(roleName));
-		if (alreadyHeld) {
+		if (user.hasRole(roleName)) {
 			return;
 		}
 		Role role = roles.findByName(roleName)
@@ -66,8 +65,7 @@ class RoleService {
 	}
 
 	private void revoke(AppUser user, String roleName) {
-		boolean held = user.getRoles().stream().anyMatch(role -> role.getName().equals(roleName));
-		if (!held) {
+		if (!user.hasRole(roleName)) {
 			return;
 		}
 		user.removeRole(roleName);
