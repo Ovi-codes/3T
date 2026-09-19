@@ -335,7 +335,7 @@ class AdminEventIntegrationTest {
 
 		List<Map<String, Object>> messages = mailpitMessages();
 		assertThat(messages).hasSize(1);
-		assertThat(mailpitText(messages.get(0))).contains("Reason: Severe weather");
+		assertThat(mailpitText(messages.get(0))).contains("cancelled due to Severe weather");
 	}
 
 	@Test
@@ -351,7 +351,7 @@ class AdminEventIntegrationTest {
 
 		List<Map<String, Object>> messages = mailpitMessages();
 		assertThat(messages).hasSize(1);
-		assertThat(mailpitText(messages.get(0))).contains("Reason: Power cut at the park");
+		assertThat(mailpitText(messages.get(0))).contains("cancelled due to Power cut at the park");
 	}
 
 	@Test

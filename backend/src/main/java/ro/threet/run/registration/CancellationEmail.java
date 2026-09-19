@@ -37,11 +37,9 @@ final class CancellationEmail {
 		String body = """
 				Hi %s,
 
-				We're sorry — %s has been cancelled, so there's nothing to turn up to.
+				We're sorry — %s has been cancelled due to %s.
 
-				Reason: %s
-
-				When it would have been: %s
+				Initial date: %s
 				Where: %s
 
 				You don't need to do anything. Keep an eye on the site for the next run.
