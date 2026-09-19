@@ -48,7 +48,7 @@ class RegistrantMailout {
 	 * Never throws: a send that fails is logged and skipped, so the committed change stands whatever
 	 * the mail server does.
 	 */
-	void notifyRegistrants(long eventId, String change, Function<Registration, MailMessage> build) {
+	void notifyRegistrants(long eventId, String change, Function<Registration, RegistrantEmail> build) {
 		Map<String, Registration> recipients = new LinkedHashMap<>();
 		for (Registration registration : registrations.findByEventIdWithEvent(eventId)) {
 			recipients.putIfAbsent(registration.getEmail().toLowerCase(Locale.ROOT), registration);
@@ -56,7 +56,7 @@ class RegistrantMailout {
 
 		int sent = 0;
 		for (Registration registration : recipients.values()) {
-			MailMessage message = build.apply(registration);
+			RegistrantEmail message = build.apply(registration);
 			try {
 				emailSender.send(registration.getEmail(), message.subject(), message.body());
 				sent++;
