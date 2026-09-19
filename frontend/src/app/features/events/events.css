@@ -123,6 +123,20 @@
   margin-top: var(--space-2);
 }
 
+/* ---- Admin-only card extras (#58): the count, and a called-off run greyed back ---- */
+.event-count {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-card-off .event-name,
+.event-card-off .event-kicker {
+  color: var(--color-ink-soft);
+}
+
 /* ---- Admin: create a run (issue #57) ---- */
 /* Sits between the hero and the upcoming list; tighter top gap so it reads as part of the same view. */
 .admin-create {
@@ -207,30 +221,6 @@
 
 .create-form input {
   caret-color: var(--color-primary);
-}
-
-/* Pull the native date control onto the theme: the editable date text (its own shadow parts) takes
-   the body font and ink colour instead of the UA default, and the calendar-open button is tinted to
-   match. The pop-up calendar grid itself is a browser-native surface CSS can't reach — colour-scheme
-   just keeps it on the app's light footing. */
-.create-form input[type='date'] {
-  color-scheme: light;
-}
-
-.create-form input[type='date']::-webkit-datetime-edit,
-.create-form input[type='date']::-webkit-datetime-edit-fields-wrapper {
-  font-family: var(--font-body);
-  color: var(--color-ink);
-}
-
-.create-form input[type='date']:invalid::-webkit-datetime-edit {
-  /* The unfilled mm/dd/yyyy placeholder — soften it to the theme's muted ink. */
-  color: var(--color-ink-soft);
-}
-
-.create-form input[type='date']::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.7;
 }
 
 .create-form input:focus-visible,

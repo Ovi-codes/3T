@@ -12,6 +12,11 @@ export interface MyRegistration {
   startDateTime: string;
   locationName: string;
   city: string;
+  /**
+   * Whether the run has been called off (#58). A cancelled run stays on the dashboard, badged, until
+   * its date passes — the registration is kept, so the runner can see what happened to it.
+   */
+  cancelled: boolean;
 }
 
 /** Body of GET /api/me/registrations: the two buckets the dashboard shows. */

@@ -63,6 +63,13 @@ public class RegistrationService {
 					"The selected run has already taken place.");
 		}
 
+		// A cancelled run is off the public list, but the id still resolves — refuse it here too, so
+		// a stale page or a direct POST can't sign someone up for a run that isn't happening (#58).
+		if (event.isCancelled()) {
+			throw new RegistrationException(HttpStatus.BAD_REQUEST, "eventId",
+					"The selected run has been cancelled.");
+		}
+
 		if (registrationRepository.existsByEventIdAndEmailIgnoreCase(event.getId(), email)) {
 			throw new RegistrationException(HttpStatus.CONFLICT, "email",
 					"The email is already registered for this run.");

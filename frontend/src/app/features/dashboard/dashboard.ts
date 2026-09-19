@@ -1,9 +1,9 @@
-import { Component, ElementRef, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
-import { AccountService, MyRegistrations } from '../account/account.service';
+import { AccountService, MyRegistration, MyRegistrations } from '../account/account.service';
 
 /**
  * Increment 4: the runner's own runs, split into the ones ahead (CS-4) and the ones done (CS-5).
@@ -31,6 +31,14 @@ export class Dashboard {
   protected readonly runs = signal<MyRegistrations | null>(null);
   /** Set only if the call fails, so the page fails visibly, not blankly. */
   protected readonly error = signal<string | null>(null);
+
+  /**
+   * The run the "Next" tag belongs to: the soonest upcoming one that hasn't been called off (#58).
+   * A cancelled run keeps its place on the list — badged as cancelled — but isn't what's next.
+   */
+  protected readonly nextRun = computed<MyRegistration | null>(
+    () => this.runs()?.upcoming.find((run) => !run.cancelled) ?? null,
+  );
 
   /** The delete-confirm region, focused when it opens so the destructive choice isn't lost. */
   private readonly confirmRegion = viewChild<ElementRef<HTMLElement>>('confirmRegion');

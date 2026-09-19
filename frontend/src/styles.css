@@ -159,6 +159,38 @@ a:hover {
   color: var(--color-ink-soft);
 }
 
+/* A run that has been called off (#58) — the destructive red, so it reads as "this isn't happening"
+   rather than as another status chip. Used on the admin schedule and on registrants' dashboards. */
+.tag-off {
+  background: var(--color-destructive);
+  color: var(--color-surface);
+}
+
+/* ---- Native date control ----
+   Pull it onto the theme wherever it's used (the admin create and edit forms): the editable date
+   text (its own shadow parts) takes the body font and ink colour instead of the UA default, and the
+   calendar-open button is tinted to match. The pop-up calendar grid itself is a browser-native
+   surface CSS can't reach — colour-scheme just keeps it on the app's light footing. */
+input[type='date'] {
+  color-scheme: light;
+}
+
+input[type='date']::-webkit-datetime-edit,
+input[type='date']::-webkit-datetime-edit-fields-wrapper {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+
+/* The unfilled mm/dd/yyyy placeholder — soften it to the theme's muted ink. */
+input[type='date']:invalid::-webkit-datetime-edit {
+  color: var(--color-ink-soft);
+}
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
 /* ---- Poster hero typography — shared by the events hero, confirmation, and auth panels ----
    Sits on the dark poster field, so colours are the ground-white / dimmed / orange set. */
 .hero {
