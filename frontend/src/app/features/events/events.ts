@@ -1,10 +1,12 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { EventItem, EventsService } from './events.service';
+import { AdminEventItem, EventsService, ListedEvent } from './events.service';
+import { HOURS, QUARTER_HOURS, toLocalDateTime } from './event-time';
+import { AdminEventActions } from './admin-event-actions';
 import { ForecastWidget } from './forecast';
 import { Poster } from '../../shared/poster/poster';
 import { AuthService } from '../auth/auth.service';
@@ -12,10 +14,6 @@ import { toFormErrors } from '../../core/form-errors';
 
 /** The longest an event name may be — mirrors the backend @Size(max = 160). */
 const MAX_NAME = 160;
-
-/** Selectable hours (00–23) and quarter-hour minutes, pre-rendered as two-digit option values. */
-const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'));
-const MINUTES = ['00', '15', '30', '45'];
 
 /**
  * Increment 1: the anonymous upcoming-events list. Asks the events service for the upcoming runs
@@ -26,10 +24,15 @@ const MINUTES = ['00', '15', '30', '45'];
  * "Create a run" form here. The time is entered as Bucharest wall-clock (date + hour + quarter-hour)
  * and sent as a zone-less local date-time; the server applies Europe/Bucharest and binds the sole
  * location. On success the list is refreshed so the new run appears in place.
+ *
+ * Increment 10b (#58): an admin reads the schedule from the admin endpoint instead, which keeps
+ * cancelled runs on it (read-only, badged) and carries each run's registration count — neither of
+ * which the public payload contains. Every card then gets its edit / remove controls
+ * ({@link AdminEventActions}), and any change they make re-reads the schedule.
  */
 @Component({
   selector: 'app-events',
-  imports: [DatePipe, RouterLink, ReactiveFormsModule, Poster, ForecastWidget],
+  imports: [DatePipe, RouterLink, ReactiveFormsModule, Poster, ForecastWidget, AdminEventActions],
   templateUrl: './events.html',
   styleUrl: './events.css',
 })
@@ -39,7 +42,7 @@ export class Events {
   private readonly fb = inject(FormBuilder);
 
   /** null while the request is in flight; the (possibly empty) list once it lands. */
-  protected readonly events = signal<EventItem[] | null>(null);
+  protected readonly events = signal<ListedEvent[] | null>(null);
   /** Set only if the call fails, so the page fails visibly, not blankly. */
   protected readonly error = signal<string | null>(null);
 
@@ -51,16 +54,25 @@ export class Events {
 
   /**
    * The runs to show in the upcoming grid: everyone sees the next {@link PUBLIC_LIMIT}, an admin sees
-   * all of them. null while the list is still loading. The hero CTA still targets the true next run
-   * (events()[0]), which is unaffected by the cap.
+   * all of them. null while the list is still loading. The hero CTA targets {@link nextEvent}, which
+   * is unaffected by the cap.
    */
-  protected readonly visibleEvents = computed<EventItem[] | null>(() => {
+  protected readonly visibleEvents = computed<ListedEvent[] | null>(() => {
     const all = this.events();
     if (all === null) {
       return null;
     }
     return this.isAdmin() ? all : all.slice(0, Events.PUBLIC_LIMIT);
   });
+
+  /**
+   * The run the hero points at: the soonest one that is still on. For everyone but an admin that's
+   * simply the first, since the public list never carries a cancelled run; an admin's list does, and
+   * a called-off run must not be what the page invites people to register for.
+   */
+  protected readonly nextEvent = computed<ListedEvent | null>(
+    () => this.events()?.find((event) => !this.isCancelled(event)) ?? null,
+  );
 
   /**
    * Empty tiles that pad the last row so it never shows a bare grey grid cell. The grid is at most 4
@@ -77,7 +89,7 @@ export class Events {
   });
 
   protected readonly hours = HOURS;
-  protected readonly minutes = MINUTES;
+  protected readonly minutes = QUARTER_HOURS;
 
   /** True while the create POST is in flight, to disable the submit button. */
   protected readonly creating = signal(false);
@@ -96,21 +108,45 @@ export class Events {
   });
 
   constructor() {
-    this.load();
+    // The session resolves after the page is created, so the role can flip from "not an admin" to
+    // "admin" under us; re-reading on the flip is what gets an admin the richer schedule without a
+    // reload. Signed out it runs exactly once, for the public list.
+    effect(() => {
+      this.isAdmin();
+      this.load();
+    });
 
     // Any edit clears a lingering "created" banner so it doesn't outstay the moment.
     this.createForm.valueChanges.subscribe(() => this.justCreated.set(null));
   }
 
-  /** (Re)load the upcoming runs. Reused by the initial view and after an admin creates one. */
-  private load(): void {
-    this.events$.list().subscribe({
+  /**
+   * (Re)load the upcoming runs — the admin schedule for an admin, the public list otherwise. Reused
+   * by the initial view and after any admin change (create, edit, delete, cancel).
+   */
+  protected load(): void {
+    const schedule = this.isAdmin() ? this.events$.adminList() : this.events$.list();
+    schedule.subscribe({
       next: (response) => {
         this.events.set(response);
         this.error.set(null);
       },
       error: () => this.error.set('We could not load upcoming runs. Please try again shortly.'),
     });
+  }
+
+  /**
+   * The admin view of a row, or null when the page is showing the public list. The two payloads are
+   * genuinely different shapes, so this is the one place they're told apart — everything downstream
+   * takes a definite {@link AdminEventItem}.
+   */
+  protected adminView(event: ListedEvent): AdminEventItem | null {
+    return 'registrationCount' in event ? event : null;
+  }
+
+  /** Whether a row is a called-off run. Never true on the public list, which drops them. */
+  protected isCancelled(event: ListedEvent): boolean {
+    return 'status' in event && event.status === 'CANCELLED';
   }
 
   /** The message to show under the name field: server error first, else the client-side rule. */
@@ -161,7 +197,7 @@ export class Events {
     this.justCreated.set(null);
     const { name, date, hour, minute } = this.createForm.getRawValue();
     // Wall-clock local date-time, no zone — the server reads it as Europe/Bucharest.
-    const startDateTime = `${date}T${hour}:${minute}`;
+    const startDateTime = toLocalDateTime({ date: date!, hour: hour!, minute: minute! });
 
     this.events$.create({ name: name!.trim(), startDateTime }).subscribe({
       next: (created) => {

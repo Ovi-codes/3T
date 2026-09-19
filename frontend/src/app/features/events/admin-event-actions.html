@@ -1,0 +1,114 @@
+@if (!editable()) {
+  <p class="admin-readonly" data-testid="event-readonly">
+    Cancelled — this run can no longer be changed.
+  </p>
+} @else if (mode() === 'idle') {
+  <div class="admin-actions">
+    <button class="btn btn-secondary" type="button" (click)="startEdit()" data-testid="event-edit">
+      Edit<span class="sr-only"> {{ event().name }}</span>
+    </button>
+    <button class="btn btn-ghost" type="button" (click)="startRemove()" data-testid="event-remove">
+      Remove<span class="sr-only"> {{ event().name }}</span>
+    </button>
+  </div>
+} @else if (mode() === 'editing') {
+  <form
+    class="admin-edit"
+    data-testid="edit-form"
+    [formGroup]="editForm"
+    (ngSubmit)="save()"
+    novalidate
+  >
+    @if (generalError(); as message) {
+      <p class="admin-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="field">
+      <label [attr.for]="'edit-name-' + event().id">Name</label>
+      <input
+        [attr.id]="'edit-name-' + event().id"
+        type="text"
+        formControlName="name"
+        maxlength="160"
+        data-testid="edit-name"
+        [attr.aria-invalid]="nameError() ? 'true' : null"
+      />
+      @if (nameError(); as message) {
+        <p class="field-error" role="alert">{{ message }}</p>
+      }
+    </div>
+
+    <fieldset class="field field-when">
+      <legend>Start (Bucharest time)</legend>
+      <div class="when-inputs">
+        <input
+          type="date"
+          formControlName="date"
+          data-testid="edit-date"
+          aria-label="Date"
+          [attr.aria-invalid]="startError() ? 'true' : null"
+        />
+        <select formControlName="hour" data-testid="edit-hour" aria-label="Hour">
+          @for (hour of hours; track hour) {
+            <option [value]="hour">{{ hour }}</option>
+          }
+        </select>
+        <span class="when-sep" aria-hidden="true">:</span>
+        <select formControlName="minute" data-testid="edit-minute" aria-label="Minute">
+          @for (minute of minutes(); track minute) {
+            <option [value]="minute">{{ minute }}</option>
+          }
+        </select>
+      </div>
+      @if (startError(); as message) {
+        <p class="field-error" role="alert">{{ message }}</p>
+      }
+    </fieldset>
+
+    <div class="admin-actions">
+      <button class="btn btn-primary" type="submit" [disabled]="busy()" data-testid="edit-save">
+        {{ busy() ? 'Saving…' : 'Save' }}
+      </button>
+      <button class="btn btn-ghost" type="button" (click)="dismiss()" data-testid="edit-dismiss">
+        Discard
+      </button>
+    </div>
+  </form>
+} @else {
+  <div class="admin-remove" data-testid="remove-confirm">
+    @if (generalError(); as message) {
+      <p class="admin-error" role="alert">{{ message }}</p>
+    }
+
+    @if (deletable()) {
+      <p class="admin-prompt">Nobody has registered. Delete “{{ event().name }}” for good?</p>
+      <div class="admin-actions">
+        <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="remove()" data-testid="remove-delete">
+          {{ busy() ? 'Deleting…' : 'Delete run' }}
+        </button>
+        <button class="btn btn-ghost" type="button" (click)="dismiss()" data-testid="remove-dismiss">
+          Keep it
+        </button>
+      </div>
+    } @else {
+      <p class="admin-prompt">
+        This run has {{ event().registrationCount }} registration{{ event().registrationCount === 1 ? '' : 's' }}, so
+        it can't be deleted. Cancelling calls it off for good and emails everyone registered.
+      </p>
+      <div class="admin-actions">
+        <button
+          class="btn btn-danger"
+          type="button"
+          [disabled]="busy()"
+          (click)="cancelRun()"
+          data-testid="remove-cancel-run"
+        >
+          {{ busy() ? 'Cancelling…' : 'Cancel run' }}
+        </button>
+        <button class="btn btn-ghost" type="button" (click)="dismiss()" data-testid="remove-dismiss">
+          Keep it
+        </button>
+      </div>
+    }
+  </div>
+}

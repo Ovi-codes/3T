@@ -28,7 +28,9 @@
                 <h3 class="run-name">{{ run.eventName }}</h3>
                 <p class="run-location">{{ run.locationName }}, {{ run.city }}</p>
               </div>
-              @if ($first) {
+              @if (run.cancelled) {
+                <span class="tag tag-off" data-testid="run-cancelled">Cancelled</span>
+              } @else if (run === nextRun()) {
                 <span class="tag tag-accent">Next</span>
               }
             </li>
@@ -53,7 +55,11 @@
                 <h3 class="run-name">{{ run.eventName }}</h3>
                 <p class="run-location">{{ run.locationName }}, {{ run.city }}</p>
               </div>
-              <span class="tag tag-neutral">Attended</span>
+              @if (run.cancelled) {
+                <span class="tag tag-off" data-testid="run-cancelled">Cancelled</span>
+              } @else {
+                <span class="tag tag-neutral">Attended</span>
+              }
             </li>
           }
         </ul>

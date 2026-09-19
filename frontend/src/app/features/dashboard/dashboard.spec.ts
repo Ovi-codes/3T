@@ -52,6 +52,7 @@ describe('Dashboard', () => {
       startDateTime: '2026-09-05T06:00:00Z',
       locationName: 'Tineretului Park',
       city: 'Bucharest',
+      cancelled: false,
       ...overrides,
     };
   }
@@ -88,6 +89,29 @@ describe('Dashboard', () => {
     const items = section('section-upcoming').querySelectorAll('[data-testid="upcoming-item"]');
     expect(items[0].textContent).toContain('Next');
     expect(items[1].textContent).not.toContain('Next');
+  });
+
+  it('badges a called-off upcoming run, and hands "Next" to the soonest run still on (#58)', async () => {
+    await flush({
+      upcoming: [
+        run({ registrationId: 1, eventName: 'Called off', cancelled: true }),
+        run({ registrationId: 2, eventName: 'Later' }),
+      ],
+      past: [],
+    });
+
+    const items = section('section-upcoming').querySelectorAll('[data-testid="upcoming-item"]');
+    expect(items[0].textContent).toContain('Cancelled');
+    expect(items[0].textContent).not.toContain('Next');
+    expect(items[1].textContent).toContain('Next');
+  });
+
+  it('says a called-off past run was cancelled, not attended (#58)', async () => {
+    await flush({ upcoming: [], past: [run({ cancelled: true })] });
+
+    const item = section('section-past').querySelector('[data-testid="past-item"]')!;
+    expect(item.textContent).toContain('Cancelled');
+    expect(item.textContent).not.toContain('Attended');
   });
 
   it('shows the upcoming empty state while past still lists runs', async () => {

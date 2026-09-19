@@ -39,9 +39,21 @@ stays local (charter §3).
 - **Admin surface:** `/api/admin/**` requires `ROLE_ADMIN` in `SecurityConfig` — the real boundary. A
   non-admin gets **403**, an anonymous caller **401** (the deny-by-default 401, since this API has no
   login page to redirect to). The Angular role guard only *hides* the controls; it is never the guard.
-  Today the surface is `POST /api/admin/events` (create an event — name ≤160 + future start; the
-  location auto-binds to the sole Bucharest row and the entered wall-clock time is read as
-  Europe/Bucharest, then persisted as an `OffsetDateTime`).
+  Today the surface is the event schedule:
+  - `GET /api/admin/events` — the upcoming schedule as an admin sees it: **cancelled runs kept** (the
+    public `GET /api/events` drops them) and each run's **registration count**. Neither ever appears
+    in the public payload.
+  - `POST /api/admin/events` — create an event (name ≤160 + future start; the location auto-binds to
+    the sole Bucharest row and the entered wall-clock time is read as Europe/Bucharest, then
+    persisted as an `OffsetDateTime`).
+  - `PUT /api/admin/events/{id}` — rename / reschedule an upcoming run. **409** if it has been
+    cancelled or has already taken place (both are read-only), **400** for a start in the past.
+  - `DELETE /api/admin/events/{id}` — hard-remove a run, the "created in error" escape hatch. **409**
+    as soon as anyone is registered.
+  - `POST /api/admin/events/{id}/cancel` — call a run off. Terminal (no un-cancel): the run keeps its
+    registrations, drops off the public list, stays badged on each registrant's dashboard until its
+    date passes, and every registrant is emailed (deduped by email, best-effort after commit, so a
+    mail failure never rolls the cancel back). Why the two removals differ: [ADR-0001](../adr/0001-cancel-vs-hard-delete-events.md).
 - **CSRF:** Spring's CSRF token machinery is **off** for the JSON API — it's served same-origin and the
   `SameSite=Lax` session cookie blocks the cross-site form POST tokens defend against, without forcing
   a token round-trip onto the anonymous registration POST. A token-based CSRF layer is a **pre-go-live
