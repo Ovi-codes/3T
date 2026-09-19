@@ -20,8 +20,6 @@ stays local (charter §3).
   the API — every account has one.
 - **Registration linkage:** `POST /api/registrations` stays anonymous, but if the caller has a
   session the registration is attributed to that account (`registration.user_id`). Anonymous → null.
-  For a signed-in user the registration form is prefilled from their account (name + email) so they
-  don't retype it, but the fields stay editable and the anonymous form is unchanged (Increment 7, #38).
 - **Roles (Increment 10a, #57):** authorities come from a local `user_roles` table (`role` +
   `user_roles`, a many-to-many with a FK to `app_user`), which is the real authority and stays after
   the future Entra swap. `ADMIN_EMAILS` (comma-separated, defaulted empty) names the admin accounts.
