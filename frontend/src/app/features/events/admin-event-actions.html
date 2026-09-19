@@ -75,7 +75,7 @@
     </div>
   </form>
 } @else {
-  <div class="admin-remove" data-testid="remove-confirm">
+  <div class="admin-remove" data-testid="remove-confirm" [formGroup]="cancelForm">
     @if (generalError(); as message) {
       <p class="admin-error" role="alert">{{ message }}</p>
     }
@@ -95,6 +95,42 @@
         This run has {{ event().registrationCount }} registration{{ event().registrationCount === 1 ? '' : 's' }}, so
         it can't be deleted. Cancelling calls it off for good and emails everyone registered.
       </p>
+
+      <div class="field">
+        <label [attr.for]="'cancel-reason-' + event().id">Reason for cancelling</label>
+        <select
+          [attr.id]="'cancel-reason-' + event().id"
+          formControlName="reason"
+          data-testid="cancel-reason"
+          [attr.aria-invalid]="reasonError() ? 'true' : null"
+        >
+          @for (reason of reasons; track reason) {
+            <option [value]="reason">{{ reason }}</option>
+          }
+          <option [value]="otherReason">{{ otherReason }}</option>
+        </select>
+        @if (reasonError(); as message) {
+          <p class="field-error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      @if (showCustom()) {
+        <div class="field">
+          <label [attr.for]="'cancel-custom-' + event().id">Reason (this is emailed to registrants)</label>
+          <input
+            [attr.id]="'cancel-custom-' + event().id"
+            type="text"
+            formControlName="customText"
+            maxlength="200"
+            data-testid="cancel-custom"
+            [attr.aria-invalid]="customError() ? 'true' : null"
+          />
+          @if (customError(); as message) {
+            <p class="field-error" role="alert">{{ message }}</p>
+          }
+        </div>
+      }
+
       <div class="admin-actions">
         <button
           class="btn btn-danger"

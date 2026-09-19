@@ -159,26 +159,61 @@ describe('AdminEventActions', () => {
   });
 
   describe('removing a run people have registered for', () => {
-    it('withholds delete, offers cancel, and says how many people are registered', () => {
+    /** Mirrors the component's free-text sentinel — selecting it reveals the custom-text field. */
+    const OTHER = 'Other…';
+
+    it('withholds delete, offers a static reason picker, and says how many are registered', () => {
       render({ registrationCount: 12 });
       click('event-remove');
 
       expect(query('remove-delete')).toBeNull();
       expect(query('remove-cancel-run')).not.toBeNull();
       expect(query('remove-confirm')?.textContent).toContain('12');
+      // The picker is a hardcoded list (no fetch) and defaults to the first standard reason.
+      expect((query('cancel-reason') as HTMLSelectElement).value).toBe('Severe weather');
+      expect(query('cancel-custom')).toBeNull();
     });
 
-    it('cancels the run once confirmed, and announces the change', () => {
+    it('cancels the run with the chosen standard reason as text, and announces the change', () => {
       render({ registrationCount: 12 });
       click('event-remove');
       click('remove-cancel-run');
 
       const request = httpMock.expectOne('/api/admin/events/7/cancel');
       expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ reason: 'Severe weather' });
       request.flush({ ...SCHEDULED, status: 'CANCELLED', registrationCount: 12 });
       fixture.detectChanges();
 
       expect(changes).toBe(1);
+    });
+
+    it('reveals a text field for "Other" and sends the typed reason as the text', () => {
+      render({ registrationCount: 12 });
+      click('event-remove');
+      setField('cancel-reason', OTHER);
+
+      expect(query('cancel-custom')).not.toBeNull();
+      setField('cancel-custom', 'Power cut at the park');
+      click('remove-cancel-run');
+
+      const request = httpMock.expectOne('/api/admin/events/7/cancel');
+      expect(request.request.body).toEqual({ reason: 'Power cut at the park' });
+      request.flush({ ...SCHEDULED, status: 'CANCELLED', registrationCount: 12 });
+      fixture.detectChanges();
+
+      expect(changes).toBe(1);
+    });
+
+    it('will not cancel with "Other" left blank — no request, a message instead', () => {
+      render({ registrationCount: 12 });
+      click('event-remove');
+      setField('cancel-reason', OTHER);
+      click('remove-cancel-run');
+
+      // Client-side guard: no POST is issued (afterEach verify() would fail on a stray one).
+      expect(text()).toContain('Enter a reason for cancelling.');
+      expect(changes).toBe(0);
     });
 
     it('shows the server message if the cancel is refused, and announces nothing', () => {
@@ -196,13 +231,14 @@ describe('AdminEventActions', () => {
       expect(changes).toBe(0);
     });
 
-    it('keeping the run makes no request', () => {
+    it('keeping the run makes no cancel request', () => {
       render({ registrationCount: 12 });
       click('event-remove');
       click('remove-dismiss');
 
       expect(query('remove-confirm')).toBeNull();
       expect(changes).toBe(0);
+      // No POST was issued — afterEach's verify() would fail if one were left pending.
     });
   });
 });

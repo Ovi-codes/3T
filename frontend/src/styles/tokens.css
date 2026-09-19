@@ -53,11 +53,11 @@
 
   /* ---- Color: status ----
    * Validation + load errors render in accessible orange (the theme folds alerts into the accent).
-   * --color-destructive stays red for the single irreversible action (delete account), so data
-   * loss reads as danger rather than as another CTA. */
+   * --color-destructive stays red for irreversible/terminal actions (delete account, admin
+   * delete/cancel event), so data loss reads as danger rather than as another CTA. */
   --color-danger: #a8480a;       /* field + form error text (AA on ground and on the tint) */
   --color-danger-soft: #fff1e6;  /* error-banner background */
-  --color-destructive: #b3261e;      /* delete-account controls only */
+  --color-destructive: #b3261e;      /* delete-account + admin delete/cancel-event controls */
   --color-destructive-soft: #f7e4e2;
 
   /* ---- Focus ---- */

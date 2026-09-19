@@ -10,6 +10,24 @@ import { toFormErrors } from '../../core/form-errors';
 /** The longest an event name may be — mirrors the backend @Size(max = 160). */
 const MAX_NAME = 160;
 
+/** The longest a cancellation reason may be — mirrors the backend @Size(max = 200). */
+const MAX_REASON = 200;
+
+/**
+ * The standard cancellation reasons the picker offers, newest curation owned here on the client (the
+ * backend takes the chosen wording as free text — issue #58). Each string is exactly what the
+ * registrant sees in the email, so a standard pick reads the same every time.
+ */
+const STANDARD_REASONS = [
+  'Severe weather',
+  'Unsafe course conditions',
+  'Too few volunteers to run it safely',
+  'The venue is unavailable',
+];
+
+/** The picker's free-text choice — a sentinel that can't collide with a real reason. */
+const OTHER = 'Other…';
+
 /** What the card is showing: the plain actions, the edit form, or the remove confirmation. */
 type Mode = 'idle' | 'editing' | 'removing';
 
@@ -71,6 +89,21 @@ export class AdminEventActions {
     minute: ['', [Validators.required]],
   });
 
+  /** The picked reason (a standard one or the `Other…` sentinel); `customText` holds the free text. */
+  protected readonly cancelForm = this.fb.group({
+    reason: ['', [Validators.required]],
+    customText: ['', [Validators.maxLength(MAX_REASON)]],
+  });
+
+  /** The standard reasons the picker lists, plus a free-text `Other…`, both owned on the client. */
+  protected readonly reasons = STANDARD_REASONS;
+  protected readonly otherReason = OTHER;
+
+  /** Whether the picked reason is the free-text one, so the custom-text field is shown and required. */
+  protected showCustom(): boolean {
+    return this.cancelForm.controls.reason.value === OTHER;
+  }
+
   /** Open the edit form on the run as it currently stands, in Bucharest wall-clock time. */
   protected startEdit(): void {
     const event = this.event();
@@ -82,6 +115,11 @@ export class AdminEventActions {
 
   protected startRemove(): void {
     this.clearErrors();
+    // Only a run with registrations is cancelled, and only cancelling needs a reason — preselect the
+    // first standard one so the picker is never in a blank state.
+    if (!this.deletable()) {
+      this.cancelForm.reset({ reason: this.reasons[0], customText: '' });
+    }
     this.mode.set('removing');
   }
 
@@ -111,7 +149,15 @@ export class AdminEventActions {
   }
 
   protected cancelRun(): void {
-    this.run(this.events$.cancel(this.event().id));
+    const choice = this.cancelForm.controls.reason.value ?? '';
+    // A standard pick is sent as-is; "Other…" sends the admin's own (trimmed) wording instead.
+    const reason =
+      choice === OTHER ? (this.cancelForm.controls.customText.value ?? '').trim() : choice;
+    if (!reason) {
+      this.cancelForm.markAllAsTouched();
+      return;
+    }
+    this.run(this.events$.cancel(this.event().id, { reason }));
   }
 
   /**
@@ -172,5 +218,34 @@ export class AdminEventActions {
   /** A rejection about the run as a whole (already cancelled, has registrations, or a network failure). */
   protected generalError(): string | null {
     return this.fieldErrors()['event'] ?? this.formError();
+  }
+
+  /** The message under the reason picker: the server's rejection first, else the client-side rule. */
+  protected reasonError(): string | null {
+    const server = this.fieldErrors()['reason'];
+    if (server) {
+      return server;
+    }
+    const control = this.cancelForm.controls.reason;
+    return control.touched && control.invalid ? 'Choose a reason for cancelling.' : null;
+  }
+
+  /**
+   * The message under the custom-reason field, shown only for the free-text reason. This is a
+   * client-side guard only: the free text is sent as `reason`, so a server rejection of it comes
+   * back under `reason` and surfaces on the picker via {@link reasonError}.
+   */
+  protected customError(): string | null {
+    if (!this.showCustom()) {
+      return null;
+    }
+    const control = this.cancelForm.controls.customText;
+    if (!control.touched) {
+      return null;
+    }
+    if (!(control.value ?? '').trim()) {
+      return 'Enter a reason for cancelling.';
+    }
+    return control.hasError('maxlength') ? `Reason must be at most ${MAX_REASON} characters.` : null;
   }
 }

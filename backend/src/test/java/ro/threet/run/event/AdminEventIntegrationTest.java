@@ -47,21 +47,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * real SMTP server (Mailpit), both Testcontainers — through the whole security filter chain
  * (issues #57 and #58):
  *
- * <ul>
- *   <li>a configured {@code ADMIN_EMAILS} account carries {@code ROLE_ADMIN} + {@code ROLE_USER} on
- *       authentication, and a regular account carries only {@code ROLE_USER};</li>
- *   <li>an admin creates, edits, deletes and cancels runs, and the public {@code GET /api/events}
- *       reflects each change;</li>
- *   <li><strong>delete is the empty-only escape hatch</strong> and <strong>cancel is the path for a
- *       run people signed up for</strong> (ADR-0001): delete is refused with a 409 the moment a
- *       registration exists, and cancelling emails every registrant, deduped, without rolling the
- *       cancellation back;</li>
- *   <li>registration counts reach the admin list and never the public payload;</li>
- *   <li>a non-admin is refused (403) and an anonymous caller is refused (401) on every one of these
- *       — the real boundary is server-side, not the hidden UI;</li>
- *   <li>an invalid submission (blank name, past start) is a 400 and nothing changes.</li>
- * </ul>
- *
  * {@code app.admin.emails} is set for the test so {@code admin@example.com} is the admin.
  */
 @Import(TestcontainersConfiguration.class)
@@ -112,8 +97,7 @@ class AdminEventIntegrationTest {
 		registrations.deleteAll();
 		jdbc.update("delete from user_roles");
 		jdbc.update("delete from app_user");
-		HTTP.send(HttpRequest.newBuilder(mailpitUri("/api/v1/messages")).DELETE().build(),
-				HttpResponse.BodyHandlers.discarding());
+		clearMailbox();
 	}
 
 	// --- Roles (#57) ---------------------------------------------------------------------------
@@ -132,7 +116,7 @@ class AdminEventIntegrationTest {
 				.andExpect(jsonPath("$.roles", containsInAnyOrder("ROLE_USER")));
 	}
 
-	// --- Create (#57) --------------------------------------------------------------------------
+	// Create
 
 	@Test
 	void adminCreatesAnEventAndItAppearsOnTheEventsList() throws Exception {
@@ -180,7 +164,7 @@ class AdminEventIntegrationTest {
 		assertThat(events.count()).isEqualTo(before);
 	}
 
-	// --- Edit (#58) ----------------------------------------------------------------------------
+	// Edit
 
 	@Test
 	void adminEditsAnEventAndTheChangeShowsOnThePublicList() throws Exception {
@@ -221,7 +205,7 @@ class AdminEventIntegrationTest {
 				.andExpect(status().isNotFound());
 	}
 
-	// --- Delete: the empty-only escape hatch (#58, ADR-0001) -----------------------------------
+	// Delete
 
 	@Test
 	void adminHardDeletesAnEventNobodyHasRegisteredFor() throws Exception {
@@ -257,7 +241,7 @@ class AdminEventIntegrationTest {
 				.andExpect(status().isNotFound());
 	}
 
-	// --- Cancel: the path for a run people signed up for (#58, ADR-0001) -----------------------
+	// Cancel
 
 	@Test
 	void cancellingDropsTheRunFromThePublicListAndEmailsEveryRegistrantOnce() throws Exception {
@@ -271,7 +255,7 @@ class AdminEventIntegrationTest {
 				id, "Ana Pop", "ANA.POP@example.com");
 		clearMailbox();
 
-		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").session(admin))
+		mockMvc.perform(cancelEvent(admin, id, WEATHER_REASON))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("CANCELLED"))
 				.andExpect(jsonPath("$.registrationCount").value(3));
@@ -307,7 +291,7 @@ class AdminEventIntegrationTest {
 						{"eventId": %d, "name": "Ana Pop", "email": "%s"}""".formatted(id, USER_EMAIL)))
 				.andExpect(status().isCreated());
 
-		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").session(admin))
+		mockMvc.perform(cancelEvent(admin, id, WEATHER_REASON))
 				.andExpect(status().isOk());
 
 		// Her dashboard still lists it, flagged as cancelled, rather than silently losing the run.
@@ -327,20 +311,116 @@ class AdminEventIntegrationTest {
 	void aCancelledEventIsReadOnly() throws Exception {
 		MockHttpSession admin = adminSession();
 		long id = createdEventId(admin, "Already off", futureLocal());
-		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").session(admin))
+		mockMvc.perform(cancelEvent(admin, id, WEATHER_REASON))
 				.andExpect(status().isOk());
 
 		// Cancellation is terminal: no edit, and no second cancel.
 		mockMvc.perform(updateEvent(admin, id, "Back on", futureLocal()))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.errors.event").exists());
-		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").session(admin))
+		mockMvc.perform(cancelEvent(admin, id, WEATHER_REASON))
 				.andExpect(status().isConflict());
 
 		assertThat(events.findById(id).orElseThrow().getName()).isEqualTo("Already off");
 	}
 
-	// --- Registration counts (#58) -------------------------------------------------------------
+	@Test
+	void cancellingPutsTheReasonInTheEmail() throws Exception {
+		MockHttpSession admin = adminSession();
+		long id = createdEventId(admin, "Stormy 5k", futureLocal());
+		register(id, "Ana Pop", "ana.pop@example.com");
+		clearMailbox();
+
+		mockMvc.perform(cancelEvent(admin, id, WEATHER_REASON)).andExpect(status().isOk());
+
+		List<Map<String, Object>> messages = mailpitMessages();
+		assertThat(messages).hasSize(1);
+		assertThat(mailpitText(messages.get(0))).contains("Reason: Severe weather");
+	}
+
+	@Test
+	void cancellingRelaysWhateverWordingTheAdminGaveIntoTheEmail() throws Exception {
+		MockHttpSession admin = adminSession();
+		long id = createdEventId(admin, "Off 5k", futureLocal());
+		register(id, "Ana Pop", "ana.pop@example.com");
+		clearMailbox();
+
+		// The reason is plain text — a free-text "other" is just another string to the backend.
+		mockMvc.perform(cancelEvent(admin, id, "{\"reason\": \"Power cut at the park\"}"))
+				.andExpect(status().isOk());
+
+		List<Map<String, Object>> messages = mailpitMessages();
+		assertThat(messages).hasSize(1);
+		assertThat(mailpitText(messages.get(0))).contains("Reason: Power cut at the park");
+	}
+
+	@Test
+	void cancellingWithABlankReasonIsRejectedAndNothingIsCancelledOrEmailed() throws Exception {
+		MockHttpSession admin = adminSession();
+		long id = createdEventId(admin, "Needs a reason 5k", futureLocal());
+		register(id, "Ana Pop", "ana.pop@example.com");
+		clearMailbox();
+
+		mockMvc.perform(cancelEvent(admin, id, "{\"reason\": \"   \"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.reason").exists());
+
+		assertThat(events.findById(id).orElseThrow().getStatus()).isEqualTo(EventStatus.SCHEDULED);
+		assertThat(mailpitMessages()).isEmpty();
+	}
+
+	@Test
+	void cancellingWithNoReasonIsRejected() throws Exception {
+		MockHttpSession admin = adminSession();
+		long id = createdEventId(admin, "Reasonless 5k", futureLocal());
+
+		mockMvc.perform(cancelEvent(admin, id, "{}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.reason").exists());
+
+		assertThat(events.findById(id).orElseThrow().getStatus()).isEqualTo(EventStatus.SCHEDULED);
+	}
+
+	// Reschedule (#58)
+
+	@Test
+	void movingAnEventsTimeEmailsEveryRegistrantOnceWithTheNewTime() throws Exception {
+		MockHttpSession admin = adminSession();
+		long id = createdEventId(admin, "Movable 5k", futureLocal());
+		register(id, "Ana Pop", "ana.pop@example.com");
+		register(id, "Radu Ion", "radu.ion@example.com");
+		// A second row for Ana under a differently-cased address — the notifier dedupes by email.
+		jdbc.update("insert into registration (event_id, name, email) values (?, ?, ?)",
+				id, "Ana Pop", "ANA.POP@example.com");
+		clearMailbox();
+
+		String newStart = LocalDateTime.now().plusDays(31).withHour(10).withMinute(30)
+				.withSecond(0).withNano(0).toString();
+		mockMvc.perform(updateEvent(admin, id, "Movable 5k", newStart)).andExpect(status().isOk());
+
+		List<Map<String, Object>> messages = mailpitMessages();
+		assertThat(messages).hasSize(2);
+		assertThat(messages).extracting(AdminEventIntegrationTest::recipient)
+				.containsExactlyInAnyOrder("ana.pop@example.com", "radu.ion@example.com");
+		assertThat(messages).allSatisfy(message ->
+				assertThat((String) message.get("Subject")).contains("Rescheduled: Movable 5k"));
+	}
+
+	@Test
+	void renamingAnEventWithoutMovingItEmailsNobody() throws Exception {
+		MockHttpSession admin = adminSession();
+		String start = futureLocal();
+		long id = createdEventId(admin, "Steady 5k", start);
+		register(id, "Ana Pop", "ana.pop@example.com");
+		clearMailbox();
+
+		// Same start, new name only — the instant is unchanged, so nobody is notified.
+		mockMvc.perform(updateEvent(admin, id, "Steady evening 5k", start)).andExpect(status().isOk());
+
+		assertThat(mailpitMessages()).isEmpty();
+	}
+
+	// Registration counts
 
 	@Test
 	void theAdminListCarriesLiveRegistrationCountsAndThePublicListCarriesNone() throws Exception {
@@ -359,7 +439,7 @@ class AdminEventIntegrationTest {
 				.andExpect(jsonPath("$[0].registrationCount").doesNotExist());
 	}
 
-	// --- The authorisation boundary (#57, #58) -------------------------------------------------
+	// The authorisation boundary
 
 	@Test
 	void nonAdminIsForbiddenFromCreating() throws Exception {
@@ -410,8 +490,6 @@ class AdminEventIntegrationTest {
 		assertThat(untouched.getName()).isEqualTo("Untouchable");
 		assertThat(untouched.getStatus()).isEqualTo(EventStatus.SCHEDULED);
 	}
-
-	// --- Fixtures ------------------------------------------------------------------------------
 
 	private MockHttpSession adminSession() throws Exception {
 		return sessionOf(mockMvc.perform(signup(ADMIN_EMAIL, "Boss"))
@@ -467,11 +545,18 @@ class AdminEventIntegrationTest {
 						{"name": "%s", "startDateTime": "%s"}""".formatted(name, startDateTime));
 	}
 
+	/** A cancel with an explicit reason body — the reason is plain text (issue #58). */
+	private static MockHttpServletRequestBuilder cancelEvent(MockHttpSession session, long id, String reasonJson) {
+		return post("/api/admin/events/" + id + "/cancel").session(session)
+				.contentType(MediaType.APPLICATION_JSON).content(reasonJson);
+	}
+
+	/** The everyday cancel body, for tests not about the reason wording itself. */
+	private static final String WEATHER_REASON = "{\"reason\": \"Severe weather\"}";
+
 	private static MockHttpSession sessionOf(MvcResult result) {
 		return (MockHttpSession) result.getRequest().getSession(false);
 	}
-
-	// --- Mailpit ------------------------------------------------------------------------------
 
 	private void clearMailbox() throws Exception {
 		HTTP.send(HttpRequest.newBuilder(mailpitUri("/api/v1/messages")).DELETE().build(),
@@ -486,6 +571,17 @@ class AdminEventIntegrationTest {
 		Map<String, Object> payload = objectMapper.readValue(response.body(), new TypeReference<>() {
 		});
 		return (List<Map<String, Object>>) payload.get("messages");
+	}
+
+	/** The plain-text body of one listed message, fetched from Mailpit's single-message endpoint. */
+	private String mailpitText(Map<String, Object> message) throws Exception {
+		String messageId = (String) message.get("ID");
+		HttpResponse<String> response = HTTP.send(
+				HttpRequest.newBuilder(mailpitUri("/api/v1/message/" + messageId)).GET().build(),
+				HttpResponse.BodyHandlers.ofString());
+		Map<String, Object> full = objectMapper.readValue(response.body(), new TypeReference<>() {
+		});
+		return (String) full.get("Text");
 	}
 
 	@SuppressWarnings("unchecked")

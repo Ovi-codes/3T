@@ -43,6 +43,15 @@ export interface EventDetailsInput {
 }
 
 /**
+ * The cancel payload (issue #58): a required reason as plain text. The picker's standard reasons and
+ * its free-text "other" both resolve to this one string on the client, which the server relays
+ * verbatim into the cancellation email — the backend doesn't enumerate reasons.
+ */
+export interface CancelEventInput {
+  reason: string;
+}
+
+/**
  * Owns the events resource and its DTOs. The one home for the events API contract, so components
  * hold view state only and never build `/api` URLs themselves.
  *
@@ -99,9 +108,10 @@ export class EventsService {
 
   /**
    * Admin-only: call a run off (issue #58). Terminal — it drops off the public list, keeps every
-   * registration, and the server emails each registrant.
+   * registration, and the server emails each registrant the reason. A non-blank reason is required
+   * (the server rejects a blank one with a 400).
    */
-  cancel(id: number): Observable<AdminEventItem> {
-    return this.http.post<AdminEventItem>(`/api/admin/events/${id}/cancel`, {});
+  cancel(id: number, input: CancelEventInput): Observable<AdminEventItem> {
+    return this.http.post<AdminEventItem>(`/api/admin/events/${id}/cancel`, input);
   }
 }

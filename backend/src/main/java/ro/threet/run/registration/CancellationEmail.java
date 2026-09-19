@@ -8,7 +8,7 @@ import ro.threet.run.event.Event;
 
 /**
  * Builds the email that tells a registrant their run is off — subject and plain-text body, naming
- * the event, the date it would have been, and its location. The sibling of
+ * the event, why it was called off, the date it would have been, and its location. The sibling of
  * {@link ConfirmationEmail}: same split, so wording changes never touch the SMTP code.
  *
  * The stored instant is UTC; the email shows the local Bucharest time, which is when the run would
@@ -28,7 +28,7 @@ final class CancellationEmail {
 		this.body = body;
 	}
 
-	static CancellationEmail forRegistration(Registration registration) {
+	static CancellationEmail forRegistration(Registration registration, String reason) {
 		Event event = registration.getEvent();
 		String when = event.getStartDateTime().atZoneSameInstant(EVENT_ZONE).format(WHEN);
 		String where = event.getLocation().getName() + ", " + event.getLocation().getCity();
@@ -39,12 +39,14 @@ final class CancellationEmail {
 
 				We're sorry — %s has been cancelled, so there's nothing to turn up to.
 
+				Reason: %s
+
 				When it would have been: %s
 				Where: %s
 
 				You don't need to do anything. Keep an eye on the site for the next run.
 
-				The 3T Run team""".formatted(registration.getName(), event.getName(), when, where);
+				The 3T Run team""".formatted(registration.getName(), event.getName(), reason, when, where);
 
 		return new CancellationEmail(subject, body);
 	}

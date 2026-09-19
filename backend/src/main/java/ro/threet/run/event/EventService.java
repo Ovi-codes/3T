@@ -24,15 +24,15 @@ public class EventService {
 	private final EventRepository eventRepository;
 	private final LocationRepository locationRepository;
 	private final RegistrationCounts registrationCounts;
-	private final ApplicationEventPublisher events;
+	private final ApplicationEventPublisher eventPublisher;
 	private final Clock clock;
 
 	EventService(EventRepository eventRepository, LocationRepository locationRepository,
-			RegistrationCounts registrationCounts, ApplicationEventPublisher events, Clock clock) {
+			RegistrationCounts registrationCounts, ApplicationEventPublisher eventPublisher, Clock clock) {
 		this.eventRepository = eventRepository;
 		this.locationRepository = locationRepository;
 		this.registrationCounts = registrationCounts;
-		this.events = events;
+		this.eventPublisher = eventPublisher;
 		this.clock = clock;
 	}
 
@@ -91,6 +91,10 @@ public class EventService {
 	 * are 409s that change nothing. The new start is read as Bucharest wall-clock time and must
 	 * itself be in the future, exactly as on create.
 	 *
+	 * <p>If the edit <em>moves the start</em> (date or time), the registrants are emailed the new
+	 * time by a listener that runs after the commit — a rename on its own notifies nobody. Same
+	 * best-effort, post-commit delivery as a cancellation, for the same reason (ADR-0001).
+	 *
 	 * @throws EventException 404 unknown id, 409 not editable, 400 start not in the future
 	 */
 	@Transactional
@@ -98,9 +102,14 @@ public class EventService {
 		Event event = require(id);
 		requireEditable(event);
 		OffsetDateTime start = requireFutureStart(request.startDateTime());
+		OffsetDateTime previousStart = event.getStartDateTime();
 
 		event.updateDetails(request.name().trim(), start);
 		Event saved = eventRepository.save(event);
+		// isEqual compares the instant, so a mere offset re-spelling of the same moment isn't a move.
+		if (!previousStart.isEqual(start)) {
+			eventPublisher.publishEvent(new EventRescheduled(id, previousStart, start));
+		}
 		return AdminEventResponse.from(saved, registrationCounts.forEvent(id));
 	}
 
@@ -131,16 +140,20 @@ public class EventService {
 	 * commits on its own; the registrant emails are sent by a listener that runs
 	 * <em>after</em> the commit, so a failing mail server can never undo the cancel (ADR-0001).
 	 *
+	 * <p>A reason is required (enforced as {@code @NotBlank} at the controller boundary). It is plain
+	 * text — the admin UI offers standard reasons and a free-text option, but the finished wording
+	 * arrives as one string and travels on the {@link EventCancelled} event into the email.
+	 *
 	 * @throws EventException 404 unknown id, 409 already cancelled or already run
 	 */
 	@Transactional
-	public AdminEventResponse cancelEvent(Long id) {
+	public AdminEventResponse cancelEvent(Long id, CancelEventRequest request) {
 		Event event = require(id);
 		requireEditable(event);
 
 		event.cancel();
 		Event saved = eventRepository.save(event);
-		events.publishEvent(new EventCancelled(id));
+		eventPublisher.publishEvent(new EventCancelled(id, request.reason().trim()));
 		return AdminEventResponse.from(saved, registrationCounts.forEvent(id));
 	}
 

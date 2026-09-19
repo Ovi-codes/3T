@@ -59,10 +59,13 @@ public class AdminEventController {
 		return ResponseEntity.noContent().build();
 	}
 
-	/** Call the run off: terminal, keeps every registration, and emails the registrants. */
+	/**
+	 * Call the run off: terminal, keeps every registration, and emails the registrants the reason.
+	 * {@code @Valid} enforces that a non-blank, length-capped reason was supplied.
+	 */
 	@PostMapping("/events/{id}/cancel")
-	public AdminEventResponse cancel(@PathVariable Long id) {
-		return eventService.cancelEvent(id);
+	public AdminEventResponse cancel(@PathVariable Long id, @Valid @RequestBody CancelEventRequest request) {
+		return eventService.cancelEvent(id, request);
 	}
 
 }

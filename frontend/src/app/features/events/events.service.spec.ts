@@ -122,13 +122,14 @@ describe('EventsService', () => {
     expect(completed).toBe(true);
   });
 
-  it('cancel posts to the cancel endpoint and returns the cancelled event', () => {
+  it('cancel posts the reason text to the cancel endpoint and returns the cancelled event', () => {
     const cancelled: AdminEventItem = { ...ADMIN_EVENT, status: 'CANCELLED' };
     let received: AdminEventItem | undefined;
-    service.cancel(1).subscribe((event) => (received = event));
+    service.cancel(1, { reason: 'Severe weather' }).subscribe((event) => (received = event));
 
     const request = httpMock.expectOne('/api/admin/events/1/cancel');
     expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ reason: 'Severe weather' });
     request.flush(cancelled);
 
     expect(received).toEqual(cancelled);

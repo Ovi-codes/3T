@@ -8,8 +8,10 @@ import AxeBuilder from '@axe-core/playwright';
  *
  * Incr10b (#58): and then manages it — editing an upcoming run, deleting one nobody has signed up
  * for, and cancelling one people have (which is the only way out once there are registrations, see
- * ADR-0001). Cancelling is checked end to end: the admin keeps a badged, read-only card, the run
- * drops off the public list, and the person registered sees it called off on their own dashboard.
+ * ADR-0001). Cancelling takes a reason and is checked end to end: the admin
+ * keeps a badged, read-only card, the run drops off the public list, and the person registered sees
+ * it called off on their own dashboard. (Reschedule- and cancellation-email contents, including the
+ * reason, are covered against Mailpit by the backend integration test.)
  *
  * The authorization boundary itself is server-side and covered by the backend integration test
  * (403/401 on /api/admin/**); here we drive the browser the way an admin actually would.
@@ -168,6 +170,7 @@ test('a run people have signed up for can only be cancelled, and everyone sees i
   // Deleting is off the table — the confirmation says who it would affect and offers cancelling.
   await expect(card.getByTestId('remove-delete')).toHaveCount(0);
   await expect(card.getByTestId('remove-confirm')).toContainText('1 registration');
+  await card.getByTestId('cancel-reason').selectOption('Severe weather');
   await card.getByTestId('remove-cancel-run').click();
 
   // The admin keeps the run on the schedule, badged and read-only.

@@ -157,7 +157,7 @@ class EventServiceTest {
 	// --- Editing -------------------------------------------------------------------------------
 
 	@Test
-	void updateRenamesAndReschedulesAnUpcomingEvent() {
+	void updateRenamesAndReschedulesAnUpcomingEventAndAnnouncesTheMove() {
 		Event event = persisted(7L, "Autumn 5k", NOW.plusDays(3));
 		given(eventRepository.findById(7L)).willReturn(Optional.of(event));
 		given(eventRepository.save(any(Event.class))).willAnswer(call -> call.getArgument(0));
@@ -172,6 +172,28 @@ class EventServiceTest {
 		assertThat(response.name()).isEqualTo("Autumn Night 5k");
 		assertThat(response.registrationCount()).isEqualTo(4L);
 		verify(eventRepository).save(event);
+		// The start moved, so the registrants are told — old and new instant on the announcement.
+		ArgumentCaptor<EventRescheduled> moved = ArgumentCaptor.forClass(EventRescheduled.class);
+		verify(events).publishEvent(moved.capture());
+		assertThat(moved.getValue().eventId()).isEqualTo(7L);
+		assertThat(moved.getValue().previousStart()).isEqualTo(NOW.plusDays(3));
+		assertThat(moved.getValue().newStart()).isEqualTo(OffsetDateTime.parse("2026-09-01T18:30+03:00"));
+	}
+
+	@Test
+	void updateThatKeepsTheStartRenamesWithoutTellingAnyone() {
+		Event event = persisted(7L, "Autumn 5k", NOW.plusDays(3));
+		given(eventRepository.findById(7L)).willReturn(Optional.of(event));
+		given(eventRepository.save(any(Event.class))).willAnswer(call -> call.getArgument(0));
+		given(registrationCounts.forEvent(7L)).willReturn(4L);
+
+		// NOW.plusDays(3) is 2026-08-24T09:00Z, which is 12:00 in Bucharest (EEST) — the same instant.
+		service().updateEvent(7L,
+				new UpdateEventRequest("Autumn Night 5k", LocalDateTime.parse("2026-08-24T12:00")));
+
+		assertThat(event.getName()).isEqualTo("Autumn Night 5k");
+		// A rename that doesn't move the run notifies nobody.
+		verify(events, never()).publishEvent(any(EventRescheduled.class));
 	}
 
 	@Test
@@ -275,21 +297,35 @@ class EventServiceTest {
 	// --- Cancelling (the soft, terminal path — see ADR-0001) -----------------------------------
 
 	@Test
-	void cancelMarksTheEventCancelledAndAnnouncesItForTheRegistrantEmails() {
+	void cancelMarksTheEventCancelledAndAnnouncesItWithTheReason() {
 		Event event = persisted(7L, "Autumn 5k", NOW.plusDays(3));
 		given(eventRepository.findById(7L)).willReturn(Optional.of(event));
 		given(eventRepository.save(any(Event.class))).willAnswer(call -> call.getArgument(0));
 		given(registrationCounts.forEvent(7L)).willReturn(2L);
 
-		AdminEventResponse response = service().cancelEvent(7L);
+		AdminEventResponse response =
+				service().cancelEvent(7L, new CancelEventRequest("Severe weather"));
 
 		assertThat(event.getStatus()).isEqualTo(EventStatus.CANCELLED);
 		assertThat(response.status()).isEqualTo(EventStatus.CANCELLED);
 		assertThat(response.registrationCount()).isEqualTo(2L);
 		verify(eventRepository).save(event);
 		// Notification is announced, never sent inline — the listener runs after the commit, so a
-		// failing mail server can't roll the cancellation back (ADR-0001).
-		verify(events).publishEvent(new EventCancelled(7L));
+		// failing mail server can't roll the cancellation back (ADR-0001). The reason text rides
+		// along for the email.
+		verify(events).publishEvent(new EventCancelled(7L, "Severe weather"));
+	}
+
+	@Test
+	void cancelTrimsTheReasonWordingForTheEmail() {
+		Event event = persisted(7L, "Autumn 5k", NOW.plusDays(3));
+		given(eventRepository.findById(7L)).willReturn(Optional.of(event));
+		given(eventRepository.save(any(Event.class))).willAnswer(call -> call.getArgument(0));
+		given(registrationCounts.forEvent(7L)).willReturn(2L);
+
+		service().cancelEvent(7L, new CancelEventRequest("  Power cut at the park  "));
+
+		verify(events).publishEvent(new EventCancelled(7L, "Power cut at the park"));
 	}
 
 	@Test
@@ -298,7 +334,7 @@ class EventServiceTest {
 		event.cancel();
 		given(eventRepository.findById(7L)).willReturn(Optional.of(event));
 
-		assertThatThrownBy(() -> service().cancelEvent(7L))
+		assertThatThrownBy(() -> service().cancelEvent(7L, severeWeather()))
 				.isInstanceOf(EventException.class)
 				.satisfies(thrown -> assertThat(((EventException) thrown).status())
 						.isEqualTo(HttpStatus.CONFLICT));
@@ -312,7 +348,7 @@ class EventServiceTest {
 		Event event = persisted(7L, "Last week's run", NOW.minusDays(3));
 		given(eventRepository.findById(7L)).willReturn(Optional.of(event));
 
-		assertThatThrownBy(() -> service().cancelEvent(7L))
+		assertThatThrownBy(() -> service().cancelEvent(7L, severeWeather()))
 				.isInstanceOf(EventException.class)
 				.satisfies(thrown -> assertThat(((EventException) thrown).status())
 						.isEqualTo(HttpStatus.CONFLICT));
@@ -325,7 +361,7 @@ class EventServiceTest {
 	void cancelRejectsAnUnknownEvent() {
 		given(eventRepository.findById(anyLong())).willReturn(Optional.empty());
 
-		assertThatThrownBy(() -> service().cancelEvent(404L))
+		assertThatThrownBy(() -> service().cancelEvent(404L, severeWeather()))
 				.isInstanceOf(EventException.class)
 				.satisfies(thrown -> assertThat(((EventException) thrown).status())
 						.isEqualTo(HttpStatus.NOT_FOUND));
@@ -337,6 +373,10 @@ class EventServiceTest {
 
 	private static UpdateEventRequest anUpdate() {
 		return new UpdateEventRequest("Renamed", LocalDateTime.parse("2026-09-01T18:30"));
+	}
+
+	private static CancelEventRequest severeWeather() {
+		return new CancelEventRequest("Severe weather");
 	}
 
 	/** A stubbed read-only event, for the list-shaped tests. */

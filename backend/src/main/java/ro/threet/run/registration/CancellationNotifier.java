@@ -47,7 +47,7 @@ class CancellationNotifier {
 
 		int sent = 0;
 		for (Registration registration : recipients.values()) {
-			CancellationEmail email = CancellationEmail.forRegistration(registration);
+			CancellationEmail email = CancellationEmail.forRegistration(registration, cancelled.reason());
 			try {
 				emailSender.send(registration.getEmail(), email.subject(), email.body());
 				sent++;
