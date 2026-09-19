@@ -14,7 +14,7 @@ import ro.threet.run.event.Event;
  * The stored instant is UTC; the email shows the local Bucharest time, which is when the run would
  * have happened for the reader.
  */
-final class CancellationEmail {
+final class CancellationEmail implements MailMessage {
 
 	private static final ZoneId EVENT_ZONE = ZoneId.of("Europe/Bucharest");
 	private static final DateTimeFormatter WHEN =
@@ -49,11 +49,13 @@ final class CancellationEmail {
 		return new CancellationEmail(subject, body);
 	}
 
-	String subject() {
+	@Override
+	public String subject() {
 		return subject;
 	}
 
-	String body() {
+	@Override
+	public String body() {
 		return body;
 	}
 

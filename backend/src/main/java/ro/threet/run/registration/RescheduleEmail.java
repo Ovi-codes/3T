@@ -15,7 +15,7 @@ import ro.threet.run.event.Event;
  * <p>The old and new starts come from the {@code EventRescheduled} event (the row now holds only the
  * new one); both are shown in local Bucharest time, which is when the run happens for the reader.
  */
-final class RescheduleEmail {
+final class RescheduleEmail implements MailMessage {
 
 	private static final ZoneId EVENT_ZONE = ZoneId.of("Europe/Bucharest");
 	private static final DateTimeFormatter WHEN =
@@ -53,11 +53,13 @@ final class RescheduleEmail {
 		return new RescheduleEmail(subject, body);
 	}
 
-	String subject() {
+	@Override
+	public String subject() {
 		return subject;
 	}
 
-	String body() {
+	@Override
+	public String body() {
 		return body;
 	}
 

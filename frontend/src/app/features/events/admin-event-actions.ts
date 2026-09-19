@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import { AdminEventItem, EventsService } from './events.service';
@@ -190,29 +190,38 @@ export class AdminEventActions {
     this.formError.set(null);
   }
 
-  /** The message under the name field: the server's rejection first, else the client-side rule. */
-  protected nameError(): string | null {
-    const server = this.fieldErrors()['name'];
+  /**
+   * The message under a field: the server's rejection (keyed by `key`) first, else — once `control`
+   * has been touched and is invalid — the client-side `rule`. The shared shape behind the
+   * field-level getters, so each only names its server key, its control, and its own wording.
+   */
+  private fieldError(key: string, control: AbstractControl, rule: () => string): string | null {
+    const server = this.fieldErrors()[key];
     if (server) {
       return server;
     }
-    const control = this.editForm.controls.name;
     if (!control.touched || control.valid) {
       return null;
     }
-    return control.hasError('required')
-      ? 'Enter a name for the run.'
-      : `Name must be at most ${MAX_NAME} characters.`;
+    return rule();
+  }
+
+  /** The message under the name field: the server's rejection first, else the client-side rule. */
+  protected nameError(): string | null {
+    return this.fieldError('name', this.editForm.controls.name, () =>
+      this.editForm.controls.name.hasError('required')
+        ? 'Enter a name for the run.'
+        : `Name must be at most ${MAX_NAME} characters.`,
+    );
   }
 
   /** The message under the date/time row. Hour and minute always hold a value, so only the date can be blank. */
   protected startError(): string | null {
-    const server = this.fieldErrors()['startDateTime'];
-    if (server) {
-      return server;
-    }
-    const date = this.editForm.controls.date;
-    return date.touched && date.hasError('required') ? 'Choose a date for the run.' : null;
+    return this.fieldError(
+      'startDateTime',
+      this.editForm.controls.date,
+      () => 'Choose a date for the run.',
+    );
   }
 
   /** A rejection about the run as a whole (already cancelled, has registrations, or a network failure). */
@@ -222,12 +231,11 @@ export class AdminEventActions {
 
   /** The message under the reason picker: the server's rejection first, else the client-side rule. */
   protected reasonError(): string | null {
-    const server = this.fieldErrors()['reason'];
-    if (server) {
-      return server;
-    }
-    const control = this.cancelForm.controls.reason;
-    return control.touched && control.invalid ? 'Choose a reason for cancelling.' : null;
+    return this.fieldError(
+      'reason',
+      this.cancelForm.controls.reason,
+      () => 'Choose a reason for cancelling.',
+    );
   }
 
   /**
