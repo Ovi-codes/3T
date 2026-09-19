@@ -6,6 +6,7 @@ past and upcoming runs on a dashboard.
 
 - Scope, architecture and testing strategy: [`docs/charter.md`](docs/charter.md)
 - What's now / next / later: [`docs/roadmap.md`](docs/roadmap.md)
+- Architecture decision records: [`docs/adr/`](docs/adr/) — e.g. [why cancel and delete are different actions](docs/adr/0001-cancel-vs-hard-delete-events.md)
 - Agent context: [`CLAUDE.md`](CLAUDE.md)
 
 ## Prerequisites
@@ -88,6 +89,10 @@ a prod SMTP provider sets the mail ones.
 
 The next-run weather forecast calls [Open-Meteo](https://open-meteo.com) (free, no API key,
 EU-hosted). It uses `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS` and `WEATHER_CACHE_TTL`.
+
+Admin accounts are named by `ADMIN_EMAILS` (comma-separated; empty by default, so no account is an
+admin unless set). A listed account gains `ROLE_ADMIN` the first time it signs up or logs in, which
+unlocks event management under `/api/admin/**`.
 
 The account session cookie is `Secure` by default (prod is HTTPS). To sign in over local
 **http**, opt out so the browser will store the cookie:

@@ -73,6 +73,49 @@ describe('AuthService', () => {
     expect(service.user()).toEqual({ id: 7, email: 'ana@example.com' });
   });
 
+  it('isAdmin is false before any check and for an account without ROLE_ADMIN', () => {
+    expect(service.isAdmin()).toBe(false);
+
+    service.login('ana@example.com', 'correct horse').subscribe();
+    httpMock.expectOne('/api/auth/login').flush({
+      id: 1,
+      email: 'ana@example.com',
+      name: 'Ana Pop',
+      roles: ['ROLE_USER'],
+    });
+
+    expect(service.isAdmin()).toBe(false);
+  });
+
+  it('isAdmin is true when the account carries ROLE_ADMIN', () => {
+    service.login('boss@example.com', 'correct horse').subscribe();
+    httpMock.expectOne('/api/auth/login').flush({
+      id: 2,
+      email: 'boss@example.com',
+      name: 'Boss',
+      roles: ['ROLE_ADMIN', 'ROLE_USER'],
+    });
+
+    expect(service.isAdmin()).toBe(true);
+    expect(service.user()?.roles).toEqual(['ROLE_ADMIN', 'ROLE_USER']);
+  });
+
+  it('isAdmin returns to false after logout', () => {
+    service.login('boss@example.com', 'correct horse').subscribe();
+    httpMock.expectOne('/api/auth/login').flush({
+      id: 2,
+      email: 'boss@example.com',
+      name: 'Boss',
+      roles: ['ROLE_ADMIN', 'ROLE_USER'],
+    });
+    expect(service.isAdmin()).toBe(true);
+
+    service.logout().subscribe();
+    httpMock.expectOne('/api/auth/logout').flush(null);
+
+    expect(service.isAdmin()).toBe(false);
+  });
+
   it('loadCurrentUser treats a 401 as signed-out, not an error', () => {
     let emitted: unknown = 'unset';
     service.loadCurrentUser().subscribe((account) => (emitted = account));

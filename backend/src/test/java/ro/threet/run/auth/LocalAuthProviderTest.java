@@ -1,6 +1,7 @@
 package ro.threet.run.auth;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,6 +25,8 @@ import static org.mockito.Mockito.when;
  * The local provider's credential rules in isolation: passwords are hashed (never stored raw),
  * emails are normalised so accounts are case-insensitive, a taken email is refused, and a login
  * failure is one indistinguishable outcome whether the email is unknown or the password is wrong.
+ * Role provisioning is delegated to {@link RoleService} (mocked here); the provider only puts the
+ * resolved roles onto the principal.
  */
 @ExtendWith(MockitoExtension.class)
 class LocalAuthProviderTest {
@@ -33,11 +37,20 @@ class LocalAuthProviderTest {
 	@Mock
 	private AppUserRepository users;
 
+	@Mock
+	private RoleService roleService;
+
 	@Captor
 	private ArgumentCaptor<AppUser> savedCaptor;
 
+	@org.junit.jupiter.api.BeforeEach
+	void defaultRoles() {
+		// By default a user carries the baseline ROLE_USER; the admin tests override this.
+		lenient().when(roleService.ensureRolesFor(any(AppUser.class))).thenReturn(Set.of("ROLE_USER"));
+	}
+
 	private LocalAuthProvider provider() {
-		return new LocalAuthProvider(users, passwordEncoder);
+		return new LocalAuthProvider(users, passwordEncoder, roleService);
 	}
 
 	@Test
@@ -55,6 +68,19 @@ class LocalAuthProviderTest {
 		assertThat(passwordEncoder.matches("correct horse", saved.getPasswordHash())).isTrue();
 		assertThat(principal.email()).isEqualTo("ana@example.com");
 		assertThat(principal.name()).isEqualTo("Ana Pop");
+		assertThat(principal.roles()).containsExactly("ROLE_USER");
+	}
+
+	@Test
+	void signupPutsTheResolvedRolesOntoThePrincipal() {
+		when(users.existsByEmail("boss@example.com")).thenReturn(false);
+		when(users.save(any(AppUser.class))).thenAnswer(call -> call.getArgument(0));
+		when(roleService.ensureRolesFor(any(AppUser.class)))
+				.thenReturn(Set.of("ROLE_ADMIN", "ROLE_USER"));
+
+		AccountPrincipal principal = provider().signup("boss@example.com", "Boss", "correct horse");
+
+		assertThat(principal.roles()).containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
 	}
 
 	@Test
@@ -75,6 +101,18 @@ class LocalAuthProviderTest {
 		AccountPrincipal principal = provider().login("  ANA@example.com ", "correct horse");
 
 		assertThat(principal.email()).isEqualTo("ana@example.com");
+		assertThat(principal.roles()).containsExactly("ROLE_USER");
+	}
+
+	@Test
+	void loginPutsTheResolvedRolesOntoThePrincipal() {
+		AppUser user = new AppUser("boss@example.com", "Boss", passwordEncoder.encode("correct horse"));
+		when(users.findByEmail("boss@example.com")).thenReturn(Optional.of(user));
+		when(roleService.ensureRolesFor(user)).thenReturn(Set.of("ROLE_ADMIN", "ROLE_USER"));
+
+		AccountPrincipal principal = provider().login("boss@example.com", "correct horse");
+
+		assertThat(principal.roles()).containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
 	}
 
 	@Test

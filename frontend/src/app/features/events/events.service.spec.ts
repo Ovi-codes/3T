@@ -59,4 +59,23 @@ describe('EventsService', () => {
     service.byId(1).subscribe();
     httpMock.expectOne('/api/events').flush(EVENTS);
   });
+
+  it('create posts the payload to the admin endpoint and returns the created event', () => {
+    const created: EventItem = {
+      id: 3,
+      name: 'Autumn 5k',
+      startDateTime: '2026-10-01T09:00:00+03:00',
+      locationName: 'Tineretului Park',
+      city: 'Bucharest',
+    };
+    let received: EventItem | undefined;
+    service.create({ name: 'Autumn 5k', startDateTime: '2026-10-01T09:00' }).subscribe((event) => (received = event));
+
+    const request = httpMock.expectOne('/api/admin/events');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ name: 'Autumn 5k', startDateTime: '2026-10-01T09:00' });
+    request.flush(created);
+
+    expect(received).toEqual(created);
+  });
 });
