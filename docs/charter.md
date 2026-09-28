@@ -146,7 +146,8 @@ A feature is shippable when:
 - **Data minimisation:** collect only name + email for registration.
 - **Rights:** support access (export) and erasure (delete account + data) — build the seam early even if the UI is minimal.
   Implemented in Increment 5: `GET /api/me/export` downloads the account + its registrations as JSON
-  (structured, machine-readable; no password hash); `DELETE /api/me` erases the account and its
+  (structured, machine-readable; no password hash; each registration carries the
+  runner's self-entered `finishTimeSeconds`); `DELETE /api/me` erases the account and its
   registrations (hard delete — V1 keeps no aggregate that needs the rows) and ends the session.
 - **Consent + cookies:** privacy policy page; cookie/consent banner only for non-essential cookies.
   We set **no non-essential cookies** — the only cookie is the strictly-necessary `JSESSIONID` session

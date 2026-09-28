@@ -155,6 +155,50 @@ class RegistrationServiceTest {
 		assertThat(response.past()).extracting(MyRegistration::eventId).containsExactly(21L, 20L);
 	}
 
+	@Test
+	void refusesAFinishTimeOnSomeoneElsesRegistrationAsNotFound() {
+		Registration bobs = registration(event(NOW.minusDays(2)));
+		bobs.linkUser(99L);
+		when(registrationRepository.findById(7L)).thenReturn(Optional.of(bobs));
+
+		// Ana (42) can't touch Bob's row — and the 404 doesn't confirm that the id exists.
+		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471))
+				.isInstanceOfSatisfying(RegistrationException.class,
+						e -> assertThat(e.status()).isEqualTo(HttpStatus.NOT_FOUND));
+		assertThat(bobs.getFinishTime()).isNull();
+	}
+
+	@Test
+	void refusesAFinishTimeBeforeTheRunHasTakenPlace() {
+		Registration anas = registration(upcomingEvent());
+		anas.linkUser(42L);
+		when(registrationRepository.findById(7L)).thenReturn(Optional.of(anas));
+
+		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471))
+				.isInstanceOfSatisfying(RegistrationException.class, e -> {
+					assertThat(e.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+					assertThat(e.field()).isEqualTo("finishTimeSeconds");
+				});
+		assertThat(anas.getFinishTime()).isNull();
+	}
+
+	@Test
+	void refusesAFinishTimeForACancelledRun() {
+		Event cancelled = event(NOW.minusDays(2));
+		when(cancelled.isCancelled()).thenReturn(true);
+		Registration anas = registration(cancelled);
+		anas.linkUser(42L);
+		when(registrationRepository.findById(7L)).thenReturn(Optional.of(anas));
+
+		// Its date has gone by, but the run never happened — there's no time to record.
+		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471))
+				.isInstanceOfSatisfying(RegistrationException.class, e -> {
+					assertThat(e.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+					assertThat(e.field()).isEqualTo("finishTimeSeconds");
+				});
+		assertThat(anas.getFinishTime()).isNull();
+	}
+
 	private Registration registration(Event event) {
 		return new Registration(event, "Ana", "ana@example.com");
 	}

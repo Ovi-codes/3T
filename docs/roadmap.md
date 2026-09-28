@@ -20,7 +20,7 @@
 - ~~Implement user roles - admins should be able to CRUD events~~  Increment 10 (#57) (#58)
 - ~~Create design theme and logo and implement new design language~~ ✓ Increment 8 (#39) — "Floodlight" theme; see [`docs/design/`](./design/)
 - ~~Tidy up user experience - sign up should take name also and logged in users no longer enter registration info manually~~ ✓ Increment 7 (#38)
-- Post-event time upload — runners manually enter their own finish time (AI screenshot extraction deferred to V3).
+- ~~Post-event time upload — runners manually enter their own finish time (AI screenshot extraction deferred to V3).~~ ✓ Increment 11 (#43)
 - Leaderboards per run.
 - Personal stats: placement, time trend, graphs.
 - ~~Integrate a free weather API that shows prediction for the next session.~~ ✓ Increment 9 (#40)

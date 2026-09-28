@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
 import { AccountService, MyRegistration, MyRegistrations } from '../account/account.service';
+import { FinishTimeEntry } from './finish-time-entry';
 
 /**
  * Increment 4: the runner's own runs, split into the ones ahead (CS-4) and the ones done (CS-5).
@@ -16,7 +17,7 @@ import { AccountService, MyRegistration, MyRegistrations } from '../account/acco
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, FinishTimeEntry],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -69,6 +70,16 @@ export class Dashboard {
         this.returnFocusToDelete.set(false);
       }
     });
+  }
+
+  /** Swap a past run's row for the server's updated one after its finish time is saved (#43). */
+  protected onRecorded(updated: MyRegistration): void {
+    this.runs.update((runs) =>
+      runs && {
+        ...runs,
+        past: runs.past.map((run) => (run.registrationId === updated.registrationId ? updated : run)),
+      },
+    );
   }
 
   protected logout(): void {

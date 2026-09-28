@@ -1,5 +1,6 @@
 package ro.threet.run.registration;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
@@ -12,6 +13,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import ro.threet.run.event.Event;
 
 /**
@@ -20,8 +24,7 @@ import ro.threet.run.event.Event;
  *
  * Always carries name + email. {@code user_id} attributes the registration to a signed-in account
  * and is null for an anonymous one, so the core loop stays anonymous while a logged-in registration
- * links to its owner. {@code finish_time} remains unmapped — it belongs to V2 (results); Hibernate
- * validates only mapped columns against the schema, so leaving it off is fine.
+ * links to its owner. {@code finish_time} is the runner's own recorded time for the run.
  */
 @Entity
 @Table(name = "registration")
@@ -45,6 +48,15 @@ public class Registration {
 	@Column(name = "user_id")
 	private Long userId;
 
+	/**
+	 * The runner's self-entered finish time, or null when none has been recorded. Pinned to the
+	 * Postgres {@code interval} type — Hibernate would otherwise map a {@link Duration} to numeric and
+	 * fail schema validation against the V3 column.
+	 */
+	@JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
+	@Column(name = "finish_time")
+	private Duration finishTime;
+
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private OffsetDateTime createdAt;
 
@@ -61,6 +73,11 @@ public class Registration {
 	/** Attribute this registration to a signed-in account. */
 	public void linkUser(Long userId) {
 		this.userId = userId;
+	}
+
+	/** Record (or correct) the runner's finish time. */
+	public void recordFinishTime(Duration finishTime) {
+		this.finishTime = finishTime;
 	}
 
 	public Long getId() {
@@ -81,6 +98,15 @@ public class Registration {
 
 	public Long getUserId() {
 		return userId;
+	}
+
+	public Duration getFinishTime() {
+		return finishTime;
+	}
+
+	/** The finish time in whole seconds — the API's wire unit — or null when none is recorded. */
+	public Integer getFinishTimeSeconds() {
+		return finishTime == null ? null : Math.toIntExact(finishTime.toSeconds());
 	}
 
 	public OffsetDateTime getCreatedAt() {

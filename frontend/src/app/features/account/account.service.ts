@@ -17,6 +17,11 @@ export interface MyRegistration {
    * its date passes — the registration is kept, so the runner can see what happened to it.
    */
   cancelled: boolean;
+  /**
+   * The runner's own finish time for a past run, in whole seconds — null until they record one
+   * (#43). Seconds on the wire; the dashboard formats it as mm:ss.
+   */
+  finishTimeSeconds: number | null;
 }
 
 /** Body of GET /api/me/registrations: the two buckets the dashboard shows. */
@@ -43,6 +48,16 @@ export class AccountService {
    */
   getMyRegistrations(): Observable<MyRegistrations> {
     return this.http.get<MyRegistrations>('/api/me/registrations');
+  }
+
+  /**
+   * Record or correct the runner's own finish time on one of their past registrations
+   * (PUT /api/me/registrations/{id}/finish-time, #43). Resolves to the updated dashboard row.
+   */
+  recordFinishTime(registrationId: number, finishTimeSeconds: number): Observable<MyRegistration> {
+    return this.http.put<MyRegistration>(`/api/me/registrations/${registrationId}/finish-time`, {
+      finishTimeSeconds,
+    });
   }
 
   /**

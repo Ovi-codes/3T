@@ -33,6 +33,28 @@ describe('AccountService', () => {
     expect(received).toEqual(body);
   });
 
+  it('recordFinishTime puts the time in seconds and returns the updated row', () => {
+    const row = {
+      registrationId: 5,
+      eventId: 3,
+      eventName: 'Tineretului parkrun',
+      startDateTime: '2026-09-01T15:00:00Z',
+      locationName: 'Tineretului Park',
+      city: 'Bucharest',
+      cancelled: false,
+      finishTimeSeconds: 1471,
+    };
+    let received: unknown;
+    service.recordFinishTime(5, 1471).subscribe((updated) => (received = updated));
+
+    const request = httpMock.expectOne('/api/me/registrations/5/finish-time');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ finishTimeSeconds: 1471 });
+    request.flush(row);
+
+    expect(received).toEqual(row);
+  });
+
   it('exportData fetches the account data as a blob', () => {
     let received: Blob | undefined;
     service.exportData().subscribe((blob) => (received = blob));

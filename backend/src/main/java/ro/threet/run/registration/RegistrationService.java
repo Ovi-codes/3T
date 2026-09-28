@@ -1,6 +1,7 @@
 package ro.threet.run.registration;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,6 +114,36 @@ public class RegistrationService {
 		Collections.reverse(upcoming);
 
 		return new MyRegistrationsResponse(upcoming, past);
+	}
+
+	/**
+	 * Record (or correct) the runner's own finish time on one of their registrations.
+	 *
+	 * @param userId            the current account (never null — the endpoint requires authentication)
+	 * @param registrationId    the registration to record the time on
+	 * @param finishTimeSeconds the time, in whole seconds (range already bean-validated at the boundary)
+	 * @return the updated registration, in the dashboard's row shape
+	 */
+	@Transactional
+	public MyRegistration recordFinishTime(Long userId, Long registrationId, int finishTimeSeconds) {
+		// Someone else's registration is reported exactly like a missing one, so the 404 never
+		// confirms that another person's row exists.
+		Registration registration = registrationRepository.findById(registrationId)
+				.filter(found -> userId.equals(found.getUserId()))
+				.orElseThrow(() -> new RegistrationException(HttpStatus.NOT_FOUND, "registrationId",
+						"That registration could not be found."));
+		// "Taken place" uses the dashboard's cutoff — a run is past once its start has gone by.
+		if (!registration.getEvent().getStartDateTime().isBefore(OffsetDateTime.now(clock))) {
+			throw new RegistrationException(HttpStatus.BAD_REQUEST, "finishTimeSeconds",
+					"You can add a time once the run has taken place.");
+		}
+		// A cancelled run keeps showing under Past (ADR-0001), but it never happened.
+		if (registration.getEvent().isCancelled()) {
+			throw new RegistrationException(HttpStatus.BAD_REQUEST, "finishTimeSeconds",
+					"This run was cancelled, so there's no time to record.");
+		}
+		registration.recordFinishTime(Duration.ofSeconds(finishTimeSeconds));
+		return MyRegistration.from(registration);
 	}
 
 	/**
