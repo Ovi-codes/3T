@@ -20,7 +20,7 @@ import ro.threet.run.event.Event;
 
 /**
  * A person's registration for an {@link Event}, stored per (event, participant) — the shape that
- * lets results and account linkage share one row (charter Â§3 seam).
+ * lets results and account linkage share one row (charter §3 seam).
  *
  * Always carries name + email. {@code user_id} attributes the registration to a signed-in account
  * and is null for an anonymous one, so the core loop stays anonymous while a logged-in registration

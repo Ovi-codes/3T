@@ -137,7 +137,7 @@ public class RegistrationService {
 			throw new RegistrationException(HttpStatus.BAD_REQUEST, "finishTimeSeconds",
 					"You can add a time once the run has taken place.");
 		}
-		// A canceled run keeps showing under Past (ADR-0001), but it never happened.
+		// A cancelled run keeps showing under Past (ADR-0001), but it never happened.
 		if (registration.getEvent().isCancelled()) {
 			throw new RegistrationException(HttpStatus.BAD_REQUEST, "finishTimeSeconds",
 					"This run was cancelled, so there's no time to record.");
