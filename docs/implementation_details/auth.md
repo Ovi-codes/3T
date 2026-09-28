@@ -15,7 +15,9 @@ stays local (charter §3).
 - **Endpoints:** `POST /api/auth/signup` (201, logs in), `POST /api/auth/login` (200),
   `POST /api/auth/logout` (204), `GET /api/auth/me` (200 or 401). Authorisation is deny-by-default;
   the public API (events, anonymous registration, signup/login, health) is enumerated in
-  `SecurityConfig`. Sign-up captures the person's `name` alongside email + password (Increment 7,
+  `SecurityConfig`. `GET /api/events/**` also covers a past run's leaderboard,
+  `GET /api/events/{id}/leaderboard` (#44) — public by design; it exposes only first name + last
+  initial and finish times, and refuses upcoming / cancelled runs (409). Sign-up captures the person's `name` alongside email + password (Increment 7,
   #38); `/me` and `AccountResponse` carry it. `name` is `NOT NULL` on `app_user` and `@NotBlank` at
   the API — every account has one.
 - **Registration linkage:** `POST /api/registrations` stays anonymous, but if the caller has a

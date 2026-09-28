@@ -1,0 +1,95 @@
+<main id="main-content" tabindex="-1" class="page" data-testid="leaderboard">
+  @if (error(); as message) {
+    <p class="state state-error" role="alert">{{ message }}</p>
+  } @else if (unavailable(); as reason) {
+    <header class="page-header" data-testid="leaderboard-unavailable">
+      <p class="eyebrow">Results</p>
+      <h1>No results</h1>
+      <p class="lede">{{ reason }} <a routerLink="/">See upcoming runs</a>.</p>
+    </header>
+  } @else if (leaderboard(); as board) {
+    <header class="page-header">
+      <p class="eyebrow">Results</p>
+      <h1>{{ board.eventName }}</h1>
+      <p class="lede">
+        <time class="run-when" [attr.datetime]="board.startDateTime">
+          {{ board.startDateTime | date: 'EEE d MMM' }} · {{ board.startDateTime | date: 'HH:mm' }}
+        </time>
+        · {{ board.locationName }}, {{ board.city }}
+      </p>
+    </header>
+
+    <hr class="course-rule" aria-hidden="true" />
+
+    @if (board.entries.length === 0) {
+      <p class="state-empty">No results for this run — nobody was registered for it.</p>
+    } @else {
+      <p class="summary" data-testid="leaderboard-summary">{{ summary() }}</p>
+
+      <table class="results">
+        <caption class="sr-only">Results for {{ board.eventName }}, fastest first</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="col-position">Position</th>
+            <th scope="col">Runner</th>
+            <th scope="col" class="col-time">Time</th>
+            <th scope="col" class="col-medal"><span class="sr-only">Medal</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of board.entries; track $index) {
+            <tr
+              data-testid="leaderboard-row"
+              [class.podium]="entry.position !== null && entry.position <= 3"
+              [class.no-time]="entry.finishTimeSeconds === null"
+            >
+              <td class="col-position">
+                @if (entry.position !== null) {
+                  {{ entry.position }}
+                } @else {
+                  <span aria-hidden="true">–</span><span class="sr-only">No position</span>
+                }
+              </td>
+              <th scope="row" class="runner">{{ entry.runnerName }}</th>
+              <td class="col-time">
+                @if (entry.finishTimeSeconds !== null) {
+                  {{ formatTime(entry.finishTimeSeconds) }}
+                } @else {
+                  Time not entered
+                }
+              </td>
+              <td class="col-medal">
+                @if (medal(entry.position); as medal) {
+                  <svg
+                    [class]="'medal medal-' + medal.kind"
+                    viewBox="0 0 24 28"
+                    role="img"
+                    [attr.aria-label]="medal.label"
+                  >
+                    <path class="medal-ribbon" d="M5 0h5l4 11H9zM19 0h-5l-4 11h5z" />
+                    <circle class="medal-disc" cx="12" cy="19" r="8" />
+                    <circle class="medal-rim" cx="12" cy="19" r="5.25" />
+                  </svg>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <p class="fine-print">
+        Runners are shown by first name and last initial, with the time they entered themselves. See
+        our <a routerLink="/privacy">privacy policy</a>.
+      </p>
+    }
+
+    <div class="actions">
+      @if (user()) {
+        <a class="btn btn-secondary" routerLink="/dashboard">Back to your dashboard</a>
+      }
+      <a class="btn btn-secondary" routerLink="/">See upcoming runs</a>
+    </div>
+  } @else {
+    <p class="state" aria-live="polite">Loading results…</p>
+  }
+</main>

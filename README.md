@@ -103,6 +103,16 @@ SESSION_COOKIE_SECURE=false ./mvnw spring-boot:run
 
 Anonymous run registration needs no session, so you only need this when exercising accounts.
 
+To demo the leaderboard without typing results in, opt into the **demo seed**:
+
+```bash
+DEMO_DATA=true SESSION_COOKIE_SECURE=false ./mvnw spring-boot:run
+```
+
+It fills the most recent past run with eleven runners and their times, and adds an account that ran
+it — sign in as `demo@example.com` / `demo-run-5k` and open **Results** on the past run. Off by
+default; **never set it in prod**.
+
 ### 3. Frontend
 
 ```bash

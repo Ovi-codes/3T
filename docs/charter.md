@@ -149,6 +149,11 @@ A feature is shippable when:
   (structured, machine-readable; no password hash; each registration carries the
   runner's self-entered `finishTimeSeconds`); `DELETE /api/me` erases the account and its
   registrations (hard delete — V1 keeps no aggregate that needs the rows) and ends the session.
+- **Public results (V2, #44):** a past run's leaderboard (`GET /api/events/{id}/leaderboard`) is
+  public. It shows each registrant by **first name + last-name initial** ("Ana P.") with their
+  self-entered finish time — never the email or full surname (data minimisation). Only past,
+  not-cancelled runs have one, so an upcoming run's registrant list is never public. Disclosed in
+  the privacy policy; erasure removes the account's registrations, and so its leaderboard rows.
 - **Consent + cookies:** privacy policy page; cookie/consent banner only for non-essential cookies.
   We set **no non-essential cookies** — the only cookie is the strictly-necessary `JSESSIONID` session
   cookie (no analytics, no tracking), so **no consent banner is needed** (per the Increment 5 brief); the

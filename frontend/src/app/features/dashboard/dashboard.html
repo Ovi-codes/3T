@@ -59,6 +59,13 @@
                 <span class="tag tag-off" data-testid="run-cancelled">Cancelled</span>
               } @else {
                 <app-finish-time-entry [run]="run" (recorded)="onRecorded($event)" />
+                <a
+                  class="btn btn-ghost"
+                  [routerLink]="['/leaderboard', run.eventId]"
+                  data-testid="leaderboard-link"
+                >
+                  Results<span class="sr-only"> for {{ run.eventName }}</span>
+                </a>
                 <span class="tag tag-neutral">Attended</span>
               }
             </li>

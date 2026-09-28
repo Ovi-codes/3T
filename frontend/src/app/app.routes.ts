@@ -6,6 +6,7 @@ import { Login } from './features/auth/login';
 import { Dashboard } from './features/dashboard/dashboard';
 import { authGuard } from './features/auth/auth.guard';
 import { Privacy } from './features/privacy/privacy';
+import { Leaderboard } from './features/leaderboard/leaderboard';
 
 export const routes: Routes = [
   { path: '', component: Events },
@@ -17,4 +18,6 @@ export const routes: Routes = [
   { path: 'dashboard', component: Dashboard, canActivate: [authGuard] },
   // GDPR (Increment 5): the privacy policy, linked from the footer.
   { path: 'privacy', component: Privacy },
+  // A past run's public results (Increment 12), linked from the dashboard's past runs.
+  { path: 'leaderboard/:eventId', component: Leaderboard },
 ];

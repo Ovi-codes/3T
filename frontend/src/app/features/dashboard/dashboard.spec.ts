@@ -119,6 +119,22 @@ describe('Dashboard', () => {
     expect(item.textContent).not.toContain('Attended');
   });
 
+  it('links a past run to its leaderboard (#44)', async () => {
+    await flush({ upcoming: [], past: [run({ eventId: 20, eventName: 'Summer 5k' })] });
+
+    const link = query('leaderboard-link') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/leaderboard/20');
+    // The visible "Results" is disambiguated for screen readers, like "Add your time".
+    expect(link.textContent).toContain('Results');
+    expect(link.textContent).toContain('Summer 5k');
+  });
+
+  it('offers no leaderboard for a called-off past run — nobody ran it (#44)', async () => {
+    await flush({ upcoming: [], past: [run({ cancelled: true })] });
+
+    expect(query('leaderboard-link')).toBeNull();
+  });
+
   it('shows the upcoming empty state while past still lists runs', async () => {
     await flush({ upcoming: [], past: [run()] });
 
