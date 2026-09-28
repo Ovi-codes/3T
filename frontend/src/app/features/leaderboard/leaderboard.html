@@ -33,6 +33,7 @@
             <th scope="col" class="col-position">Position</th>
             <th scope="col">Runner</th>
             <th scope="col" class="col-time">Time</th>
+            <th scope="col" class="col-medal"><span class="sr-only">Medal</span></th>
           </tr>
         </thead>
         <tbody>
@@ -55,6 +56,20 @@
                   {{ formatTime(entry.finishTimeSeconds) }}
                 } @else {
                   Time not entered
+                }
+              </td>
+              <td class="col-medal">
+                @if (medal(entry.position); as medal) {
+                  <svg
+                    [class]="'medal medal-' + medal.kind"
+                    viewBox="0 0 24 28"
+                    role="img"
+                    [attr.aria-label]="medal.label"
+                  >
+                    <path class="medal-ribbon" d="M5 0h5l4 11H9zM19 0h-5l-4 11h5z" />
+                    <circle class="medal-disc" cx="12" cy="19" r="8" />
+                    <circle class="medal-rim" cx="12" cy="19" r="5.25" />
+                  </svg>
                 }
               </td>
             </tr>

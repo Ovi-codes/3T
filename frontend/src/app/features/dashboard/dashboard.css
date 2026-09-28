@@ -83,6 +83,12 @@ h1 {
   color: var(--color-ink-soft);
 }
 
+/* Results sits between the time's Edit and the Attended tag; flush its ghost padding like Edit's, so
+   the time, Edit, Results and Attended are evenly spaced by the row's gap. */
+.run-card-past .btn-ghost {
+  margin-inline: calc(-1 * var(--space-2));
+}
+
 .run-date {
   display: flex;
   flex-direction: column;
@@ -230,6 +236,16 @@ h1 {
   .actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  /* A past run's details fill the first line, pushing its time, Results and Attended onto the next
+     together; the wider row gap leaves room for the "Your time" label above that line. */
+  .run-card-past {
+    row-gap: var(--space-8);
+  }
+
+  .run-card-past .run-body {
+    flex-basis: 60%;
   }
 
   /* Stack the label and its action so the button isn't squeezed on narrow screens. */

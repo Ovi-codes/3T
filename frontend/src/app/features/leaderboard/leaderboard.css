@@ -124,6 +124,52 @@ h1 {
   color: var(--color-primary-ink);
 }
 
+/* The podium's medals: a small orange ribbon over a gold / silver / bronze disc with a darker rim. */
+.results .col-medal {
+  width: 6rem;
+}
+
+/* Through tbody so it outranks the cells' left-align + right padding above. */
+.results tbody .col-medal {
+  padding-right: 0;
+  text-align: center;
+  line-height: 0;
+}
+
+.medal {
+  width: 1.25rem;
+  height: auto;
+  vertical-align: middle;
+}
+
+.medal-ribbon {
+  fill: var(--color-primary);
+}
+
+.medal-disc {
+  fill: var(--medal);
+  stroke: color-mix(in srgb, var(--medal) 55%, var(--color-ink));
+  stroke-width: 1.5;
+}
+
+.medal-rim {
+  fill: none;
+  stroke: color-mix(in srgb, var(--medal) 70%, var(--color-ink));
+  stroke-width: 1;
+}
+
+.medal-gold {
+  --medal: var(--color-medal-gold);
+}
+
+.medal-silver {
+  --medal: var(--color-medal-silver);
+}
+
+.medal-bronze {
+  --medal: var(--color-medal-bronze);
+}
+
 /* Runners without a time: quieter, so the ranked field reads first. */
 .results .no-time .runner,
 .results .no-time .col-position {
@@ -172,6 +218,10 @@ h1 {
 
   .results .col-position {
     width: 3rem;
+  }
+
+  .results .col-medal {
+    width: 2rem;
   }
 
   .results .runner,

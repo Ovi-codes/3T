@@ -116,12 +116,12 @@ test.afterEach(async () => {
   }
 });
 
-/** Every row's cells as text, in page order. */
+/** Every row's cells as text, in page order (the medal column is checked on its own). */
 async function rowsOf(page: Page): Promise<string[][]> {
   const rows = page.getByTestId('leaderboard-row');
   await expect(rows.first()).toBeVisible();
   return rows.evaluateAll((trs) =>
-    trs.map((tr) => Array.from(tr.querySelectorAll('th, td')).map((cell) => (cell as HTMLElement).innerText.trim())),
+    trs.map((tr) => Array.from(tr.querySelectorAll('th, td:not(.col-medal)')).map((cell) => (cell as HTMLElement).innerText.trim())),
   );
 }
 
@@ -157,6 +157,11 @@ test('anyone can open a past run’s results, no sign-in needed', async ({ page 
 
   expect((await rowsOf(page)).slice(0, 5)).toEqual(EXPECTED_ROWS);
   await expect(page.getByTestId('leaderboard-summary')).toHaveText('5 of 6 runners have entered a time.');
+  // The podium gets medals; the tie for 3rd means two bronzes.
+  const board = page.getByTestId('leaderboard');
+  await expect(board.getByRole('img', { name: 'Gold medal' })).toHaveCount(1);
+  await expect(board.getByRole('img', { name: 'Silver medal' })).toHaveCount(1);
+  await expect(board.getByRole('img', { name: 'Bronze medal' })).toHaveCount(2);
 });
 
 test('an upcoming run has no results yet', async ({ page, request }) => {

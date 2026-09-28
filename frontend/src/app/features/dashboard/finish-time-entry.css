@@ -9,21 +9,29 @@
   order: 1;
 }
 
+/* The recorded time and its Edit, on one line. The "Your time" label hangs above the digits, centred on
+   them and out of flow, so the row centres on the time itself — Edit, Results and the Attended tag
+   beside it line up with the digits, not with the label-plus-time block. */
 .result {
   display: flex;
-  align-items: flex-end;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-6);
 }
 
 .result-value {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-1);
+  position: relative;
   margin: 0;
 }
 
 .result-label {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  left: 50%;
+  transform: translateX(-50%);
+  /* letter-spacing also trails the last letter; pad the start by as much so the word centres. */
+  padding-inline-start: 0.16em;
+  white-space: nowrap;
+  line-height: 1;
   font-size: var(--text-xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -31,8 +39,14 @@
   color: var(--color-ink-soft);
 }
 
+/* Flush the ghost button's text with its neighbours, so every gap along the row is the row's own. */
+.result .btn-ghost {
+  margin-inline: calc(-1 * var(--space-2));
+}
+
 /* Times use tabular figures (design invariant) so a column of results lines up. */
 .result-time {
+  display: block;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-xl);
@@ -109,14 +123,19 @@ input[aria-invalid='true'] {
   border: 0;
 }
 
-/* Narrow screens: the time drops under the run's details, left-aligned, instead of crowding the row. */
+/* Narrow screens: the time, Results and Attended share a line under the run's details. The label comes
+   back into flow so it can't overhang the page edge — still centred over the time — and a negative top
+   margin takes it out of the line's height, so that line still centres on the digits. */
 @media (max-width: 40rem) {
-  :host {
-    flex-basis: 100%;
-    order: 1;
+  .result-value {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+    margin-top: calc(-1 * (var(--text-xs) + var(--space-1)));
   }
 
-  .result-value {
-    align-items: flex-start;
+  .result-label {
+    position: static;
+    transform: none;
   }
 }

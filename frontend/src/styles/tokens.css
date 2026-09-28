@@ -60,6 +60,13 @@
   --color-destructive: #b3261e;      /* delete-account + admin delete/cancel-event controls */
   --color-destructive-soft: #f7e4e2;
 
+  /* ---- Color: medals ----
+   * The leaderboard's podium (#44). Decorative next to the position number, so they only need to
+   * read as gold / silver / bronze; each disc gets a darker rim (mixed with ink) for definition. */
+  --color-medal-gold: #e0a800;
+  --color-medal-silver: #a9adb2;
+  --color-medal-bronze: #b8733a;
+
   /* ---- Focus ---- */
   --color-focus-ring: #ff6d00;   /* visible focus; pair with --focus-offset */
   --focus-offset: 2px;

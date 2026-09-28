@@ -7,6 +7,13 @@ import { AuthService } from '../auth/auth.service';
 import { formatFinishTime } from '../dashboard/finish-time';
 import { LeaderboardService, RunLeaderboard } from './leaderboard.service';
 
+/** The podium: positions 1–3 earn a medal (tied runners share theirs). */
+const MEDALS: Record<number, { kind: string; label: string }> = {
+  1: { kind: 'gold', label: 'Gold medal' },
+  2: { kind: 'silver', label: 'Silver medal' },
+  3: { kind: 'bronze', label: 'Bronze medal' },
+};
+
 /**
  * Increment 12 (#44): a past run's public results. Anyone can open it — no session needed. Renders
  * the server's ranking as-is (the order and the shared positions of tied runners are the server's
@@ -43,6 +50,10 @@ export class Leaderboard {
   });
 
   protected readonly formatTime = formatFinishTime;
+
+  protected medal(position: number | null): { kind: string; label: string } | null {
+    return position === null ? null : (MEDALS[position] ?? null);
+  }
 
   constructor() {
     const eventId = Number(this.route.snapshot.paramMap.get('eventId'));

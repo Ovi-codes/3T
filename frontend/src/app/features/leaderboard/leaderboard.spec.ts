@@ -57,10 +57,17 @@ describe('Leaderboard', () => {
     fixture.detectChanges();
   }
 
-  /** Each row's cells as text: [position, runner, time]. */
+  /** Each row's cells as text: [position, runner, time] (the medal column is checked on its own). */
   function rows(): string[][] {
     return Array.from(page().querySelectorAll('[data-testid="leaderboard-row"]')).map((row) =>
-      Array.from(row.querySelectorAll('th, td')).map((cell) => cell.textContent!.trim()),
+      Array.from(row.querySelectorAll('th, td:not(.col-medal)')).map((cell) => cell.textContent!.trim()),
+    );
+  }
+
+  /** Each row's medal, by its accessible name ('' when the row has none). */
+  function medals(): string[] {
+    return Array.from(page().querySelectorAll('[data-testid="leaderboard-row"] .col-medal')).map(
+      (cell) => cell.querySelector('[role="img"]')?.getAttribute('aria-label') ?? '',
     );
   }
 
@@ -107,6 +114,21 @@ describe('Leaderboard', () => {
     expect(rows().map(([position]) => position)).toEqual(['1', '2', '2', '4']);
   });
 
+  it('gives the top three a gold, silver and bronze medal — tied runners share theirs', async () => {
+    await flush(
+      leaderboard([
+        { position: 1, runnerName: 'Andrei P.', finishTimeSeconds: 1122 },
+        { position: 2, runnerName: 'Ioana M.', finishTimeSeconds: 1195 },
+        { position: 3, runnerName: 'Elena D.', finishTimeSeconds: 1270 },
+        { position: 3, runnerName: 'Mihai C.', finishTimeSeconds: 1270 },
+        { position: 5, runnerName: 'Demo R.', finishTimeSeconds: 1417 },
+        { position: null, runnerName: 'Vlad I.', finishTimeSeconds: null },
+      ]),
+    );
+
+    expect(medals()).toEqual(['Gold medal', 'Silver medal', 'Bronze medal', 'Bronze medal', '', '']);
+  });
+
   it('lists a runner without a time last, with no position, as "Time not entered"', async () => {
     await flush(
       leaderboard([
@@ -141,7 +163,7 @@ describe('Leaderboard', () => {
     const table = page().querySelector('table')!;
     expect(table.querySelector('caption')!.textContent).toContain('Tineretului parkrun');
     const headers = Array.from(table.querySelectorAll('thead th')).map((th) => th.textContent!.trim());
-    expect(headers).toEqual(['Position', 'Runner', 'Time']);
+    expect(headers).toEqual(['Position', 'Runner', 'Time', 'Medal']);
     table.querySelectorAll('thead th').forEach((th) => expect(th.getAttribute('scope')).toBe('col'));
   });
 
