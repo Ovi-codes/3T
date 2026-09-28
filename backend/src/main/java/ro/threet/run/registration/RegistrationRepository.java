@@ -62,4 +62,16 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 	 */
 	long deleteByUserId(Long userId);
 
+	/**
+	 * One run's registrations in finishing order, for its leaderboard (#44): fastest time first,
+	 * runners without a time last, and ties broken by who registered first (the lower id) so the
+	 * order is stable from one request to the next. A single query over the run's rows — the
+	 * leaderboard reads only name and time, so there are no lazy relations to walk.
+	 */
+	@Query("""
+			select r from Registration r
+			where r.event.id = :eventId
+			order by r.finishTime asc nulls last, r.id asc""")
+	List<Registration> findLeaderboard(Long eventId);
+
 }

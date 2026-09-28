@@ -59,6 +59,9 @@ app:
   # so a deploy has no admins until the var is set
   admin:
     emails: ${ADMIN_EMAILS:}
+  # Seed a past run with ranked runners and a demo account (demo@example.com / demo-run-5k) so the
+  # leaderboard can be demoed without typing data in (#44). Off by default — never set it in prod.
+  demo-data: ${DEMO_DATA:false}
   mail:
     # The From address on confirmation emails. Overridden per environment.
     from: ${MAIL_FROM:no-reply@3trun.ro}

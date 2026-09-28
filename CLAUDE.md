@@ -83,5 +83,7 @@ Azure is not fully up yet, so let's make sure we respect the following:
   never hardcoded. Weather vars: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL`
   (all defaulted; the defaults hit the public Open-Meteo endpoint, so prod works with none set).
   `ADMIN_EMAILS`: comma-separated accounts granted `ROLE_ADMIN` (defaulted empty — no admin unless set).
+  `DEMO_DATA`: `true` adds the `db/demo` Flyway seed (fake leaderboard runners + a demo account) —
+  local demos only, **never set in prod**.
 - Flyway migrations run on startup so a fresh Azure DB self-provisions.
 - No localhost-baked URLs in app code; the Angular app talks to /api (proxy in dev, same-origin in prod).
