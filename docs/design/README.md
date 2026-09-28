@@ -87,7 +87,7 @@ All shown at **desktop 1180** and **mobile 390** in `references/3T Run — Build
 
 * Header (eyebrow "Your dashboard", `h1` "Hi, {name}", sub "{email} · member since … · N runs logged").
 * **Upcoming** section: a registered-run row with a `.tag-accent` **Registered**, **Add to calendar** (secondary) + **Cancel** (ghost). *(Add-to-calendar / cancel are new niceties — implement only if in scope; otherwise drop.)*
-* **Past runs** section: a **table** (`Date · Run · Edition · Result`) with a `.tag-neutral` **Attended** per row. **Finish times are intentionally omitted — they're a V2 feature** (the charter keeps the results shape but no times in V1). Mobile collapses the table into rows.
+* **Past runs** section: a **table** (`Date · Run · Edition · Result`) with a `.tag-neutral` **Attended** per row. Mobile collapses the table into rows.
 
 ### 07 · States  → wherever a list/lookup renders
 

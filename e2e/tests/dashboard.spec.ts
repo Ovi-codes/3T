@@ -70,14 +70,14 @@ test('CS-4: a registration for an upcoming run shows under Upcoming', async ({ p
   await expect(past).toContainText('No past runs yet');
 });
 
-test('CS-5: a registration for a run that has passed shows under Past', async ({ page, request }) => {
-  const user = await signUp(request);
-
+/** Register the account for the most recent run that has gone by, straight into Postgres. */
+async function seedPastRegistration(user: NewUser): Promise<void> {
   const client = new Client(PG);
   await client.connect();
   try {
     const { rows } = await client.query(
-      'select id from event where start_datetime < now() order by start_datetime desc limit 1',
+      "select id from event where start_datetime < now() and status <> 'CANCELLED' " +
+        'order by start_datetime desc limit 1',
     );
     expect(rows.length).toBeGreaterThan(0);
     await client.query(
@@ -87,6 +87,11 @@ test('CS-5: a registration for a run that has passed shows under Past', async ({
   } finally {
     await client.end();
   }
+}
+
+test('CS-5: a registration for a run that has passed shows under Past', async ({ page, request }) => {
+  const user = await signUp(request);
+  await seedPastRegistration(user);
 
   await logIn(page, user);
 
@@ -95,6 +100,40 @@ test('CS-5: a registration for a run that has passed shows under Past', async ({
   await expect(past.getByTestId('past-item')).toHaveCount(1);
   await expect(upcoming.getByTestId('upcoming-item')).toHaveCount(0);
   await expect(upcoming).toContainText('No upcoming runs yet');
+});
+
+test('CS-5: a runner records their finish time on a past run, then corrects it (#43)', async ({
+  page,
+  request,
+}) => {
+  const user = await signUp(request);
+  await seedPastRegistration(user);
+  await logIn(page, user);
+
+  const pastRun = page.getByTestId('section-past').getByTestId('past-item');
+  await pastRun.getByTestId('finish-time-add').click();
+  await pastRun.getByLabel('Finish time').fill('24:31');
+
+  // The open form is new UI — check it against axe while it's showing.
+  const results = await new AxeBuilder({ page }).analyze();
+  const seriousOrWorse = results.violations.filter(
+    (violation) => violation.impact === 'critical' || violation.impact === 'serious',
+  );
+  expect(seriousOrWorse).toEqual([]);
+
+  await pastRun.getByTestId('finish-time-save').click();
+  await expect(pastRun.getByTestId('finish-time')).toHaveText('24:31');
+
+  await pastRun.getByTestId('finish-time-edit').click();
+  await pastRun.getByLabel('Finish time').fill('25:02');
+  await pastRun.getByTestId('finish-time-save').click();
+  await expect(pastRun.getByTestId('finish-time')).toHaveText('25:02');
+
+  // The correction was stored, not just shown — it's still there after a reload.
+  await page.reload();
+  await expect(
+    page.getByTestId('section-past').getByTestId('past-item').getByTestId('finish-time'),
+  ).toHaveText('25:02');
 });
 
 test('CS-6: an anonymous visitor is sent to log in', async ({ page }) => {

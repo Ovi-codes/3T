@@ -9,6 +9,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -25,6 +27,7 @@ import ro.threet.run.event.EventRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,6 +111,103 @@ class MyRegistrationsIntegrationTest {
 				.andExpect(jsonPath("$.past.length()").value(0));
 	}
 
+	@Test
+	void recordsAFinishTimeOnTheUsersOwnPastRegistration() throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration registration = seedRegistration(aPastEvent(), userIdOf(signup), "ana@example.com");
+
+		mockMvc.perform(finishTimeRequest(registration.getId(), 1471).session(sessionOf(signup)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.registrationId").value(registration.getId()))
+				.andExpect(jsonPath("$.finishTimeSeconds").value(1471));
+
+		// The dashboard's Past row now carries the recorded time.
+		mockMvc.perform(get("/api/me/registrations").session(sessionOf(signup)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.past[0].finishTimeSeconds").value(1471));
+	}
+
+	@Test
+	void correctsAPreviouslyRecordedFinishTime() throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration registration = seedRegistration(aPastEvent(), userIdOf(signup), "ana@example.com");
+		mockMvc.perform(finishTimeRequest(registration.getId(), 1471).session(sessionOf(signup)))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(finishTimeRequest(registration.getId(), 1502).session(sessionOf(signup)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.finishTimeSeconds").value(1502));
+
+		mockMvc.perform(get("/api/me/registrations").session(sessionOf(signup)))
+				.andExpect(jsonPath("$.past[0].finishTimeSeconds").value(1502));
+	}
+
+	@Test
+	void refusesAFinishTimeOnSomeoneElsesRegistration() throws Exception {
+		MvcResult ana = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		MvcResult bob = mockMvc.perform(signupRequest("bob@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration bobs = seedRegistration(aPastEvent(), userIdOf(bob), "bob@example.com");
+
+		// Not found, not forbidden — Ana learns nothing about whether Bob's row exists.
+		mockMvc.perform(finishTimeRequest(bobs.getId(), 1471).session(sessionOf(ana)))
+				.andExpect(status().isNotFound());
+
+		mockMvc.perform(get("/api/me/registrations").session(sessionOf(bob)))
+				.andExpect(jsonPath("$.past[0].finishTimeSeconds").isEmpty());
+	}
+
+	@Test
+	void refusesAFinishTimeForARunThatHasNotTakenPlace() throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration registration = seedRegistration(anUpcomingEvent(), userIdOf(signup), "ana@example.com");
+
+		mockMvc.perform(finishTimeRequest(registration.getId(), 1471).session(sessionOf(signup)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.finishTimeSeconds").exists());
+	}
+
+	@Test
+	void anonymousFinishTimeIsUnauthorised() throws Exception {
+		mockMvc.perform(finishTimeRequest(1L, 1471)).andExpect(status().isUnauthorized());
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = { 0, 599, 3601 })
+	void rejectsAFinishTimeOutsideTheSensibleRange(int finishTimeSeconds) throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration registration = seedRegistration(aPastEvent(), userIdOf(signup), "ana@example.com");
+
+		// 10:00 to 1:00:00 is the accepted window for a 5k.
+		mockMvc.perform(finishTimeRequest(registration.getId(), finishTimeSeconds).session(sessionOf(signup)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.finishTimeSeconds").exists());
+	}
+
+	@Test
+	void rejectsAMissingFinishTime() throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration registration = seedRegistration(aPastEvent(), userIdOf(signup), "ana@example.com");
+
+		mockMvc.perform(put("/api/me/registrations/" + registration.getId() + "/finish-time")
+				.session(sessionOf(signup)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.finishTimeSeconds").exists());
+	}
+
 	private Event anUpcomingEvent() {
 		OffsetDateTime now = OffsetDateTime.now();
 		return events.findAll().stream()
@@ -124,10 +224,18 @@ class MyRegistrationsIntegrationTest {
 				.orElseThrow();
 	}
 
-	private void seedRegistration(Event event, long userId, String email) {
+	private Registration seedRegistration(Event event, long userId, String email) {
 		Registration registration = new Registration(event, "Ana", email);
 		registration.linkUser(userId);
-		registrations.save(registration);
+		return registrations.save(registration);
+	}
+
+	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder finishTimeRequest(
+			long registrationId, int finishTimeSeconds) {
+		return put("/api/me/registrations/" + registrationId + "/finish-time")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"finishTimeSeconds": %d}""".formatted(finishTimeSeconds));
 	}
 
 	private long userIdOf(MvcResult signup) throws Exception {

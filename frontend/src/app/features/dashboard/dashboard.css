@@ -72,6 +72,7 @@ h1 {
 /* Flat rows separated by 1px hairlines (Floodlight — no cards, no shadows). */
 .run-card {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-4) 0;

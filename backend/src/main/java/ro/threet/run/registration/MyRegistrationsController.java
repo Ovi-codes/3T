@@ -1,7 +1,12 @@
 package ro.threet.run.registration;
 
+import jakarta.validation.Valid;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,6 +32,13 @@ public class MyRegistrationsController {
 	@GetMapping("/me/registrations")
 	public MyRegistrationsResponse myRegistrations(@AuthenticationPrincipal AccountPrincipal principal) {
 		return registrationService.myRegistrations(principal.id());
+	}
+
+	/** Record or correct the caller's finish time on one of their own past registrations (#43). */
+	@PutMapping("/me/registrations/{id}/finish-time")
+	public MyRegistration recordFinishTime(@AuthenticationPrincipal AccountPrincipal principal,
+			@PathVariable Long id, @Valid @RequestBody FinishTimeRequest request) {
+		return registrationService.recordFinishTime(principal.id(), id, request.finishTimeSeconds());
 	}
 
 }

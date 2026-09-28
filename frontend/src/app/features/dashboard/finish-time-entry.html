@@ -1,0 +1,68 @@
+@if (editing()) {
+  <form class="entry" data-testid="finish-time-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="field">
+      <label [attr.for]="'finish-time-' + run().registrationId">Finish time</label>
+      <input
+        #timeField
+        [attr.id]="'finish-time-' + run().registrationId"
+        type="text"
+        formControlName="time"
+        placeholder="mm:ss"
+        autocomplete="off"
+        data-testid="finish-time-input"
+        [attr.aria-invalid]="error() ? 'true' : null"
+        [attr.aria-describedby]="error() ? 'finish-time-error-' + run().registrationId : null"
+      />
+    </div>
+    <div class="entry-actions">
+      <button class="btn btn-primary" type="submit" [disabled]="busy()" data-testid="finish-time-save">
+        {{ busy() ? 'Saving…' : 'Save time' }}
+      </button>
+      <button
+        class="btn btn-ghost"
+        type="button"
+        (click)="discard()"
+        [disabled]="busy()"
+        data-testid="finish-time-discard"
+      >
+        Discard
+      </button>
+    </div>
+    @if (error(); as message) {
+      <p
+        class="field-error"
+        role="alert"
+        [attr.id]="'finish-time-error-' + run().registrationId"
+        data-testid="finish-time-error"
+      >
+        {{ message }}
+      </p>
+    }
+  </form>
+} @else if (time(); as recordedTime) {
+  <div class="result">
+    <p class="result-value">
+      <span class="result-label">Your time</span>
+      <span class="result-time" data-testid="finish-time">{{ recordedTime }}</span>
+    </p>
+    <button
+      #trigger
+      class="btn btn-ghost"
+      type="button"
+      (click)="startEdit()"
+      data-testid="finish-time-edit"
+    >
+      Edit<span class="sr-only"> your time for {{ run().eventName }}</span>
+    </button>
+  </div>
+} @else {
+  <button
+    #trigger
+    class="btn btn-secondary"
+    type="button"
+    (click)="startEdit()"
+    data-testid="finish-time-add"
+  >
+    Add your time<span class="sr-only"> for {{ run().eventName }}</span>
+  </button>
+}

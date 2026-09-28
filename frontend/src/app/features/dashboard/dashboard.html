@@ -58,6 +58,7 @@
               @if (run.cancelled) {
                 <span class="tag tag-off" data-testid="run-cancelled">Cancelled</span>
               } @else {
+                <app-finish-time-entry [run]="run" (recorded)="onRecorded($event)" />
                 <span class="tag tag-neutral">Attended</span>
               }
             </li>
@@ -86,7 +87,7 @@
     <div class="data-row">
       <div class="data-copy">
         <h3 class="data-title">Download your data</h3>
-        <p class="data-note">Your account and every run you've registered for, as a JSON file.</p>
+        <p class="data-note">Your account, every run you've registered for and your finish times, as a JSON file.</p>
       </div>
       <button
         class="btn btn-secondary"

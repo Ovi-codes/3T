@@ -1,5 +1,6 @@
 package ro.threet.run.auth;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -106,6 +107,22 @@ class AccountPrivacyIntegrationTest {
 	}
 
 	@Test
+	void exportIncludesTheRecordedFinishTime() throws Exception {
+		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Registration registration = new Registration(aPastEvent(), "Ana", "ana@example.com");
+		registration.linkUser(userIdOf(signup));
+		registration.recordFinishTime(Duration.ofSeconds(1471));
+		registrations.save(registration);
+
+		// The runner's own time is their personal data, so it travels with the export (§7).
+		mockMvc.perform(get("/api/me/export").session(sessionOf(signup)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.registrations[0].finishTimeSeconds").value(1471));
+	}
+
+	@Test
 	void eraseDeletesTheAccountAndItsRegistrationsAndEndsTheSession() throws Exception {
 		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
 				.andExpect(status().isCreated())
@@ -140,6 +157,14 @@ class AccountPrivacyIntegrationTest {
 		// Bob is a bystander — his account and his registration survive Ana's erasure.
 		assertThat(appUsers.findById(bobId)).isPresent();
 		assertThat(registrations.findByUserIdWithEvent(bobId)).hasSize(1);
+	}
+
+	private Event aPastEvent() {
+		OffsetDateTime now = OffsetDateTime.now();
+		return events.findAll().stream()
+				.filter(event -> event.getStartDateTime().isBefore(now))
+				.max(Comparator.comparing(Event::getStartDateTime))
+				.orElseThrow();
 	}
 
 	private Event anUpcomingEvent() {
