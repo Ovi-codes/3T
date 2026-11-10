@@ -2,7 +2,6 @@ package ro.threet.run.auth;
 
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,49 +26,51 @@ import org.springframework.transaction.annotation.Transactional;
 class RoleService {
 
 	private final RoleRepository roles;
-	private final AppUserRepository users;
 	private final AdminEmails adminEmails;
 
-	RoleService(RoleRepository roles, AppUserRepository users, AdminEmails adminEmails) {
+	RoleService(RoleRepository roles, AdminEmails adminEmails) {
 		this.roles = roles;
-		this.users = users;
 		this.adminEmails = adminEmails;
 	}
 
 	/**
 	 * Reconcile the account's roles against config, then return the full set of role names for the
 	 * principal. {@code ROLE_USER} is always granted; {@code ROLE_ADMIN} is granted iff the email is
-	 * configured and revoked otherwise. Idempotent: an unchanged role is neither re-persisted nor
-	 * re-removed, so a steady-state login writes nothing.
+	 * configured and revoked otherwise. A steady-state login only reads: an unchanged role is neither
+	 * re-written nor re-removed.
+	 *
+	 * <p>Safe when the same account logs in twice at once (issue #64): both logins may see a role as
+	 * missing, and both grant it, but the grant and the revoke are idempotent in SQL, so the second
+	 * one is a no-op rather than a duplicate-key error.
 	 */
 	@Transactional
 	Set<String> ensureRolesFor(AppUser user) {
-		grant(user, Roles.ROLE_USER);
+		Set<String> held = new TreeSet<>(roles.namesHeldBy(user.getId()));
+		grant(user, held, Roles.ROLE_USER);
 		if (adminEmails.isAdmin(user.getEmail())) {
-			grant(user, Roles.ROLE_ADMIN);
+			grant(user, held, Roles.ROLE_ADMIN);
 		} else {
-			revoke(user, Roles.ROLE_ADMIN);
+			revoke(user, held, Roles.ROLE_ADMIN);
 		}
-		return user.getRoles().stream().map(Role::getName)
-				.collect(Collectors.toCollection(TreeSet::new));
+		return held;
 	}
 
-	private void grant(AppUser user, String roleName) {
-		if (user.hasRole(roleName)) {
+	private void grant(AppUser user, Set<String> held, String roleName) {
+		if (held.contains(roleName)) {
 			return;
 		}
 		Role role = roles.findByName(roleName)
 				.orElseThrow(() -> new IllegalStateException("Role not seeded: " + roleName));
-		user.addRole(role);
-		users.save(user);
+		roles.grant(user.getId(), role.getId());
+		held.add(roleName);
 	}
 
-	private void revoke(AppUser user, String roleName) {
-		if (!user.hasRole(roleName)) {
+	private void revoke(AppUser user, Set<String> held, String roleName) {
+		if (!held.contains(roleName)) {
 			return;
 		}
-		user.removeRole(roleName);
-		users.save(user);
+		roles.revoke(user.getId(), roleName);
+		held.remove(roleName);
 	}
 
 }

@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -18,107 +20,101 @@ import static org.mockito.Mockito.verify;
 /**
  * The role-provisioning rule in isolation: every authenticated account gets {@code ROLE_USER} as a
  * baseline; an account whose email is named in {@link AdminEmails} additionally gets
- * {@code ROLE_ADMIN} lazily on authentication; and the grant is idempotent (re-authenticating a user
- * who already holds a role adds nothing). Real join-row persistence is proven by the admin
- * integration test on a live Postgres.
+ * {@code ROLE_ADMIN} lazily on authentication, and loses it once it is no longer named; and a role
+ * already held is not written again. The SQL itself (idempotent under concurrent logins) is proven
+ * on a live Postgres by {@link ConcurrentRoleGrantIntegrationTest}.
  */
 @ExtendWith(MockitoExtension.class)
 class RoleServiceTest {
 
-	private final Role userRole = new Role("ROLE_USER");
-	private final Role adminRole = new Role("ROLE_ADMIN");
+	private static final long USER_ID = 7L;
+	private static final long USER_ROLE_ID = 1L;
+	private static final long ADMIN_ROLE_ID = 2L;
 
 	@Mock
 	private RoleRepository roles;
 
 	@Mock
-	private AppUserRepository users;
-
-	@Mock
 	private AdminEmails adminEmails;
 
 	private RoleService roleService() {
-		lenient().when(roles.findByName("ROLE_USER")).thenReturn(Optional.of(userRole));
-		lenient().when(roles.findByName("ROLE_ADMIN")).thenReturn(Optional.of(adminRole));
-		return new RoleService(roles, users, adminEmails);
+		lenient().when(roles.findByName("ROLE_USER")).thenReturn(Optional.of(role(USER_ROLE_ID, "ROLE_USER")));
+		lenient().when(roles.findByName("ROLE_ADMIN")).thenReturn(Optional.of(role(ADMIN_ROLE_ID, "ROLE_ADMIN")));
+		return new RoleService(roles, adminEmails);
 	}
 
 	@Test
 	void aRegularAccountGetsOnlyTheUserRole() {
 		given(adminEmails.isAdmin("ana@example.com")).willReturn(false);
-		AppUser user = new AppUser("ana@example.com", "Ana Pop", "hash");
+		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of());
 
-		Set<String> granted = roleService().ensureRolesFor(user);
+		Set<String> granted = roleService().ensureRolesFor(account("ana@example.com"));
 
 		assertThat(granted).containsExactly("ROLE_USER");
-		assertThat(user.getRoles()).extracting(Role::getName).containsExactly("ROLE_USER");
+		verify(roles).grant(USER_ID, USER_ROLE_ID);
+		verify(roles, never()).grant(USER_ID, ADMIN_ROLE_ID);
+		verify(roles, never()).revoke(anyLong(), anyString());
 	}
 
 	@Test
 	void aConfiguredAdminEmailGetsBothAdminAndUserRoles() {
 		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
-		AppUser user = new AppUser("boss@example.com", "Boss", "hash");
+		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of());
 
-		Set<String> granted = roleService().ensureRolesFor(user);
+		Set<String> granted = roleService().ensureRolesFor(account("boss@example.com"));
 
 		assertThat(granted).containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
-		assertThat(user.getRoles()).extracting(Role::getName)
-				.containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
+		verify(roles).grant(USER_ID, USER_ROLE_ID);
+		verify(roles).grant(USER_ID, ADMIN_ROLE_ID);
 	}
 
 	@Test
-	void grantingIsIdempotentWhenTheUserAlreadyHoldsTheRole() {
-		given(adminEmails.isAdmin("ana@example.com")).willReturn(false);
-		AppUser user = new AppUser("ana@example.com", "Ana Pop", "hash");
-		user.addRole(userRole); // already provisioned by a previous login
+	void aRoleAlreadyHeldIsNotGrantedAgain() {
+		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
+		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of("ROLE_USER")); // from an earlier sign-up
 
-		Set<String> granted = roleService().ensureRolesFor(user);
+		Set<String> granted = roleService().ensureRolesFor(account("boss@example.com"));
 
-		assertThat(granted).containsExactly("ROLE_USER");
-		assertThat(user.getRoles()).hasSize(1);
-		// Nothing new to persist when the role is already held.
-		verify(users, never()).save(any(AppUser.class));
+		assertThat(granted).containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
+		verify(roles, never()).grant(USER_ID, USER_ROLE_ID);
+		verify(roles).grant(USER_ID, ADMIN_ROLE_ID);
 	}
 
 	@Test
 	void anAccountRemovedFromTheAdminConfigLosesTheAdminRoleOnReauthentication() {
 		// Previously an admin (holds both roles from an earlier login), now dropped from ADMIN_EMAILS.
 		given(adminEmails.isAdmin("boss@example.com")).willReturn(false);
-		AppUser user = new AppUser("boss@example.com", "Boss", "hash");
-		user.addRole(userRole);
-		user.addRole(adminRole);
+		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of("ROLE_USER", "ROLE_ADMIN"));
 
-		Set<String> granted = roleService().ensureRolesFor(user);
+		Set<String> granted = roleService().ensureRolesFor(account("boss@example.com"));
 
 		assertThat(granted).containsExactly("ROLE_USER");
-		assertThat(user.getRoles()).extracting(Role::getName).containsExactly("ROLE_USER");
-		// The demotion is persisted (the ROLE_ADMIN join row is dropped).
-		verify(users, org.mockito.Mockito.atLeastOnce()).save(user);
+		verify(roles).revoke(USER_ID, "ROLE_ADMIN");
 	}
 
 	@Test
 	void aSteadyStateAdminReauthenticatesWithoutAnyWrite() {
 		// Still configured and already holding both roles — nothing to grant or revoke.
 		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
-		AppUser user = new AppUser("boss@example.com", "Boss", "hash");
-		user.addRole(userRole);
-		user.addRole(adminRole);
+		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of("ROLE_USER", "ROLE_ADMIN"));
 
-		Set<String> granted = roleService().ensureRolesFor(user);
+		Set<String> granted = roleService().ensureRolesFor(account("boss@example.com"));
 
 		assertThat(granted).containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_USER");
-		verify(users, never()).save(any(AppUser.class));
+		verify(roles, never()).grant(anyLong(), anyLong());
+		verify(roles, never()).revoke(anyLong(), anyString());
 	}
 
-	@Test
-	void aNewlyGrantedRoleIsPersisted() {
-		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
-		AppUser user = new AppUser("boss@example.com", "Boss", "hash");
+	private static AppUser account(String email) {
+		AppUser user = new AppUser(email, "Someone", "hash");
+		ReflectionTestUtils.setField(user, "id", USER_ID);
+		return user;
+	}
 
-		roleService().ensureRolesFor(user);
-
-		// Two grants (USER + ADMIN) on a fresh account → the user is saved with its new join rows.
-		verify(users, org.mockito.Mockito.atLeastOnce()).save(user);
+	private static Role role(long id, String name) {
+		Role role = new Role(name);
+		ReflectionTestUtils.setField(role, "id", id);
+		return role;
 	}
 
 }
