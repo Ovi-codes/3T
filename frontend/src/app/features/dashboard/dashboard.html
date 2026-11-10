@@ -2,7 +2,6 @@
   <header class="page-header">
     <p class="eyebrow">Your dashboard</p>
     <h1>Hi, {{ user()?.name }}</h1>
-    <p class="lede">Your runs — the ones ahead and the ones you've done.</p>
   </header>
 
   <hr class="course-rule" aria-hidden="true" />
@@ -12,8 +11,13 @@
   } @else if (runs() === null) {
     <p class="state" aria-live="polite">Loading your runs…</p>
   } @else {
+    <section class="runs" aria-labelledby="stats-heading" data-testid="section-stats">
+      <h2 id="stats-heading" class="section-heading section-heading-accent">Your stats</h2>
+      <app-my-stats #stats />
+    </section>
+
     <section class="runs" aria-labelledby="upcoming-heading" data-testid="section-upcoming">
-      <h2 id="upcoming-heading" class="section-heading">Upcoming</h2>
+      <h2 id="upcoming-heading" class="section-heading section-heading-accent">Upcoming</h2>
       @if (runs()!.upcoming.length === 0) {
         <p class="state-empty">No upcoming runs yet — register for a run and it'll appear here.</p>
       } @else {
@@ -37,10 +41,11 @@
           }
         </ul>
       }
+      <a class="btn btn-secondary section-more" routerLink="/">See more upcoming runs</a>
     </section>
 
     <section class="runs" aria-labelledby="past-heading" data-testid="section-past">
-      <h2 id="past-heading" class="section-heading">Past</h2>
+      <h2 id="past-heading" class="section-heading section-heading-accent">Past</h2>
       @if (runs()!.past.length === 0) {
         <p class="state-empty">No past runs yet — once a run you've joined is over, it'll show here.</p>
       } @else {
@@ -73,19 +78,13 @@
         </ul>
       }
     </section>
-  }
 
-  <div class="actions">
-    <a class="btn btn-secondary" routerLink="/">See upcoming runs</a>
-    <button class="btn btn-secondary" type="button" (click)="logout()" data-testid="logout">
-      Sign out
-    </button>
-  </div>
+  }
 
   <hr class="course-rule" aria-hidden="true" />
 
   <section class="data-controls" aria-labelledby="data-heading" data-testid="section-data">
-    <h2 id="data-heading" class="section-heading">Your data</h2>
+    <h2 id="data-heading" class="section-heading section-heading-accent">Your data</h2>
     <p class="data-lede">
       Download everything we hold about you, or delete your account for good. See our
       <a routerLink="/privacy">privacy policy</a> for what we keep and why.

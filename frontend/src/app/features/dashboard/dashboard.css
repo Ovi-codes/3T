@@ -55,6 +55,12 @@ h1 {
   color: var(--color-ink);
 }
 
+/* Orange headings mark where each main section starts, so the dashboard's sections are easy to
+   tell apart. Primary-ink is the text-safe orange (as on links); bright primary is for fills only. */
+.section-heading-accent {
+  color: var(--color-primary-ink);
+}
+
 .state-empty {
   padding: var(--space-6) 0;
   font-size: var(--text-lg);
@@ -142,11 +148,9 @@ h1 {
   border: 0;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-top: var(--space-12);
+/* The way back to the full list of runs, closing the Upcoming section. */
+.section-more {
+  margin-top: var(--space-6);
 }
 
 /* Destructive delete — the one deliberate off-palette accent: red, so irreversible data loss
@@ -231,11 +235,6 @@ h1 {
 @media (max-width: 40rem) {
   h1 {
     font-size: var(--text-3xl);
-  }
-
-  .actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   /* A past run's details fill the first line, pushing its time, Results and Attended onto the next

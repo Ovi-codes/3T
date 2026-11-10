@@ -30,6 +30,29 @@ export interface MyRegistrations {
   past: MyRegistration[];
 }
 
+/** One finished run in the user's personal stats (#45) — mirrors the backend MyRunStat record. */
+export interface MyRunStat {
+  eventId: number;
+  eventName: string;
+  startDateTime: string;
+  locationName: string;
+  city: string;
+  /** The runner's own time, in whole seconds. */
+  finishTimeSeconds: number;
+  /** Their place on the run's leaderboard — a tied time shares its place (1, 2, 2, 4). */
+  position: number;
+  /** How many runners recorded a time on that run, so the place reads "2nd of 31". */
+  finishers: number;
+}
+
+/**
+ * Body of GET /api/me/stats (#45): the user's finished runs — past, not cancelled, with a time —
+ * oldest first. Empty until they record a time.
+ */
+export interface MyStats {
+  runs: MyRunStat[];
+}
+
 /**
  * The signed-in user's own account and data — everything under /api/me/*: their registrations
  * (the dashboard, Increment 4) and the GDPR data rights (charter §7) to export everything held
@@ -48,6 +71,11 @@ export class AccountService {
    */
   getMyRegistrations(): Observable<MyRegistrations> {
     return this.http.get<MyRegistrations>('/api/me/registrations');
+  }
+
+  /** The user's personal stats: time and place on each finished run, oldest first (#45). */
+  getMyStats(): Observable<MyStats> {
+    return this.http.get<MyStats>('/api/me/stats');
   }
 
   /**

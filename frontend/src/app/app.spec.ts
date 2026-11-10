@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 
@@ -51,6 +51,35 @@ describe('App', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-testid="nav-dashboard"]')).not.toBeNull();
     expect(el.querySelector('[data-testid="nav-login"]')).toBeNull();
+  });
+
+  it('puts "Sign out" after "My dashboard" in the header when signed in', () => {
+    settleSession({ id: 1, email: 'ana@example.com' });
+
+    const nav = (fixture.nativeElement as HTMLElement).querySelector('nav[aria-label="Primary"]')!;
+    const actions = Array.from(nav.querySelectorAll('[data-testid="nav-dashboard"], [data-testid="logout"]'));
+    expect(actions.map((action) => action.getAttribute('data-testid'))).toEqual(['nav-dashboard', 'logout']);
+    expect(actions[1].textContent!.trim()).toBe('Sign out');
+  });
+
+  it('offers no "Sign out" when signed out', () => {
+    settleSession('signed-out');
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="logout"]')).toBeNull();
+  });
+
+  it('signs out from the header and lands on the login page', async () => {
+    settleSession({ id: 1, email: 'ana@example.com' });
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="logout"]')!.click();
+    httpMock.expectOne({ method: 'POST', url: '/api/auth/logout' }).flush(null);
+    fixture.detectChanges();
+
+    expect(navigate).toHaveBeenCalledWith('/login');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="logout"]')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="nav-login"]')).not.toBeNull();
   });
 
   it('offers a skip-to-content link as the first focusable element (a11y)', () => {

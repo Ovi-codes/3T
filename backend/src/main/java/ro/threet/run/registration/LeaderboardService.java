@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,9 +32,9 @@ public class LeaderboardService {
 
 	/**
 	 * The ranked runners for one run that has taken place. The repository returns the rows in
-	 * finishing order (fastest first, ties by who registered first, no time last); this numbers the
-	 * positions with standard competition ranking — a tied time shares its place and the next runner
-	 * skips ahead (1, 2, 2, 4). A runner without a time has no position.
+	 * finishing order (fastest first, ties by who registered first, no time last); {@link Ranking}
+	 * numbers the positions — a tied time shares its place (1, 2, 2, 4), and a runner without a time
+	 * has no position.
 	 *
 	 * <p>Only a past, not-cancelled run has a leaderboard. That also keeps an upcoming run's list of
 	 * registrants off this public endpoint.
@@ -63,18 +62,12 @@ public class LeaderboardService {
 	}
 
 	private static List<LeaderboardEntry> rank(List<Registration> finishingOrder) {
+		List<Integer> positions = Ranking.positions(finishingOrder);
 		List<LeaderboardEntry> entries = new ArrayList<>(finishingOrder.size());
-		Integer previousTime = null;
-		int position = 0;
 		for (int i = 0; i < finishingOrder.size(); i++) {
 			Registration registration = finishingOrder.get(i);
-			Integer time = registration.getFinishTimeSeconds();
-			if (time != null && !Objects.equals(time, previousTime)) {
-				position = i + 1;
-			}
-			previousTime = time;
-			entries.add(new LeaderboardEntry(time == null ? null : position, PublicName.of(registration.getName()),
-					time));
+			entries.add(new LeaderboardEntry(positions.get(i), PublicName.of(registration.getName()),
+					registration.getFinishTimeSeconds()));
 		}
 		return entries;
 	}

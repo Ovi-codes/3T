@@ -1,0 +1,70 @@
+@if (error()) {
+  <div class="form-error" role="alert" data-testid="stats-error">
+    <p>We could not load your stats. Please try again shortly.</p>
+    <button class="btn btn-secondary" type="button" (click)="reload()" data-testid="stats-retry">
+      Try again
+    </button>
+  </div>
+} @else if (runs() === null) {
+  <p class="state" aria-live="polite" data-testid="stats-loading">Loading your stats…</p>
+} @else if (runs()!.length === 0) {
+  <div class="empty" data-testid="stats-empty">
+    <p class="empty-title">No stats yet</p>
+    <p class="empty-note">
+      Add your time to a past run and you'll see your place, your personal best and how your times
+      are trending.
+    </p>
+  </div>
+} @else {
+  <dl class="tiles">
+    <div class="tile" data-testid="stat-runs">
+      <dt>Runs finished</dt>
+      <dd class="tile-value">{{ runs()!.length }}</dd>
+    </div>
+    <div class="tile" data-testid="stat-best-time">
+      <dt>Personal best</dt>
+      <dd class="tile-value">{{ formatTime(bestTime()) }}</dd>
+    </div>
+    @if (bestPlace(); as best) {
+      <div class="tile" data-testid="stat-best-place">
+        <dt>Best place</dt>
+        <dd class="tile-value">
+          {{ ordinal(best.position) }}<span class="tile-unit"> of {{ best.finishers }}</span>
+        </dd>
+      </div>
+    }
+  </dl>
+
+  <figure class="trend">
+    <figcaption class="trend-caption">
+      Your finish times, oldest run on the left — lower is faster, so a dip is a better run.
+    </figcaption>
+    <app-trend-chart [runs]="runs()!" />
+  </figure>
+
+  <!-- The chart's accessible view: the same runs, time and place, for screen readers only — on screen
+       it would repeat the chart (whose tooltip shows each run's place on hover or tap). -->
+  <table class="sr-only" data-testid="stats-table">
+    <caption>Your time and place on each run, newest first</caption>
+    <thead>
+      <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Run</th>
+        <th scope="col">Time</th>
+        <th scope="col">Place</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (run of newestFirst(); track run.eventId) {
+        <tr>
+          <td>
+            <time [attr.datetime]="run.startDateTime">{{ run.startDateTime | date: 'd MMM y' }}</time>
+          </td>
+          <th scope="row">{{ run.eventName }}</th>
+          <td>{{ formatTime(run.finishTimeSeconds) }}</td>
+          <td>{{ placeOf(run) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
