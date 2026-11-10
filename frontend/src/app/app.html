@@ -8,9 +8,12 @@
       <app-logo />
     </a>
 
-    <!-- One auth action; hidden until the session check settles, so it never shows the wrong one. -->
+    <!-- The auth actions; hidden until the session check settles, so it never shows the wrong one. -->
     @if (user(); as account) {
-      <a class="nav-button" routerLink="/dashboard" data-testid="nav-dashboard">My dashboard</a>
+      <div class="nav-actions">
+        <a class="nav-button" routerLink="/dashboard" data-testid="nav-dashboard">My dashboard</a>
+        <button class="nav-button" type="button" (click)="logout()" data-testid="logout">Sign out</button>
+      </div>
     } @else if (user() === null) {
       <a class="nav-button" routerLink="/login" data-testid="nav-login">Log in</a>
     }

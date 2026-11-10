@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { AccountService, MyRegistration, MyRegistrations } from '../account/account.service';
 import { FinishTimeEntry } from './finish-time-entry';
+import { MyStats } from '../stats/my-stats';
 
 /**
  * Increment 4: the runner's own runs, split into the ones ahead (CS-4) and the ones done (CS-5).
@@ -17,7 +18,7 @@ import { FinishTimeEntry } from './finish-time-entry';
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [DatePipe, RouterLink, FinishTimeEntry],
+  imports: [DatePipe, RouterLink, FinishTimeEntry, MyStats],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -40,6 +41,9 @@ export class Dashboard {
   protected readonly nextRun = computed<MyRegistration | null>(
     () => this.runs()?.upcoming.find((run) => !run.cancelled) ?? null,
   );
+
+  /** The stats panel (#45), refreshed when a new time changes them. */
+  private readonly stats = viewChild(MyStats);
 
   /** The delete-confirm region, focused when it opens so the destructive choice isn't lost. */
   private readonly confirmRegion = viewChild<ElementRef<HTMLElement>>('confirmRegion');
@@ -72,7 +76,10 @@ export class Dashboard {
     });
   }
 
-  /** Swap a past run's row for the server's updated one after its finish time is saved (#43). */
+  /**
+   * Swap a past run's row for the server's updated one after its finish time is saved (#43), and
+   * refresh the stats — the new time changes them (#45).
+   */
   protected onRecorded(updated: MyRegistration): void {
     this.runs.update((runs) =>
       runs && {
@@ -80,14 +87,7 @@ export class Dashboard {
         past: runs.past.map((run) => (run.registrationId === updated.registrationId ? updated : run)),
       },
     );
-  }
-
-  protected logout(): void {
-    // Either way, land on the login page — the local session is cleared regardless.
-    this.auth.logout().subscribe({
-      next: () => this.router.navigateByUrl('/login'),
-      error: () => this.router.navigateByUrl('/login'),
-    });
+    this.stats()?.reload();
   }
 
   // --- GDPR: the user's control over their own data (charter §7) ---

@@ -91,6 +91,7 @@ a:hover {
 
 .btn-primary:hover {
   background: var(--color-primary-hover);
+  color: var(--color-primary-contrast);
 }
 
 .btn-primary:active {
@@ -102,8 +103,11 @@ a:hover {
   color: var(--color-ink);
 }
 
+/* Each variant restates its text colour on hover: a link-button (`<a class="btn">`) would otherwise
+   pick up the global `a:hover` orange, which fails contrast on the hover fill. */
 .btn-secondary:hover {
   background: color-mix(in srgb, var(--color-ink) 7%, transparent);
+  color: var(--color-ink);
 }
 
 /* Ghost — orange text, no border (the quietest action). */
@@ -114,6 +118,7 @@ a:hover {
 
 .btn-ghost:hover {
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary-ink);
 }
 
 .btn:disabled {

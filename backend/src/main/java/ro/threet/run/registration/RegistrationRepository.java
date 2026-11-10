@@ -74,4 +74,15 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 			order by r.finishTime asc nulls last, r.id asc""")
 	List<Registration> findLeaderboard(Long eventId);
 
+	/**
+	 * Several runs' leaderboards in one query, for a runner's personal stats (#45): grouped by run,
+	 * and within each run the same finishing order as {@link #findLeaderboard}. One read for all of
+	 * the runner's runs instead of one per run.
+	 */
+	@Query("""
+			select r from Registration r
+			where r.event.id in :eventIds
+			order by r.event.id asc, r.finishTime asc nulls last, r.id asc""")
+	List<Registration> findLeaderboards(Collection<Long> eventIds);
+
 }

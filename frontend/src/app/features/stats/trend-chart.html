@@ -1,0 +1,79 @@
+<div class="chart">
+  <svg
+    role="img"
+    [attr.aria-label]="label()"
+    [attr.viewBox]="'0 0 ' + width() + ' ' + height"
+    [attr.width]="width()"
+    [attr.height]="height"
+    (pointermove)="onPointerMove($event)"
+    (pointerdown)="onPointerMove($event)"
+    (pointerleave)="onPointerLeave($event)"
+  >
+    <!-- Time axis: hairline gridlines at whole minutes, labelled on the left. -->
+    @for (tick of plot().ticks; track tick.seconds) {
+      <line class="grid" [attr.x1]="plotLeft" [attr.x2]="plotRight()" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+      <text class="axis-label" data-testid="trend-tick" [attr.x]="plotLeft - 10" [attr.y]="tick.y" text-anchor="end" dominant-baseline="middle">
+        {{ formatTime(tick.seconds) }}
+      </text>
+    }
+
+    <!-- Run axis: the first and latest dates bracket the line. -->
+    @let all = runs();
+    @let first = plot().points[0];
+    <text class="axis-label" [attr.x]="all.length === 1 ? first.x : plotLeft" [attr.y]="plotBottom + 50" [attr.text-anchor]="all.length === 1 ? 'middle' : 'start'">
+      {{ all[0].startDateTime | date: 'd MMM y' }}
+    </text>
+    @if (all.length > 1) {
+      <text class="axis-label" [attr.x]="plotRight()" [attr.y]="plotBottom + 50" text-anchor="end">
+        {{ all[all.length - 1].startDateTime | date: 'd MMM y' }}
+      </text>
+    }
+
+    @if (activePoint(); as point) {
+      <line class="crosshair" data-testid="trend-crosshair" [attr.x1]="point.x" [attr.x2]="point.x" [attr.y1]="plotTop" [attr.y2]="plotBottom" />
+    }
+
+    <path class="line" data-testid="trend-line" [attr.d]="plot().line" />
+
+    @for (point of plot().points; track $index) {
+      <circle
+        class="point"
+        data-testid="trend-point"
+        [class.is-best]="$index === bestIndex()"
+        [class.is-active]="$index === active()"
+        [attr.cx]="point.x"
+        [attr.cy]="point.y"
+        [attr.r]="$index === bestIndex() || $index === active() ? 6 : 4.5"
+      />
+    }
+
+    @let best = plot().points[bestIndex()];
+    <text
+      class="best-label"
+      data-testid="trend-best-label"
+      [attr.x]="best.x"
+      [attr.y]="best.y + 24"
+      [attr.text-anchor]="best.x < plotLeft + 40 ? 'start' : best.x > plotRight() - 40 ? 'end' : 'middle'"
+    >
+      Best {{ formatTime(all[bestIndex()].finishTimeSeconds) }}
+    </text>
+  </svg>
+
+  @if (active() !== null) {
+    @let index = active()!;
+    @let run = all[index];
+    <div
+      class="tooltip"
+      data-testid="trend-tooltip"
+      aria-hidden="true"
+      [class.flipped]="tooltipFlipped(index)"
+      [style.left.%]="tooltipLeft(index)"
+      [style.top.%]="tooltipTop(index)"
+    >
+      <span class="tooltip-time">{{ formatTime(run.finishTimeSeconds) }}</span>
+      <span class="tooltip-place">{{ placeOf(run) }}</span>
+      <span class="tooltip-run">{{ run.eventName }}</span>
+      <span class="tooltip-date">{{ run.startDateTime | date: 'EEE d MMM y' }}</span>
+    </div>
+  }
+</div>

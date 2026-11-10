@@ -1,11 +1,11 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 import { AuthService } from './features/auth/auth.service';
 import { Logo } from './shared/logo/logo';
 
 /**
- * The app shell. Carries the persistent header (brand + a single auth action) that sits above every
+ * The app shell. Carries the persistent header (brand + the auth actions) that sits above every
  * route. On startup it resolves the current session once, so the header shows the right action on
  * any page — including the public ones the route guard never runs on.
  */
@@ -17,6 +17,7 @@ import { Logo } from './shared/logo/logo';
 })
 export class App {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   /** undefined until the session check lands, then null (signed out) or the account. */
   protected readonly user = this.auth.user;
@@ -24,5 +25,13 @@ export class App {
   constructor() {
     // Fire-and-forget: settles `user` to the account or null; the header reacts to the signal.
     this.auth.loadCurrentUser().subscribe();
+  }
+
+  protected logout(): void {
+    // Either way, land on the login page — the local session is cleared regardless.
+    this.auth.logout().subscribe({
+      next: () => this.router.navigateByUrl('/login'),
+      error: () => this.router.navigateByUrl('/login'),
+    });
   }
 }

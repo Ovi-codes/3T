@@ -28,7 +28,12 @@ describe('Dashboard', () => {
     router = TestBed.inject(Router);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // The stats panel (#45) loads its own data once the runs are in; tests that aren't about it
+    // answer it here, so verify() still catches any other stray request.
+    httpMock.match('/api/me/stats').forEach((request) => request.flush({ runs: [] }));
+    httpMock.verify();
+  });
 
   function click(testid: string): void {
     (fixture.nativeElement as HTMLElement)
@@ -119,6 +124,16 @@ describe('Dashboard', () => {
     expect(item.textContent).not.toContain('Attended');
   });
 
+  it('shows the runner’s stats first, above their runs (#45)', async () => {
+    await flush({ upcoming: [], past: [run()] });
+
+    const sections = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('section')).map(
+      (section) => section.getAttribute('data-testid'),
+    );
+    expect(sections.slice(0, 3)).toEqual(['section-stats', 'section-upcoming', 'section-past']);
+    httpMock.expectOne('/api/me/stats');
+  });
+
   it('links a past run to its leaderboard (#44)', async () => {
     await flush({ upcoming: [], past: [run({ eventId: 20, eventName: 'Summer 5k' })] });
 
@@ -133,6 +148,21 @@ describe('Dashboard', () => {
     await flush({ upcoming: [], past: [run({ cancelled: true })] });
 
     expect(query('leaderboard-link')).toBeNull();
+  });
+
+  it('ends the Upcoming section with a link to see more upcoming runs', async () => {
+    await flush({ upcoming: [run()], past: [] });
+
+    const links = Array.from(section('section-upcoming').querySelectorAll('a'));
+    const more = links.at(-1)!;
+    expect(more.textContent!.trim()).toBe('See more upcoming runs');
+    expect(more.getAttribute('href')).toBe('/');
+  });
+
+  it('leaves signing out to the header', async () => {
+    await flush(EMPTY);
+
+    expect(query('logout')).toBeNull();
   });
 
   it('shows the upcoming empty state while past still lists runs', async () => {
@@ -199,6 +229,21 @@ describe('Dashboard', () => {
 
       expect(query('finish-time-input')).toBeNull();
       expect(query('finish-time')!.textContent!.trim()).toBe('24:31');
+    });
+
+    it('refreshes the stats once a time is saved — the new time changes them (#45)', async () => {
+      await flush({ upcoming: [], past: [run({ registrationId: 20 })] });
+      httpMock.expectOne('/api/me/stats').flush({ runs: [] });
+
+      click('finish-time-add');
+      type('finish-time-input', '24:31');
+      click('finish-time-save');
+      await respond(
+        httpMock.expectOne('/api/me/registrations/20/finish-time'),
+        run({ registrationId: 20, finishTimeSeconds: 1471 }),
+      );
+
+      httpMock.expectOne('/api/me/stats');
     });
 
     it('corrects a recorded time, starting from the one already there', async () => {

@@ -1,0 +1,99 @@
+:host {
+  display: block;
+}
+
+/* The tooltip is positioned against this box. */
+.chart {
+  position: relative;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  touch-action: pan-y;
+}
+
+/* Recessive structure: 1px solid hairlines, muted labels in tabular figures. */
+.grid {
+  stroke: var(--color-surface-sunk);
+  stroke-width: 1;
+}
+
+.axis-label {
+  fill: var(--color-ink-faint);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.crosshair {
+  stroke: var(--color-ink-faint);
+  stroke-width: 1;
+}
+
+/* The one series: a 2px orange line, round joins and caps. */
+.line {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* Each run: an orange dot with a 2px ring in the ground colour, so it stands clear of the line. */
+.point {
+  fill: var(--color-primary);
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  transition: r var(--dur-fast) var(--ease-out);
+}
+
+/* The personal best and the hovered run get an ink ring — identity is never colour alone. */
+.point.is-best,
+.point.is-active {
+  stroke: var(--color-ink);
+}
+
+.best-label {
+  fill: var(--color-ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 9rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-poster);
+  color: var(--color-poster-text);
+  pointer-events: none;
+  transform: translate(var(--space-4), -50%);
+  font-size: var(--text-sm);
+}
+
+.tooltip.flipped {
+  transform: translate(calc(-100% - var(--space-4)), -50%);
+}
+
+/* Value leads, labels follow. */
+.tooltip-time {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip-place {
+  font-weight: var(--weight-semibold);
+}
+
+.tooltip-run,
+.tooltip-date {
+  color: var(--color-poster-muted);
+}

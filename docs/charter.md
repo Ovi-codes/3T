@@ -154,6 +154,9 @@ A feature is shippable when:
   self-entered finish time — never the email or full surname (data minimisation). Only past,
   not-cancelled runs have one, so an upcoming run's registrant list is never public. Disclosed in
   the privacy policy; erasure removes the account's registrations, and so its leaderboard rows.
+- **Personal stats (V2, #45):** `GET /api/me/stats` (sign-in required) returns only the caller's own
+  finished runs — time, place and field size — computed on read from their registrations. No new
+  data is stored, so the export already covers it and there is nothing new to disclose.
 - **Consent + cookies:** privacy policy page; cookie/consent banner only for non-essential cookies.
   We set **no non-essential cookies** — the only cookie is the strictly-necessary `JSESSIONID` session
   cookie (no analytics, no tracking), so **no consent banner is needed** (per the Increment 5 brief); the
