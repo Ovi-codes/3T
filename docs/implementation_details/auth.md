@@ -34,7 +34,9 @@ stays local (charter §3).
 - **`ADMIN_EMAILS` is the source of truth — revocation included:** the reconcile runs on **every**
   authentication, not just the first, so removing an account from `ADMIN_EMAILS` **revokes** its
   `ROLE_ADMIN` (the join row is dropped) the next time it authenticates. A steady-state login with no
-  change writes nothing. Demoting an admin is therefore: drop them from the config, and their next
+  change writes nothing. The grant and the revoke are idempotent SQL (`insert … on conflict do
+  nothing`, a plain `delete`), so two logins of the same account at once can't fail on a duplicate
+  row (#64). Demoting an admin is therefore: drop them from the config, and their next
   sign-in (or their session expiring) settles it — no manual row surgery.
 - **Admin surface:** `/api/admin/**` requires `ROLE_ADMIN` in `SecurityConfig` — the real boundary. A
   non-admin gets **403**, an anonymous caller **401** (the deny-by-default 401, since this API has no
