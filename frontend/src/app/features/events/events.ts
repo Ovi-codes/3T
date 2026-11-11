@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
 import { AdminEventItem, EventsService, ListedEvent } from './events.service';
 import { HOURS, QUARTER_HOURS, toLocalDateTime } from './event-time';
@@ -45,6 +46,8 @@ export class Events {
   protected readonly events = signal<ListedEvent[] | null>(null);
   /** Set only if the call fails, so the page fails visibly, not blankly. */
   protected readonly error = signal<string | null>(null);
+  /** The schedule request in flight, cancelled when a newer load starts so a stale answer can't land. */
+  private loading?: Subscription;
 
   /** Whether to show the admin create form — hidden for everyone but an admin (UI convenience only). */
   protected readonly isAdmin = this.auth.isAdmin;
@@ -126,7 +129,8 @@ export class Events {
    */
   protected load(): void {
     const schedule = this.isAdmin() ? this.events$.adminList() : this.events$.list();
-    schedule.subscribe({
+    this.loading?.unsubscribe();
+    this.loading = schedule.subscribe({
       next: (response) => {
         this.events.set(response);
         this.error.set(null);

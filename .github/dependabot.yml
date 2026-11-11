@@ -1,7 +1,7 @@
 version: 2
 
 # Weekly update PRs. Minor + patch bumps are grouped per ecosystem to keep the PR count low;
-# majors still arrive one per PR so each can be reviewed on its own.
+# majors still arrive one per PR so each can be reviewed on its own (except Angular, see below).
 updates:
   - package-ecosystem: maven
     directory: /backend
@@ -16,9 +16,11 @@ updates:
     schedule:
       interval: weekly
     groups:
-      # Angular packages must move together.
+      # Angular packages must move together, majors included: their peer ranges are exact,
+      # so a single-package major bump can't install.
       angular:
         patterns: ['@angular/*', '@angular-devkit/*', 'angular-eslint']
+        update-types: [major, minor, patch]
       frontend-minor-patch:
         update-types: [minor, patch]
 

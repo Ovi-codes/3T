@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
 ![Spring Boot 4](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
-![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?logo=angular)
+![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?logo=angular)
 ![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
 A full-stack website for free, weekly, timed 5k runs in Romania.
@@ -68,7 +68,7 @@ their time trend.
 | Tool | Version |
 | :--- | :--- |
 | JDK | 21 (LTS) |
-| Node | 24 (LTS) |
+| Node | 24 (LTS), 24.15.0 or later — Angular CLI 22 refuses older versions |
 | Docker | any recent version, with Compose v2 |
 | Git | any recent version |
 
@@ -263,7 +263,7 @@ a range only moves when you re-run `npm install` (or `npm update`) and the lockf
 **Not pinned by a file in the repo:**
 
 - **Node and the JDK** — these are your local toolchain, listed under [Prerequisites](#prerequisites)
-  and in `CLAUDE.md`, not enforced by a version file. (Node 24 LTS, JDK 21 LTS.)
+  and in `CLAUDE.md`, not enforced by a version file. (Node 24 LTS at 24.15.0 or later, JDK 21 LTS.)
 - **The Chromium binary Playwright drives** — installed into a shared per-user cache by
   `npx playwright install chromium`, not stored in the repo. Its version is tied to the
   `@playwright/test` version in `e2e/package.json`, so bumping Playwright and re-running the

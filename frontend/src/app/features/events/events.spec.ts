@@ -134,6 +134,26 @@ describe('Events', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Run 6');
   });
 
+  it('keeps the admin schedule when the public list answers after it', async () => {
+    // The page asks for the public list before the session resolves, then for the admin schedule
+    // once the role flips. A late public answer must not replace the admin one.
+    fixture.detectChanges();
+    const publicList = httpMock.expectOne('/api/events');
+    auth.isAdmin.set(true);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/admin/events').flush([adminEvent()]);
+    if (!publicList.cancelled) {
+      publicList.flush([EVENT_1]);
+    }
+    await fixture.whenStable();
+    fixture.detectChanges();
+    httpMock
+      .match(`/api/events/${EVENT_1.id}/forecast`)
+      .forEach((req) => req.flush(FORECAST_UNAVAILABLE));
+
+    expect(query('event-edit')).not.toBeNull();
+  });
+
   it('shows the empty state when there are no upcoming events', async () => {
     await flush([]);
 
