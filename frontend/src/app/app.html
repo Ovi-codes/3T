@@ -4,9 +4,9 @@
 
 <header class="app-header">
   <nav class="app-header-inner" aria-label="Primary">
-    <a class="brand" routerLink="/" aria-label="3T Run, home">
-      <app-logo />
-    </a>
+    <!-- Named by its content (the logo's "3T Run" + a hidden suffix), not aria-label, so the
+         accessible name contains the visible text (WCAG 2.5.3). -->
+    <a class="brand" routerLink="/"> <app-logo /><span class="sr-only"> home</span> </a>
 
     <!-- The auth actions; hidden until the session check settles, so it never shows the wrong one. -->
     @if (user(); as account) {
