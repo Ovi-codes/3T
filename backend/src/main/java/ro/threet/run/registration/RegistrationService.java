@@ -17,19 +17,23 @@ import ro.threet.run.event.Event;
 import ro.threet.run.event.EventRepository;
 
 /**
- * The core loop: record a registration for an upcoming event and send its confirmation email.
+ * The core loop: record a registration for an upcoming event and send its confirmation
+ * email.
  *
- * Persisting and sending happen in one transaction, so the two either both take effect or neither
- * does — if the email can't be handed off, the registration rolls back rather than leaving a
- * confirmed-but-unnotified row. Business rules are checked before either happens, so an invalid
- * request never persists a row or sends a message.
+ * Persisting and sending happen in one transaction, so the two either both take effect or
+ * neither does — if the email can't be handed off, the registration rolls back rather
+ * than leaving a confirmed-but-unnotified row. Business rules are checked before either
+ * happens, so an invalid request never persists a row or sends a message.
  */
 @Service
 public class RegistrationService {
 
 	private final RegistrationRepository registrationRepository;
+
 	private final EventRepository eventRepository;
+
 	private final EmailSender emailSender;
+
 	private final Clock clock;
 
 	RegistrationService(RegistrationRepository registrationRepository, EventRepository eventRepository,
@@ -41,14 +45,16 @@ public class RegistrationService {
 	}
 
 	/**
-	 * Record a registration for an upcoming event and send its confirmation email, atomically.
-	 *
-	 * @param request the submitted event id, name, and email (already bean-validated at the boundary)
-	 * @param userId  the signed-in account making the registration, or null when anonymous — the
-	 *                anonymous core loop passes null and is unchanged
-	 * @return the recorded registration, echoed back with its event details for the confirmation view
-	 * @throws RegistrationException if the event is unknown (404), already past (400), or the email
-	 *                               is already registered for it (409) — nothing is saved or sent
+	 * Record a registration for an upcoming event and send its confirmation email,
+	 * atomically.
+	 * @param request the submitted event id, name, and email (already bean-validated at
+	 * the boundary)
+	 * @param userId the signed-in account making the registration, or null when anonymous
+	 * — the anonymous core loop passes null and is unchanged
+	 * @return the recorded registration, echoed back with its event details for the
+	 * confirmation view
+	 * @throws RegistrationException if the event is unknown (404), already past (400), or
+	 * the email is already registered for it (409) — nothing is saved or sent
 	 */
 	@Transactional
 	public RegistrationResponse register(RegistrationRequest request, Long userId) {
@@ -56,19 +62,19 @@ public class RegistrationService {
 		String email = request.email().trim().toLowerCase(Locale.ROOT);
 
 		Event event = eventRepository.findById(request.eventId())
-				.orElseThrow(() -> new RegistrationException(HttpStatus.NOT_FOUND, "eventId",
-						"That event could not be found."));
+			.orElseThrow(
+					() -> new RegistrationException(HttpStatus.NOT_FOUND, "eventId", "That event could not be found."));
 
 		if (event.getStartDateTime().isBefore(OffsetDateTime.now(clock))) {
 			throw new RegistrationException(HttpStatus.BAD_REQUEST, "eventId",
 					"The selected run has already taken place.");
 		}
 
-		// A cancelled run is off the public list, but the id still resolves — refuse it here too, so
-		// a stale page or a direct POST can't sign someone up for a run that isn't happening (#58).
+		// A cancelled run is off the public list, but the id still resolves — refuse it
+		// here too, so a stale page or a direct POST can't sign someone up for a run
+		// that isn't happening (#58).
 		if (event.isCancelled()) {
-			throw new RegistrationException(HttpStatus.BAD_REQUEST, "eventId",
-					"The selected run has been cancelled.");
+			throw new RegistrationException(HttpStatus.BAD_REQUEST, "eventId", "The selected run has been cancelled.");
 		}
 
 		if (registrationRepository.existsByEventIdAndEmailIgnoreCase(event.getId(), email)) {
@@ -89,13 +95,14 @@ public class RegistrationService {
 	}
 
 	/**
-	 * The signed-in user's registrations, split into upcoming (event starting now or later) and past
-	 * (already gone by), for the dashboard. The cutoff comes from the injected {@link Clock} so the
-	 * split is testable against a fixed instant. The repository returns rows newest-run-first; that
-	 * order is what "past" wants (most recent at the top), so past keeps it and upcoming is reversed
-	 * to soonest-first (the next run at the top).
-	 *
-	 * @param userId the current account (never null — the endpoint requires authentication)
+	 * The signed-in user's registrations, split into upcoming (event starting now or
+	 * later) and past (already gone by), for the dashboard. The cutoff comes from the
+	 * injected {@link Clock} so the split is testable against a fixed instant. The
+	 * repository returns rows newest-run-first; that order is what "past" wants (most
+	 * recent at the top), so past keeps it and upcoming is reversed to soonest-first (the
+	 * next run at the top).
+	 * @param userId the current account (never null — the endpoint requires
+	 * authentication)
 	 */
 	@Transactional(readOnly = true)
 	public MyRegistrationsResponse myRegistrations(Long userId) {
@@ -106,7 +113,8 @@ public class RegistrationService {
 		for (Registration registration : registrationRepository.findByUserIdWithEvent(userId)) {
 			if (registration.getEvent().getStartDateTime().isBefore(now)) {
 				past.add(MyRegistration.from(registration));
-			} else {
+			}
+			else {
 				upcoming.add(MyRegistration.from(registration));
 			}
 		}
@@ -118,21 +126,23 @@ public class RegistrationService {
 
 	/**
 	 * Record (or correct) the runner's own finish time on one of their registrations.
-	 *
-	 * @param userId            the current account (never null — the endpoint requires authentication)
-	 * @param registrationId    the registration to record the time on
-	 * @param finishTimeSeconds the time, in whole seconds (range already bean-validated at the boundary)
+	 * @param userId the current account (never null — the endpoint requires
+	 * authentication)
+	 * @param registrationId the registration to record the time on
+	 * @param finishTimeSeconds the time, in whole seconds (range already bean-validated
+	 * at the boundary)
 	 * @return the updated registration, in the dashboard's row shape
 	 */
 	@Transactional
 	public MyRegistration recordFinishTime(Long userId, Long registrationId, int finishTimeSeconds) {
-		// Someone else's registration is reported exactly like a missing one, so the 404 never
-		// confirms that another person's row exists.
+		// Someone else's registration is reported exactly like a missing one, so the 404
+		// never confirms that another person's row exists.
 		Registration registration = registrationRepository.findById(registrationId)
-				.filter(found -> userId.equals(found.getUserId()))
-				.orElseThrow(() -> new RegistrationException(HttpStatus.NOT_FOUND, "registrationId",
-						"That registration could not be found."));
-		// "Taken place" uses the dashboard's cutoff — a run is past once its start has gone by.
+			.filter(found -> userId.equals(found.getUserId()))
+			.orElseThrow(() -> new RegistrationException(HttpStatus.NOT_FOUND, "registrationId",
+					"That registration could not be found."));
+		// "Taken place" uses the dashboard's cutoff — a run is past once its start has
+		// gone by.
 		if (!registration.getEvent().getStartDateTime().isBefore(OffsetDateTime.now(clock))) {
 			throw new RegistrationException(HttpStatus.BAD_REQUEST, "finishTimeSeconds",
 					"You can add a time once the run has taken place.");
@@ -147,23 +157,22 @@ public class RegistrationService {
 	}
 
 	/**
-	 * The account's registrations flattened for a GDPR data export (charter §7), newest run first —
-	 * every field held on each row, including the name and email the person gave. Read inside a
-	 * transaction so the lazy event/location join resolves before the entities detach.
-	 *
-	 * @param userId the current account (never null — the endpoint requires authentication)
+	 * The account's registrations flattened for a GDPR data export (charter §7), newest
+	 * run first — every field held on each row, including the name and email the person
+	 * gave. Read inside a transaction so the lazy event/location join resolves before the
+	 * entities detach.
+	 * @param userId the current account (never null — the endpoint requires
+	 * authentication)
 	 */
 	@Transactional(readOnly = true)
 	public List<RegistrationExport> exportForUser(Long userId) {
-		return registrationRepository.findByUserIdWithEvent(userId).stream()
-				.map(RegistrationExport::from)
-				.toList();
+		return registrationRepository.findByUserIdWithEvent(userId).stream().map(RegistrationExport::from).toList();
 	}
 
 	/**
-	 * Delete every registration made by an account — the registration side of account erasure (GDPR
-	 * right to erasure, charter §7). Anonymous rows (user_id null) are untouched.
-	 *
+	 * Delete every registration made by an account — the registration side of account
+	 * erasure (GDPR right to erasure, charter §7). Anonymous rows (user_id null) are
+	 * untouched.
 	 * @param userId the account being erased
 	 * @return how many registrations were removed
 	 */

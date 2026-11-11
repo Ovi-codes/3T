@@ -3,9 +3,10 @@ package ro.threet.run.registration;
 import ro.threet.run.event.Event;
 
 /**
- * Builds the email that tells a registrant their run is off — naming the event, why it was called
- * off, the date it would have been, and its location. See {@link RegistrantEmail} for the shared
- * shape (the transport split, the local Bucharest time, the venue line).
+ * Builds the email that tells a registrant their run is off — naming the event, why it
+ * was called off, the date it would have been, and its location. See
+ * {@link RegistrantEmail} for the shared shape (the transport split, the local Bucharest
+ * time, the venue line).
  */
 final class CancellationEmail extends RegistrantEmail {
 

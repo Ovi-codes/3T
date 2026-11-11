@@ -20,8 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Exercises {@code GET /api/events} against a real Postgres seeded by the V2 migration: the
- * two past events are excluded and the four upcoming ones come back soonest-first.
+ * Exercises {@code GET /api/events} against a real Postgres seeded by the V2 migration:
+ * the two past events are excluded and the four upcoming ones come back soonest-first.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -37,10 +37,10 @@ class EventControllerIntegrationTest {
 	@Test
 	void returnsSeededUpcomingEventsInDateOrderAndExcludesPast() throws Exception {
 		String json = mockMvc.perform(get("/api/events"))
-				.andExpect(status().isOk())
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 
 		List<EventResponse> events = objectMapper.readValue(json, new TypeReference<>() {
 		});

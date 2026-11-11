@@ -20,10 +20,10 @@ import ro.threet.run.registration.RegistrationRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Two logins of the same account at the same moment (issue #64), on real Postgres. Each test loads
- * the account in one transaction, then lets a second transaction (the "other login") change its
- * {@code user_roles} rows and commit first. The first login must still succeed, with the right roles
- * in the principal and in the table.
+ * Two logins of the same account at the same moment (issue #64), on real Postgres. Each
+ * test loads the account in one transaction, then lets a second transaction (the "other
+ * login") change its {@code user_roles} rows and commit first. The first login must still
+ * succeed, with the right roles in the principal and in the table.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(properties = "app.admin.emails=" + ConcurrentRoleGrantIntegrationTest.ADMIN)
@@ -78,18 +78,18 @@ class ConcurrentRoleGrantIntegrationTest {
 		grantDirectly(DEMOTED, Roles.ROLE_USER);
 		grantDirectly(DEMOTED, Roles.ROLE_ADMIN);
 
-		Set<String> granted = login(DEMOTED, () -> jdbc.update(
-				"delete from user_roles where user_id = (select id from app_user where email = ?)"
-						+ " and role_id = (select id from role where name = ?)",
-				DEMOTED, Roles.ROLE_ADMIN));
+		Set<String> granted = login(DEMOTED,
+				() -> jdbc.update("delete from user_roles where user_id = (select id from app_user where email = ?)"
+						+ " and role_id = (select id from role where name = ?)", DEMOTED, Roles.ROLE_ADMIN));
 
 		assertThat(granted).containsExactly(Roles.ROLE_USER);
 		assertThat(roleRows(DEMOTED)).containsExactly(Roles.ROLE_USER);
 	}
 
 	/**
-	 * A login, as {@link LocalAuthProvider#login} does it: load the account, then reconcile its roles.
-	 * {@code otherLogin} runs and commits in its own transaction between the two steps.
+	 * A login, as {@link LocalAuthProvider#login} does it: load the account, then
+	 * reconcile its roles. {@code otherLogin} runs and commits in its own transaction
+	 * between the two steps.
 	 */
 	private Set<String> login(String email, Runnable otherLogin) {
 		TransactionTemplate outer = new TransactionTemplate(transactionManager);
@@ -107,8 +107,10 @@ class ConcurrentRoleGrantIntegrationTest {
 	}
 
 	private void grantDirectly(String email, String roleName) {
-		jdbc.update("insert into user_roles (user_id, role_id)"
-				+ " select u.id, r.id from app_user u, role r where u.email = ? and r.name = ?", email, roleName);
+		jdbc.update(
+				"insert into user_roles (user_id, role_id)"
+						+ " select u.id, r.id from app_user u, role r where u.email = ? and r.name = ?",
+				email, roleName);
 	}
 
 	private java.util.List<String> roleRows(String email) {

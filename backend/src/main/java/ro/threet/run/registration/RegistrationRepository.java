@@ -9,17 +9,22 @@ import org.springframework.data.jpa.repository.Query;
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
 
 	/**
-	 * Whether this email is already registered for this event. Backs the friendly duplicate
-	 * check; the {@code unique(event_id, email)} constraint is the race-proof backstop.
+	 * Whether this email is already registered for this event. Backs the friendly
+	 * duplicate check; the {@code unique(event_id, email)} constraint is the race-proof
+	 * backstop.
 	 */
 	boolean existsByEventIdAndEmailIgnoreCase(Long eventId, String email);
 
-	/** How many people are registered for one event — the admin's count, and the delete guard. */
+	/**
+	 * How many people are registered for one event — the admin's count, and the delete
+	 * guard.
+	 */
 	long countByEventId(Long eventId);
 
 	/**
-	 * The registration count for each of several events in one query, so the admin schedule doesn't
-	 * fan out into a count per row. Events with no registrations simply don't come back.
+	 * The registration count for each of several events in one query, so the admin
+	 * schedule doesn't fan out into a count per row. Events with no registrations simply
+	 * don't come back.
 	 */
 	@Query("""
 			select new ro.threet.run.registration.EventRegistrationCount(r.event.id, count(r))
@@ -29,9 +34,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 	List<EventRegistrationCount> countByEventIdIn(Collection<Long> eventIds);
 
 	/**
-	 * Everyone registered for one event, oldest first, with the event and its location eagerly
-	 * joined — the cancellation mailer reads the run's name, date and place off each row and runs
-	 * outside the cancelling transaction, so the lazy relations must already be resolved.
+	 * Everyone registered for one event, oldest first, with the event and its location
+	 * eagerly joined — the cancellation mailer reads the run's name, date and place off
+	 * each row and runs outside the cancelling transaction, so the lazy relations must
+	 * already be resolved.
 	 */
 	@Query("""
 			select r from Registration r
@@ -42,10 +48,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 	List<Registration> findByEventIdWithEvent(Long eventId);
 
 	/**
-	 * One account's registrations, newest run first, with the event and its location eagerly
-	 * joined — the dashboard reads event name, date, and place off each row, so fetching them in
-	 * one query avoids an N+1 walk over the lazy relations. The service splits the list into the
-	 * upcoming/past buckets against its clock.
+	 * One account's registrations, newest run first, with the event and its location
+	 * eagerly joined — the dashboard reads event name, date, and place off each row, so
+	 * fetching them in one query avoids an N+1 walk over the lazy relations. The service
+	 * splits the list into the upcoming/past buckets against its clock.
 	 */
 	@Query("""
 			select r from Registration r
@@ -56,17 +62,18 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 	List<Registration> findByUserIdWithEvent(Long userId);
 
 	/**
-	 * Delete every registration made by an account — the registration side of GDPR erasure
-	 * (charter §7). Anonymous rows keep {@code user_id} null and are left untouched. Returns how
-	 * many were removed.
+	 * Delete every registration made by an account — the registration side of GDPR
+	 * erasure (charter §7). Anonymous rows keep {@code user_id} null and are left
+	 * untouched. Returns how many were removed.
 	 */
 	long deleteByUserId(Long userId);
 
 	/**
-	 * One run's registrations in finishing order, for its leaderboard (#44): fastest time first,
-	 * runners without a time last, and ties broken by who registered first (the lower id) so the
-	 * order is stable from one request to the next. A single query over the run's rows — the
-	 * leaderboard reads only name and time, so there are no lazy relations to walk.
+	 * One run's registrations in finishing order, for its leaderboard (#44): fastest time
+	 * first, runners without a time last, and ties broken by who registered first (the
+	 * lower id) so the order is stable from one request to the next. A single query over
+	 * the run's rows — the leaderboard reads only name and time, so there are no lazy
+	 * relations to walk.
 	 */
 	@Query("""
 			select r from Registration r
@@ -75,9 +82,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 	List<Registration> findLeaderboard(Long eventId);
 
 	/**
-	 * Several runs' leaderboards in one query, for a runner's personal stats (#45): grouped by run,
-	 * and within each run the same finishing order as {@link #findLeaderboard}. One read for all of
-	 * the runner's runs instead of one per run.
+	 * Several runs' leaderboards in one query, for a runner's personal stats (#45):
+	 * grouped by run, and within each run the same finishing order as
+	 * {@link #findLeaderboard}. One read for all of the runner's runs instead of one per
+	 * run.
 	 */
 	@Query("""
 			select r from Registration r

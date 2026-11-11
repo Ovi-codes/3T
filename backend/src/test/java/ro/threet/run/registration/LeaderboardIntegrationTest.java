@@ -29,12 +29,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * {@code GET /api/events/{id}/leaderboard} end to end against real Postgres (#44), through the whole
- * security filter chain with no session — the leaderboard is public. Proves the DB ordering the
- * service relies on: fastest first, ties broken by who registered first, runners without a time last.
+ * {@code GET /api/events/{id}/leaderboard} end to end against real Postgres (#44),
+ * through the whole security filter chain with no session — the leaderboard is public.
+ * Proves the DB ordering the service relies on: fastest first, ties broken by who
+ * registered first, runners without a time last.
  *
- * <p>Each test gets its own past run, created here and removed afterwards, so the seeded schedule
- * other test classes count on (they share this cached context and its container) is left as found.
+ * <p>
+ * Each test gets its own past run, created here and removed afterwards, so the seeded
+ * schedule other test classes count on (they share this cached context and its container)
+ * is left as found.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -75,17 +78,17 @@ class LeaderboardIntegrationTest {
 		seed(run, "Bogdan Ionescu", 1450);
 
 		mockMvc.perform(get("/api/events/" + run.getId() + "/leaderboard"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.eventId").value(run.getId()))
-				.andExpect(jsonPath("$.eventName").value("Leaderboard test run"))
-				.andExpect(jsonPath("$.locationName").value("Tineretului Park"))
-				.andExpect(jsonPath("$.entries.length()").value(3))
-				.andExpect(jsonPath("$.entries[0].position").value(1))
-				.andExpect(jsonPath("$.entries[0].runnerName").value("Ana P."))
-				.andExpect(jsonPath("$.entries[0].finishTimeSeconds").value(1300))
-				.andExpect(jsonPath("$.entries[1].runnerName").value("Bogdan I."))
-				.andExpect(jsonPath("$.entries[2].runnerName").value("Carmen D."))
-				.andExpect(jsonPath("$.entries[2].position").value(3));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.eventId").value(run.getId()))
+			.andExpect(jsonPath("$.eventName").value("Leaderboard test run"))
+			.andExpect(jsonPath("$.locationName").value("Tineretului Park"))
+			.andExpect(jsonPath("$.entries.length()").value(3))
+			.andExpect(jsonPath("$.entries[0].position").value(1))
+			.andExpect(jsonPath("$.entries[0].runnerName").value("Ana P."))
+			.andExpect(jsonPath("$.entries[0].finishTimeSeconds").value(1300))
+			.andExpect(jsonPath("$.entries[1].runnerName").value("Bogdan I."))
+			.andExpect(jsonPath("$.entries[2].runnerName").value("Carmen D."))
+			.andExpect(jsonPath("$.entries[2].position").value(3));
 	}
 
 	@Test
@@ -94,9 +97,9 @@ class LeaderboardIntegrationTest {
 		seed(run, "Ana Pop", 1300);
 
 		mockMvc.perform(get("/api/events/" + run.getId() + "/leaderboard"))
-				.andExpect(status().isOk())
-				.andExpect(content().string(not(containsString("@"))))
-				.andExpect(content().string(not(containsString("Pop"))));
+			.andExpect(status().isOk())
+			.andExpect(content().string(not(containsString("@"))))
+			.andExpect(content().string(not(containsString("Pop"))));
 	}
 
 	@Test
@@ -105,20 +108,22 @@ class LeaderboardIntegrationTest {
 		Registration first = seed(run, "Bogdan Ionescu", 1450);
 		seed(run, "Carmen Dumitru", 1450);
 		seed(run, "Ana Pop", 1300);
-		// Re-save the first-registered runner last: Postgres writes the updated row after the others,
-		// so only the explicit tie-break (not storage order) can put Bogdan ahead of Carmen.
+		// Re-save the first-registered runner last: Postgres writes the updated row after
+		// the others,
+		// so only the explicit tie-break (not storage order) can put Bogdan ahead of
+		// Carmen.
 		first.recordFinishTime(Duration.ofSeconds(1451));
 		registrations.save(first);
 		first.recordFinishTime(Duration.ofSeconds(1450));
 		registrations.save(first);
 
 		mockMvc.perform(get("/api/events/" + run.getId() + "/leaderboard"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.entries[0].runnerName").value("Ana P."))
-				.andExpect(jsonPath("$.entries[1].runnerName").value("Bogdan I."))
-				.andExpect(jsonPath("$.entries[1].position").value(2))
-				.andExpect(jsonPath("$.entries[2].runnerName").value("Carmen D."))
-				.andExpect(jsonPath("$.entries[2].position").value(2));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.entries[0].runnerName").value("Ana P."))
+			.andExpect(jsonPath("$.entries[1].runnerName").value("Bogdan I."))
+			.andExpect(jsonPath("$.entries[1].position").value(2))
+			.andExpect(jsonPath("$.entries[2].runnerName").value("Carmen D."))
+			.andExpect(jsonPath("$.entries[2].position").value(2));
 	}
 
 	@Test
@@ -128,25 +133,25 @@ class LeaderboardIntegrationTest {
 		seed(run, "Ana Pop", 1300);
 
 		mockMvc.perform(get("/api/events/" + run.getId() + "/leaderboard"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.entries[0].runnerName").value("Ana P."))
-				.andExpect(jsonPath("$.entries[1].runnerName").value("Elena S."))
-				.andExpect(jsonPath("$.entries[1].position").value(nullValue()))
-				.andExpect(jsonPath("$.entries[1].finishTimeSeconds").value(nullValue()));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.entries[0].runnerName").value("Ana P."))
+			.andExpect(jsonPath("$.entries[1].runnerName").value("Elena S."))
+			.andExpect(jsonPath("$.entries[1].position").value(nullValue()))
+			.andExpect(jsonPath("$.entries[1].finishTimeSeconds").value(nullValue()));
 	}
 
 	@Test
 	void anUnknownRunIsNotFound() throws Exception {
 		mockMvc.perform(get("/api/events/999999/leaderboard"))
-				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.errors.eventId").exists());
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.errors.eventId").exists());
 	}
 
 	@Test
 	void anUpcomingRunHasNoLeaderboard() throws Exception {
 		mockMvc.perform(get("/api/events/" + anUpcomingRun().getId() + "/leaderboard"))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.errors.eventId").exists());
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.errors.eventId").exists());
 	}
 
 	@Test
@@ -156,8 +161,8 @@ class LeaderboardIntegrationTest {
 		events.save(run);
 
 		mockMvc.perform(get("/api/events/" + run.getId() + "/leaderboard"))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.errors.eventId").exists());
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.errors.eventId").exists());
 	}
 
 	private Event aPastRun() {
@@ -170,10 +175,11 @@ class LeaderboardIntegrationTest {
 
 	private Event anUpcomingRun() {
 		OffsetDateTime now = OffsetDateTime.now();
-		return events.findAll().stream()
-				.filter(event -> !event.isCancelled() && event.getStartDateTime().isAfter(now))
-				.min(Comparator.comparing(Event::getStartDateTime))
-				.orElseThrow();
+		return events.findAll()
+			.stream()
+			.filter(event -> !event.isCancelled() && event.getStartDateTime().isAfter(now))
+			.min(Comparator.comparing(Event::getStartDateTime))
+			.orElseThrow();
 	}
 
 	private Registration seed(Event run, String name, Integer finishTimeSeconds) {

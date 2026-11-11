@@ -11,14 +11,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * A signed-in runner's personal stats (#45): their time and place on each run they finished. Reads
- * the finish times of #43 and ranks them exactly like the public leaderboard of #44
- * ({@link Ranking}).
+ * A signed-in runner's personal stats (#45): their time and place on each run they
+ * finished. Reads the finish times of #43 and ranks them exactly like the public
+ * leaderboard of #44 ({@link Ranking}).
  */
 @Service
 public class MyStatsService {
 
 	private final RegistrationRepository registrationRepository;
+
 	private final Clock clock;
 
 	MyStatsService(RegistrationRepository registrationRepository, Clock clock) {
@@ -27,34 +28,36 @@ public class MyStatsService {
 	}
 
 	/**
-	 * The user's finished runs, oldest first. A run counts when it has taken place (the dashboard's
-	 * cutoff — its start has gone by), was not cancelled, and the user recorded a time on it — the
-	 * same runs that have a leaderboard with the user's place on it.
-	 *
-	 * @param userId the current account (never null — the endpoint requires authentication)
+	 * The user's finished runs, oldest first. A run counts when it has taken place (the
+	 * dashboard's cutoff — its start has gone by), was not cancelled, and the user
+	 * recorded a time on it — the same runs that have a leaderboard with the user's place
+	 * on it.
+	 * @param userId the current account (never null — the endpoint requires
+	 * authentication)
 	 */
 	@Transactional(readOnly = true)
 	public MyStatsResponse stats(Long userId) {
 		OffsetDateTime now = OffsetDateTime.now(clock);
 		// Rows arrive newest run first; the trend reads oldest first.
-		List<Registration> finished = registrationRepository.findByUserIdWithEvent(userId).stream()
-				.filter(registration -> registration.getEvent().getStartDateTime().isBefore(now))
-				.filter(registration -> !registration.getEvent().isCancelled())
-				.filter(registration -> registration.getFinishTime() != null)
-				.toList()
-				.reversed();
+		List<Registration> finished = registrationRepository.findByUserIdWithEvent(userId)
+			.stream()
+			.filter(registration -> registration.getEvent().getStartDateTime().isBefore(now))
+			.filter(registration -> !registration.getEvent().isCancelled())
+			.filter(registration -> registration.getFinishTime() != null)
+			.toList()
+			.reversed();
 		if (finished.isEmpty()) {
 			return new MyStatsResponse(List.of());
 		}
 
 		Map<Long, List<Registration>> leaderboards = registrationRepository
-				.findLeaderboards(finished.stream().map(registration -> registration.getEvent().getId()).toList())
-				.stream()
-				.collect(Collectors.groupingBy(registration -> registration.getEvent().getId()));
+			.findLeaderboards(finished.stream().map(registration -> registration.getEvent().getId()).toList())
+			.stream()
+			.collect(Collectors.groupingBy(registration -> registration.getEvent().getId()));
 
 		return new MyStatsResponse(finished.stream()
-				.map(mine -> stat(mine, leaderboards.getOrDefault(mine.getEvent().getId(), List.of(mine))))
-				.toList());
+			.map(mine -> stat(mine, leaderboards.getOrDefault(mine.getEvent().getId(), List.of(mine))))
+			.toList());
 	}
 
 	private static MyRunStat stat(Registration mine, List<Registration> finishingOrder) {

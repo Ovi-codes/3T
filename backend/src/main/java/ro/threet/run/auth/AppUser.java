@@ -10,11 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * A registered account. Owned by the local {@link AuthProvider} — the only fields stored are the
- * person's name, their email, and a BCrypt hash of the password (GDPR data minimisation, charter
- * §7). If auth later moves to Entra External ID, this table goes with the local provider and the
- * rest of the app keeps talking to {@link AccountPrincipal}.
- * Every account has a {@code name} (captured at sign-up and validated at the API).
+ * A registered account. Owned by the local {@link AuthProvider} — the only fields stored
+ * are the person's name, their email, and a BCrypt hash of the password (GDPR data
+ * minimisation, charter §7). If auth later moves to Entra External ID, this table goes
+ * with the local provider and the rest of the app keeps talking to
+ * {@link AccountPrincipal}. Every account has a {@code name} (captured at sign-up and
+ * validated at the API).
  */
 @Entity
 @Table(name = "app_user")

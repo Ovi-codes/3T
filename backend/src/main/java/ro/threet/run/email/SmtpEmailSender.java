@@ -6,14 +6,15 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 /**
- * SMTP transport for {@link EmailSender}. Talks to Mailpit in dev and tests, and to a real
- * provider in prod — the difference is entirely host/port/credentials from the environment
- * (see application.yml). The From address comes from {@code app.mail.from}.
+ * SMTP transport for {@link EmailSender}. Talks to Mailpit in dev and tests, and to a
+ * real provider in prod — the difference is entirely host/port/credentials from the
+ * environment (see application.yml). The From address comes from {@code app.mail.from}.
  */
 @Component
 public class SmtpEmailSender implements EmailSender {
 
 	private final JavaMailSender mailSender;
+
 	private final String from;
 
 	SmtpEmailSender(JavaMailSender mailSender, @Value("${app.mail.from}") String from) {

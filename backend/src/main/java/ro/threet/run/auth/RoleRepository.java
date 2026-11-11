@@ -14,8 +14,8 @@ interface RoleRepository extends JpaRepository<Role, Long> {
 	Optional<Role> findByName(String name);
 
 	/**
-	 * Give the account the role. A row that already exists is not an error: a concurrent login of the
-	 * same account may have written it first (issue #64).
+	 * Give the account the role. A row that already exists is not an error: a concurrent
+	 * login of the same account may have written it first (issue #64).
 	 */
 	@Modifying
 	@Query(value = "insert into user_roles (user_id, role_id) values (:userId, :roleId) on conflict do nothing",

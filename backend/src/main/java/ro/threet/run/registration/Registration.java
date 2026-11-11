@@ -19,12 +19,13 @@ import org.hibernate.type.SqlTypes;
 import ro.threet.run.event.Event;
 
 /**
- * A person's registration for an {@link Event}, stored per (event, participant) — the shape that
- * lets results and account linkage share one row (charter §3 seam).
+ * A person's registration for an {@link Event}, stored per (event, participant) — the
+ * shape that lets results and account linkage share one row (charter §3 seam).
  *
- * Always carries name + email. {@code user_id} attributes the registration to a signed-in account
- * and is null for an anonymous one, so the core loop stays anonymous while a logged-in registration
- * links to its owner. {@code finish_time} is the runner's own recorded time for the run.
+ * Always carries name + email. {@code user_id} attributes the registration to a signed-in
+ * account and is null for an anonymous one, so the core loop stays anonymous while a
+ * logged-in registration links to its owner. {@code finish_time} is the runner's own
+ * recorded time for the run.
  */
 @Entity
 @Table(name = "registration")
@@ -49,9 +50,9 @@ public class Registration {
 	private Long userId;
 
 	/**
-	 * The runner's self-entered finish time, or null when none has been recorded. Pinned to the
-	 * Postgres {@code interval} type — Hibernate would otherwise map a {@link Duration} to numeric and
-	 * fail schema validation against the V3 column.
+	 * The runner's self-entered finish time, or null when none has been recorded. Pinned
+	 * to the Postgres {@code interval} type — Hibernate would otherwise map a
+	 * {@link Duration} to numeric and fail schema validation against the V3 column.
 	 */
 	@JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
 	@Column(name = "finish_time")
@@ -104,7 +105,10 @@ public class Registration {
 		return finishTime;
 	}
 
-	/** The finish time in whole seconds — the API's wire unit — or null when none is recorded. */
+	/**
+	 * The finish time in whole seconds — the API's wire unit — or null when none is
+	 * recorded.
+	 */
 	public Integer getFinishTimeSeconds() {
 		return finishTime == null ? null : Math.toIntExact(finishTime.toSeconds());
 	}

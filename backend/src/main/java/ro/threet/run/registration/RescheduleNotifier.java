@@ -8,10 +8,12 @@ import ro.threet.run.event.EventRescheduled;
 /**
  * Tells everyone registered for a run that its time has moved (issue #58).
  *
- * <p>The twin of {@link CancellationNotifier}, and for the same reasons: it runs <strong>after</strong>
- * the editing transaction commits (a mail server that is down can't roll the reschedule back — the
- * edit is authoritative, the emails best-effort, ADR-0001). The dedupe-send-log mechanics are shared
- * in {@link RegistrantMailout}; this class only builds the reschedule wording.
+ * <p>
+ * The twin of {@link CancellationNotifier}, and for the same reasons: it runs
+ * <strong>after</strong> the editing transaction commits (a mail server that is down
+ * can't roll the reschedule back — the edit is authoritative, the emails best-effort,
+ * ADR-0001). The dedupe-send-log mechanics are shared in {@link RegistrantMailout}; this
+ * class only builds the reschedule wording.
  */
 @Component
 class RescheduleNotifier {
@@ -24,9 +26,8 @@ class RescheduleNotifier {
 
 	@TransactionalEventListener
 	public void onEventRescheduled(EventRescheduled rescheduled) {
-		mailout.notifyRegistrants(rescheduled.eventId(), "reschedule",
-				registration -> RescheduleEmail.forRegistration(registration,
-						rescheduled.previousStart(), rescheduled.newStart()));
+		mailout.notifyRegistrants(rescheduled.eventId(), "reschedule", registration -> RescheduleEmail
+			.forRegistration(registration, rescheduled.previousStart(), rescheduled.newStart()));
 	}
 
 }

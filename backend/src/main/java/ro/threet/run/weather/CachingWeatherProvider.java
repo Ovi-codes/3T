@@ -9,15 +9,18 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
 
 /**
- * Caches forecasts in front of a {@link WeatherProvider} so repeated views of the same run don't
- * call the upstream API each time, better perf and staying a good Open-Meteo citizen.
+ * Caches forecasts in front of a {@link WeatherProvider} so repeated views of the same
+ * run don't call the upstream API each time, better perf and staying a good Open-Meteo
+ * citizen.
  *
- * <p><b>TTL = the upstream refresh rate.</b>
- * The window is configured in {@link WeatherConfig} ({@code WEATHER_CACHE_TTL}).
+ * <p>
+ * <b>TTL = the upstream refresh rate.</b> The window is configured in
+ * {@link WeatherConfig} ({@code WEATHER_CACHE_TTL}).
  *
- * <p>Only present forecasts are cached. An empty result (a date past the horizon, or an upstream
- * failure) is not, so the moment upstream recovers the next view gets a real forecast rather than a
- * cached gap.
+ * <p>
+ * Only present forecasts are cached. An empty result (a date past the horizon, or an
+ * upstream failure) is not, so the moment upstream recovers the next view gets a real
+ * forecast rather than a cached gap.
  */
 class CachingWeatherProvider implements WeatherProvider {
 
@@ -25,19 +28,20 @@ class CachingWeatherProvider implements WeatherProvider {
 	}
 
 	private final WeatherProvider delegate;
+
 	private final Cache<Key, Forecast> cache;
 
 	CachingWeatherProvider(WeatherProvider delegate, Duration ttl) {
 		this(delegate, ttl, Ticker.systemTicker());
 	}
 
-	/** Test seam: a fake {@link Ticker} makes TTL expiry deterministic without real waiting. */
+	/**
+	 * Test seam: a fake {@link Ticker} makes TTL expiry deterministic without real
+	 * waiting.
+	 */
 	CachingWeatherProvider(WeatherProvider delegate, Duration ttl, Ticker ticker) {
 		this.delegate = delegate;
-		this.cache = Caffeine.newBuilder()
-				.expireAfterWrite(ttl)
-				.ticker(ticker)
-				.build();
+		this.cache = Caffeine.newBuilder().expireAfterWrite(ttl).ticker(ticker).build();
 	}
 
 	@Override

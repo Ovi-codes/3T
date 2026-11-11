@@ -25,9 +25,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The opt-in demo seed (#44, #45): with {@code DEMO_DATA=true} a past run comes pre-filled with
- * runners and finish times, plus a demo account that ran it and eight weekly runs before it, so the
- * leaderboard and the personal stats can be shown without typing data in. Without the flag nothing is seeded — tests and prod never see the fake runners.
+ * The opt-in demo seed (#44, #45): with {@code DEMO_DATA=true} a past run comes
+ * pre-filled with runners and finish times, plus a demo account that ran it and eight
+ * weekly runs before it, so the leaderboard and the personal stats can be shown without
+ * typing data in. Without the flag nothing is seeded — tests and prod never see the fake
+ * runners.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -39,8 +41,8 @@ class DemoDataIntegrationTest {
 
 	@Test
 	void isOffByDefault() {
-		Integer applied = jdbc.queryForObject(
-				"select count(*) from flyway_schema_history where script like '%demo%'", Integer.class);
+		Integer applied = jdbc.queryForObject("select count(*) from flyway_schema_history where script like '%demo%'",
+				Integer.class);
 		assertThat(applied).isZero();
 	}
 
@@ -53,54 +55,58 @@ class DemoDataIntegrationTest {
 
 		@Test
 		void seedsAPastRunWithARankedLeaderboardTheDemoAccountRan() throws Exception {
-			MvcResult login = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-					.content("""
-							{"email": "demo@example.com", "password": "demo-run-5k"}"""))
-					.andExpect(status().isOk())
-					.andReturn();
+			MvcResult login = mockMvc
+				.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+						{"email": "demo@example.com", "password": "demo-run-5k"}"""))
+				.andExpect(status().isOk())
+				.andReturn();
 			MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
 
-			// The demo account's dashboard lists the seeded run as its latest under Past, with its time.
+			// The demo account's dashboard lists the seeded run as its latest under Past,
+			// with its time.
 			String dashboard = mockMvc.perform(get("/api/me/registrations").session(session))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.past[0].finishTimeSeconds").value(1417))
-					.andReturn().getResponse().getContentAsString();
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.past[0].finishTimeSeconds").value(1417))
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
 			long eventId = ((Number) JsonPath.read(dashboard, "$.past[0].eventId")).longValue();
 
-			// Its leaderboard shows every shape the view has to handle: a podium, a tie, the demo
-			// runner mid-pack, and runners who never entered a time.
+			// Its leaderboard shows every shape the view has to handle: a podium, a tie,
+			// the demo runner mid-pack, and runners who never entered a time.
 			mockMvc.perform(get("/api/events/" + eventId + "/leaderboard"))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.entries.length()").value(11))
-					.andExpect(jsonPath("$.entries[0].position").value(1))
-					.andExpect(jsonPath("$.entries[0].runnerName").value("Andrei P."))
-					.andExpect(jsonPath("$.entries[2].position").value(3))
-					.andExpect(jsonPath("$.entries[3].position").value(3))
-					.andExpect(jsonPath("$.entries[4].position").value(5))
-					.andExpect(jsonPath("$.entries[4].runnerName").value("Demo R."))
-					.andExpect(jsonPath("$.entries[9].finishTimeSeconds").value(nullValue()))
-					.andExpect(jsonPath("$.entries[10].finishTimeSeconds").value(nullValue()));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.entries.length()").value(11))
+				.andExpect(jsonPath("$.entries[0].position").value(1))
+				.andExpect(jsonPath("$.entries[0].runnerName").value("Andrei P."))
+				.andExpect(jsonPath("$.entries[2].position").value(3))
+				.andExpect(jsonPath("$.entries[3].position").value(3))
+				.andExpect(jsonPath("$.entries[4].position").value(5))
+				.andExpect(jsonPath("$.entries[4].runnerName").value("Demo R."))
+				.andExpect(jsonPath("$.entries[9].finishTimeSeconds").value(nullValue()))
+				.andExpect(jsonPath("$.entries[10].finishTimeSeconds").value(nullValue()));
 		}
 
 		@Test
 		void seedsAHistoryOfRunsSoTheDemoAccountHasATimeTrend() throws Exception {
-			MvcResult login = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-					.content("""
-							{"email": "demo@example.com", "password": "demo-run-5k"}"""))
-					.andExpect(status().isOk())
-					.andReturn();
+			MvcResult login = mockMvc
+				.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+						{"email": "demo@example.com", "password": "demo-run-5k"}"""))
+				.andExpect(status().isOk())
+				.andReturn();
 			MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
 
-			// Nine weekly runs, oldest first, improving from 27:52 to the leaderboard run's 23:37 (#45).
+			// Nine weekly runs, oldest first, improving from 27:52 to the leaderboard
+			// run's 23:37 (#45).
 			mockMvc.perform(get("/api/me/stats").session(session))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.runs.length()").value(9))
-					.andExpect(jsonPath("$.runs[0].finishTimeSeconds").value(1672))
-					.andExpect(jsonPath("$.runs[0].position").value(7))
-					.andExpect(jsonPath("$.runs[0].finishers").value(8))
-					.andExpect(jsonPath("$.runs[8].finishTimeSeconds").value(1417))
-					.andExpect(jsonPath("$.runs[8].position").value(5))
-					.andExpect(jsonPath("$.runs[8].finishers").value(9));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.runs.length()").value(9))
+				.andExpect(jsonPath("$.runs[0].finishTimeSeconds").value(1672))
+				.andExpect(jsonPath("$.runs[0].position").value(7))
+				.andExpect(jsonPath("$.runs[0].finishers").value(8))
+				.andExpect(jsonPath("$.runs[8].finishTimeSeconds").value(1417))
+				.andExpect(jsonPath("$.runs[8].position").value(5))
+				.andExpect(jsonPath("$.runs[8].finishers").value(9));
 		}
 
 	}

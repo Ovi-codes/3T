@@ -38,11 +38,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The user's GDPR data rights proven end to end against real Postgres (Testcontainers), through the
- * whole security filter chain (charter §7). A signed-in user can download everything held about
- * them ({@code GET /api/me/export}) and delete their account ({@code DELETE /api/me}); erasure takes
- * their registrations with it, ends the session, and leaves other accounts untouched. Both controls
- * are closed to anonymous callers (401).
+ * The user's GDPR data rights proven end to end against real Postgres (Testcontainers),
+ * through the whole security filter chain (charter §7). A signed-in user can download
+ * everything held about them ({@code GET /api/me/export}) and delete their account
+ * ({@code DELETE /api/me}); erasure takes their registrations with it, ends the session,
+ * and leaves other accounts untouched. Both controls are closed to anonymous callers
+ * (401).
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -66,8 +67,9 @@ class AccountPrivacyIntegrationTest {
 
 	@BeforeEach
 	void reset() {
-		// Children first (FK to app_user), then the accounts — so each test signs up fresh emails
-		// without tripping the unique-email rule against a prior test's rows.
+		// Children first (FK to app_user), then the accounts — so each test signs up
+		// fresh emails without tripping the unique-email rule against a prior test's
+		// rows.
 		registrations.deleteAll();
 		appUsers.deleteAll();
 	}
@@ -85,48 +87,49 @@ class AccountPrivacyIntegrationTest {
 	@Test
 	void exportReturnsTheAccountAndItsRegistrationsAsADownload() throws Exception {
 		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
-				.andExpect(status().isCreated())
-				.andReturn();
+			.andExpect(status().isCreated())
+			.andReturn();
 		long userId = userIdOf(signup);
 		List<Event> events3 = upcomingEvents(3);
 		events3.forEach(event -> seedRegistration(event, userId, "Ana", "ana@example.com"));
 
 		mockMvc.perform(get("/api/me/export").session(sessionOf(signup)))
-				.andExpect(status().isOk())
-				// Served as a file the user can save, not an inline page.
-				.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("attachment")))
-				.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("threet-run-my-data.json")))
-				.andExpect(jsonPath("$.account.email").value("ana@example.com"))
-				.andExpect(jsonPath("$.account.name").value("Ana Pop"))
-				.andExpect(jsonPath("$.account.id").value(userId))
-				// The password hash is never part of the export.
-				.andExpect(jsonPath("$.account.passwordHash").doesNotExist())
-				.andExpect(jsonPath("$.registrations.length()").value(3))
-				.andExpect(jsonPath("$.registrations[0].participantName").value("Ana"))
-				.andExpect(jsonPath("$.registrations[0].email").value("ana@example.com"));
+			.andExpect(status().isOk())
+			// Served as a file the user can save, not an inline page.
+			.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("attachment")))
+			.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("threet-run-my-data.json")))
+			.andExpect(jsonPath("$.account.email").value("ana@example.com"))
+			.andExpect(jsonPath("$.account.name").value("Ana Pop"))
+			.andExpect(jsonPath("$.account.id").value(userId))
+			// The password hash is never part of the export.
+			.andExpect(jsonPath("$.account.passwordHash").doesNotExist())
+			.andExpect(jsonPath("$.registrations.length()").value(3))
+			.andExpect(jsonPath("$.registrations[0].participantName").value("Ana"))
+			.andExpect(jsonPath("$.registrations[0].email").value("ana@example.com"));
 	}
 
 	@Test
 	void exportIncludesTheRecordedFinishTime() throws Exception {
 		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
-				.andExpect(status().isCreated())
-				.andReturn();
+			.andExpect(status().isCreated())
+			.andReturn();
 		Registration registration = new Registration(aPastEvent(), "Ana", "ana@example.com");
 		registration.linkUser(userIdOf(signup));
 		registration.recordFinishTime(Duration.ofSeconds(1471));
 		registrations.save(registration);
 
-		// The runner's own time is their personal data, so it travels with the export (§7).
+		// The runner's own time is their personal data, so it travels with the export
+		// (§7).
 		mockMvc.perform(get("/api/me/export").session(sessionOf(signup)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.registrations[0].finishTimeSeconds").value(1471));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.registrations[0].finishTimeSeconds").value(1471));
 	}
 
 	@Test
 	void eraseDeletesTheAccountAndItsRegistrationsAndEndsTheSession() throws Exception {
 		MvcResult signup = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
-				.andExpect(status().isCreated())
-				.andReturn();
+			.andExpect(status().isCreated())
+			.andReturn();
 		long userId = userIdOf(signup);
 		upcomingEvents(3).forEach(event -> seedRegistration(event, userId, "Ana", "ana@example.com"));
 		MockHttpSession session = sessionOf(signup);
@@ -142,11 +145,11 @@ class AccountPrivacyIntegrationTest {
 	@Test
 	void eraseLeavesOtherAccountsDataUntouched() throws Exception {
 		MvcResult ana = mockMvc.perform(signupRequest("ana@example.com", "correct horse"))
-				.andExpect(status().isCreated())
-				.andReturn();
+			.andExpect(status().isCreated())
+			.andReturn();
 		MvcResult bob = mockMvc.perform(signupRequest("bob@example.com", "correct horse"))
-				.andExpect(status().isCreated())
-				.andReturn();
+			.andExpect(status().isCreated())
+			.andReturn();
 		Event event = anUpcomingEvent();
 		seedRegistration(event, userIdOf(ana), "Ana", "ana@example.com");
 		long bobId = userIdOf(bob);
@@ -161,10 +164,11 @@ class AccountPrivacyIntegrationTest {
 
 	private Event aPastEvent() {
 		OffsetDateTime now = OffsetDateTime.now();
-		return events.findAll().stream()
-				.filter(event -> event.getStartDateTime().isBefore(now))
-				.max(Comparator.comparing(Event::getStartDateTime))
-				.orElseThrow();
+		return events.findAll()
+			.stream()
+			.filter(event -> event.getStartDateTime().isBefore(now))
+			.max(Comparator.comparing(Event::getStartDateTime))
+			.orElseThrow();
 	}
 
 	private Event anUpcomingEvent() {
@@ -173,11 +177,12 @@ class AccountPrivacyIntegrationTest {
 
 	private List<Event> upcomingEvents(int count) {
 		OffsetDateTime now = OffsetDateTime.now();
-		return events.findAll().stream()
-				.filter(event -> !event.getStartDateTime().isBefore(now))
-				.sorted(Comparator.comparing(Event::getStartDateTime))
-				.limit(count)
-				.toList();
+		return events.findAll()
+			.stream()
+			.filter(event -> !event.getStartDateTime().isBefore(now))
+			.sorted(Comparator.comparing(Event::getStartDateTime))
+			.limit(count)
+			.toList();
 	}
 
 	private void seedRegistration(Event event, long userId, String name, String email) {
@@ -198,10 +203,10 @@ class AccountPrivacyIntegrationTest {
 	}
 
 	private static MockHttpServletRequestBuilder signupRequest(String email, String password) {
-		// Name is required at the API from Increment 7; a fixed value keeps these GDPR tests focused.
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
-				.content("""
-						{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
+		// Name is required at the API from Increment 7; a fixed value keeps these GDPR
+		// tests focused.
+		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+				{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 
 }

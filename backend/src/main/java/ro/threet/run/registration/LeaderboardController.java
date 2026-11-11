@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * A run's leaderboard (#44). Public: it sits under {@code GET /api/events/**}, which
- * {@code SecurityConfig} already opens to anonymous visitors, so anyone can read it. The payload
- * carries only shortened names and times — never an email ({@link PublicName}).
+ * {@code SecurityConfig} already opens to anonymous visitors, so anyone can read it. The
+ * payload carries only shortened names and times — never an email ({@link PublicName}).
  */
 @RestController
 @RequestMapping("/api")
