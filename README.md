@@ -207,6 +207,10 @@ pull request, as three jobs that must all pass:
 | `frontend` | Node 24, `npm ci`, `npm run lint`, `npm test`. |
 | `e2e` | Builds both apps, runs Playwright against the live stack (backed by a Postgres service), and uploads the HTML report as a build artifact. |
 
+[`.github/dependabot.yml`](.github/dependabot.yml) opens weekly update PRs for Maven
+(`backend/`), npm (`frontend/` and `e2e/`) and GitHub Actions. Minor and patch updates are grouped
+per ecosystem. Angular packages are grouped so that they move together.
+
 This is the seed of the release gate: the core-scenario E2E tests (charter §5, CS-1..6) plug into
 the `e2e` job as they are built.
 
