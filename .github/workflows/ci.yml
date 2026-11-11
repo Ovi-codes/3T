@@ -42,6 +42,9 @@ jobs:
       - name: Install
         working-directory: frontend
         run: npm ci
+      - name: Format check
+        working-directory: frontend
+        run: npm run format:check
       - name: Lint
         working-directory: frontend
         run: npm run lint
@@ -98,6 +101,9 @@ jobs:
       - name: Install E2E deps
         working-directory: e2e
         run: npm ci
+      - name: Format check (E2E)
+        working-directory: e2e
+        run: npm run format:check
       - name: Install Playwright browser
         working-directory: e2e
         run: npx playwright install --with-deps chromium

@@ -20,6 +20,6 @@ apply (Increment 0 tasks have no UI or personal data, for example).
 - [ ] Core scenario (CS-1..6, charter §5) affected? Its E2E test is added/updated — green
 - [ ] New UI passes axe-core (no critical/serious) at mobile + desktop viewports
 - [ ] Personal data touched? Minimised, consent captured where required, covered by export/erasure (charter §7)
-- [ ] CI green (build, lint, all test layers)
+- [ ] CI green (build, format check, lint, all test layers)
 - [ ] Self-reviewed against this increment's acceptance criteria, as the target user
 - [ ] Anything incomplete sits behind a feature flag
