@@ -34,7 +34,15 @@ For each path, [`scripts/gate.mjs`](./scripts/gate.mjs) reruns the same load and
 The budgets are fixed policy ceilings — ~20% over the recorded p95, rounded — not a moving multiple
 of the last capture, so re-recording the baseline never silently loosens the gate. Both are enforced
 as k6 thresholds, so k6 itself exits non-zero; `gate.mjs` re-checks them so the reason prints plainly
-and one failing path never masks another. It runs in CI on every pull request and on pushes to `main`
+and one failing path never masks another.
+
+**Retry on p95-only failures.** Shared GitHub runners sometimes spike the p95 of a single run,
+mostly on the write path: across 82 runs (Sept–Nov 2026) the write p95 had a median of 75 ms but
+went as high as 262 ms, with 0% errors every time. So when an endpoint fails **only** on p95,
+the gate runs it again, up to `GATE_ATTEMPTS` runs in total (default 2), and passes if any run
+is within budget. A real regression fails every run. An error-rate failure is never retried.
+
+The gate runs in CI on every pull request and on pushes to `main`
 via [`.github/workflows/perf.yml`](../.github/workflows/perf.yml), and is a **required status check**
 on `main`.
 
@@ -56,8 +64,8 @@ node perf/scripts/gate.mjs
 K6_VERSION=v2.2.0 PERF_ENV="local dev" node perf/scripts/capture.mjs
 ```
 
-Every knob (`BASE_URL`, `VUS`, `DURATION`, `P95_BUDGET_MS`, `MAX_ERROR_RATE`) is an env var with a
-default, so the scripts run the same way locally and in CI.
+Every knob (`BASE_URL`, `VUS`, `DURATION`, `P95_BUDGET_MS`, `MAX_ERROR_RATE`, `GATE_ATTEMPTS`) is an
+env var with a default, so the scripts run the same way locally and in CI.
 
 ## Not in scope
 
