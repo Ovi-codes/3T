@@ -230,7 +230,8 @@ the `e2e` job as they are built.
 A separate [`.github/workflows/perf.yml`](.github/workflows/perf.yml) runs the k6 performance gate
 (`gate` job) on the same triggers, and carries a manual `capture` job to re-record the baseline on
 the runner. It is a **required status check** on `main`, failing on a p95 over budget (40 ms read /
-120 ms write) or a raised error rate (see [`perf/baseline.md`](perf/baseline.md)).
+120 ms write) or a raised error rate. A p95-only failure is retried once, to absorb runner noise
+(see [`perf/baseline.md`](perf/baseline.md)).
 
 ### Deploy
 
