@@ -66,6 +66,19 @@
   line-height: 0;
 }
 
+/* Screen-reader-only suffix, so the brand link announces as "3T Run home". */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Chrome action — a secondary (outlined) button so it reads as navigation, not as a card's
    primary "Register". Zero radius, 2px focus target. */
 .nav-button {
