@@ -32,7 +32,9 @@ describe('Login', () => {
   }
 
   function submitForm(): void {
-    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
     fixture.detectChanges();
   }
 
@@ -63,13 +65,17 @@ describe('Login', () => {
     setInput('password', 'wrong password');
     submitForm();
 
-    httpMock.expectOne('/api/auth/login').flush(
-      { errors: { credentials: 'Email or password is incorrect.' } },
-      { status: 401, statusText: 'Unauthorized' },
-    );
+    httpMock
+      .expectOne('/api/auth/login')
+      .flush(
+        { errors: { credentials: 'Email or password is incorrect.' } },
+        { status: 401, statusText: 'Unauthorized' },
+      );
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Email or password is incorrect.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Email or password is incorrect.',
+    );
     expect(navigate).not.toHaveBeenCalled();
   });
 });

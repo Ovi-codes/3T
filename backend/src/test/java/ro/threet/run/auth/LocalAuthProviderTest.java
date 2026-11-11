@@ -22,11 +22,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * The local provider's credential rules in isolation: passwords are hashed (never stored raw),
- * emails are normalised so accounts are case-insensitive, a taken email is refused, and a login
- * failure is one indistinguishable outcome whether the email is unknown or the password is wrong.
- * Role provisioning is delegated to {@link RoleService} (mocked here); the provider only puts the
- * resolved roles onto the principal.
+ * The local provider's credential rules in isolation: passwords are hashed (never stored
+ * raw), emails are normalised so accounts are case-insensitive, a taken email is refused,
+ * and a login failure is one indistinguishable outcome whether the email is unknown or
+ * the password is wrong. Role provisioning is delegated to {@link RoleService} (mocked
+ * here); the provider only puts the resolved roles onto the principal.
  */
 @ExtendWith(MockitoExtension.class)
 class LocalAuthProviderTest {
@@ -45,7 +45,8 @@ class LocalAuthProviderTest {
 
 	@org.junit.jupiter.api.BeforeEach
 	void defaultRoles() {
-		// By default a user carries the baseline ROLE_USER; the admin tests override this.
+		// By default a user carries the baseline ROLE_USER; the admin tests override
+		// this.
 		lenient().when(roleService.ensureRolesFor(any(AppUser.class))).thenReturn(Set.of("ROLE_USER"));
 	}
 
@@ -75,8 +76,7 @@ class LocalAuthProviderTest {
 	void signupPutsTheResolvedRolesOntoThePrincipal() {
 		when(users.existsByEmail("boss@example.com")).thenReturn(false);
 		when(users.save(any(AppUser.class))).thenAnswer(call -> call.getArgument(0));
-		when(roleService.ensureRolesFor(any(AppUser.class)))
-				.thenReturn(Set.of("ROLE_ADMIN", "ROLE_USER"));
+		when(roleService.ensureRolesFor(any(AppUser.class))).thenReturn(Set.of("ROLE_ADMIN", "ROLE_USER"));
 
 		AccountPrincipal principal = provider().signup("boss@example.com", "Boss", "correct horse");
 
@@ -88,7 +88,7 @@ class LocalAuthProviderTest {
 		when(users.existsByEmail("ana@example.com")).thenReturn(true);
 
 		assertThatThrownBy(() -> provider().signup("ana@example.com", "Ana Pop", "correct horse"))
-				.isInstanceOf(EmailAlreadyUsedException.class);
+			.isInstanceOf(EmailAlreadyUsedException.class);
 
 		verify(users, never()).save(any());
 	}
@@ -121,7 +121,7 @@ class LocalAuthProviderTest {
 		when(users.findByEmail("ana@example.com")).thenReturn(Optional.of(user));
 
 		assertThatThrownBy(() -> provider().login("ana@example.com", "wrong"))
-				.isInstanceOf(BadCredentialsException.class);
+			.isInstanceOf(BadCredentialsException.class);
 	}
 
 	@Test
@@ -129,7 +129,7 @@ class LocalAuthProviderTest {
 		when(users.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> provider().login("nobody@example.com", "correct horse"))
-				.isInstanceOf(BadCredentialsException.class);
+			.isInstanceOf(BadCredentialsException.class);
 	}
 
 }

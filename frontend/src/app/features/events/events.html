@@ -9,7 +9,11 @@
       </h1>
       @if (nextEvent(); as next) {
         <div class="hero-actions">
-          <a class="btn btn-primary hero-cta" [routerLink]="['/register', next.id]" data-testid="hero-cta">
+          <a
+            class="btn btn-primary hero-cta"
+            [routerLink]="['/register', next.id]"
+            data-testid="hero-cta"
+          >
             Let's run!
             <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" />
@@ -22,7 +26,11 @@
   </app-poster>
 
   @if (isAdmin()) {
-    <section class="page admin-create" data-testid="admin-create" aria-labelledby="admin-create-title">
+    <section
+      class="page admin-create"
+      data-testid="admin-create"
+      aria-labelledby="admin-create-title"
+    >
       <div class="section-head">
         <h2 id="admin-create-title">Create a run</h2>
       </div>
@@ -54,7 +62,10 @@
           }
         </div>
 
-        <fieldset class="field field-when" [attr.aria-describedby]="startFieldError() ? 'create-when-error' : null">
+        <fieldset
+          class="field field-when"
+          [attr.aria-describedby]="startFieldError() ? 'create-when-error' : null"
+        >
           <legend>Start (Bucharest time)</legend>
           <div class="when-inputs">
             <input
@@ -108,10 +119,15 @@
     } @else {
       <ul class="event-grid" role="list">
         @for (event of visibleEvents(); track event.id) {
-          <li class="event-card" data-testid="event-item" [class.event-card-off]="isCancelled(event)">
+          <li
+            class="event-card"
+            data-testid="event-item"
+            [class.event-card-off]="isCancelled(event)"
+          >
             <div class="event-card-head">
               <time class="event-kicker" [attr.datetime]="event.startDateTime">
-                {{ event.startDateTime | date: 'EEE d MMM' }} · {{ event.startDateTime | date: 'HH:mm' }}
+                {{ event.startDateTime | date: 'EEE d MMM' }} ·
+                {{ event.startDateTime | date: 'HH:mm' }}
               </time>
               @if (isCancelled(event)) {
                 <span class="tag tag-off" data-testid="event-cancelled">Cancelled</span>

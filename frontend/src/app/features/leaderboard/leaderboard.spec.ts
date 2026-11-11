@@ -29,7 +29,10 @@ describe('Leaderboard', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         // The route names the run whose results to show.
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ eventId: '7' }) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ eventId: '7' }) } },
+        },
       ],
     }).compileComponents();
 
@@ -60,7 +63,9 @@ describe('Leaderboard', () => {
   /** Each row's cells as text: [position, runner, time] (the medal column is checked on its own). */
   function rows(): string[][] {
     return Array.from(page().querySelectorAll('[data-testid="leaderboard-row"]')).map((row) =>
-      Array.from(row.querySelectorAll('th, td:not(.col-medal)')).map((cell) => cell.textContent!.trim()),
+      Array.from(row.querySelectorAll('th, td:not(.col-medal)')).map((cell) =>
+        cell.textContent!.trim(),
+      ),
     );
   }
 
@@ -126,7 +131,14 @@ describe('Leaderboard', () => {
       ]),
     );
 
-    expect(medals()).toEqual(['Gold medal', 'Silver medal', 'Bronze medal', 'Bronze medal', '', '']);
+    expect(medals()).toEqual([
+      'Gold medal',
+      'Silver medal',
+      'Bronze medal',
+      'Bronze medal',
+      '',
+      '',
+    ]);
   });
 
   it('lists a runner without a time last, with no position, as "Time not entered"', async () => {
@@ -142,7 +154,9 @@ describe('Leaderboard', () => {
     expect(last[2]).toBe('Time not entered');
     // No number — the visible dash is decorative; screen readers hear "No position".
     expect(last[0]).not.toMatch(/\d/);
-    expect(page().querySelectorAll('[data-testid="leaderboard-row"]')[1].textContent).toContain('No position');
+    expect(page().querySelectorAll('[data-testid="leaderboard-row"]')[1].textContent).toContain(
+      'No position',
+    );
   });
 
   it('says how many of the runners recorded a time', async () => {
@@ -162,9 +176,13 @@ describe('Leaderboard', () => {
 
     const table = page().querySelector('table')!;
     expect(table.querySelector('caption')!.textContent).toContain('Tineretului parkrun');
-    const headers = Array.from(table.querySelectorAll('thead th')).map((th) => th.textContent!.trim());
+    const headers = Array.from(table.querySelectorAll('thead th')).map((th) =>
+      th.textContent!.trim(),
+    );
     expect(headers).toEqual(['Position', 'Runner', 'Time', 'Medal']);
-    table.querySelectorAll('thead th').forEach((th) => expect(th.getAttribute('scope')).toBe('col'));
+    table
+      .querySelectorAll('thead th')
+      .forEach((th) => expect(th.getAttribute('scope')).toBe('col'));
   });
 
   it('invites runners in when nobody was registered for the run', async () => {
@@ -175,7 +193,9 @@ describe('Leaderboard', () => {
   });
 
   it('explains a run that has no results yet, in the server’s words', async () => {
-    await fail(409, { errors: { eventId: 'This run hasn’t taken place yet, so it has no results.' } });
+    await fail(409, {
+      errors: { eventId: 'This run hasn’t taken place yet, so it has no results.' },
+    });
 
     expect(page().querySelector('table')).toBeNull();
     expect(page().textContent).toContain('This run hasn’t taken place yet, so it has no results.');

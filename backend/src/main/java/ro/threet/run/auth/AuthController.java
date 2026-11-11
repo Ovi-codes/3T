@@ -15,15 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Accounts (charter §3, CS-2/CS-3). Sign-up and login verify credentials through the
- * {@link AuthProvider} seam, then {@link SessionAuthenticator} promotes the result to a logged-in
- * cookie session; {@code /me} reads it back. The controller never touches the users table or
- * BCrypt directly, so the Entra swap stays a provider change.
+ * {@link AuthProvider} seam, then {@link SessionAuthenticator} promotes the result to a
+ * logged-in cookie session; {@code /me} reads it back. The controller never touches the
+ * users table or BCrypt directly, so the Entra swap stays a provider change.
  */
 @RestController
 @RequestMapping("/api/auth")
 class AuthController {
 
 	private final AuthProvider authProvider;
+
 	private final SessionAuthenticator sessionAuthenticator;
 
 	AuthController(AuthProvider authProvider, SessionAuthenticator sessionAuthenticator) {
@@ -40,16 +41,22 @@ class AuthController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(AccountResponse.from(principal));
 	}
 
-	/** CS-3: verify credentials and open a session; wrong creds are a 401 from the provider. */
+	/**
+	 * CS-3: verify credentials and open a session; wrong creds are a 401 from the
+	 * provider.
+	 */
 	@PostMapping("/login")
-	public AccountResponse login(@Valid @RequestBody LoginRequest request,
-			HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+	public AccountResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest,
+			HttpServletResponse httpResponse) {
 		AccountPrincipal principal = authProvider.login(request.email(), request.password());
 		sessionAuthenticator.establishSession(principal, httpRequest, httpResponse);
 		return AccountResponse.from(principal);
 	}
 
-	/** The current account, or 401 if the session isn't authenticated (enforced by the filter chain). */
+	/**
+	 * The current account, or 401 if the session isn't authenticated (enforced by the
+	 * filter chain).
+	 */
 	@GetMapping("/me")
 	public AccountResponse me(@AuthenticationPrincipal AccountPrincipal principal) {
 		return AccountResponse.from(principal);

@@ -5,8 +5,20 @@ import { provideHttpClient } from '@angular/common/http';
 import { AdminEventItem, EventItem, EventsService } from './events.service';
 
 const EVENTS: EventItem[] = [
-  { id: 1, name: 'Morning 5k', startDateTime: '2026-09-05T06:00:00Z', locationName: 'Tineretului Park', city: 'Bucharest' },
-  { id: 2, name: 'Evening 5k', startDateTime: '2026-09-12T17:00:00Z', locationName: 'Herăstrău', city: 'Bucharest' },
+  {
+    id: 1,
+    name: 'Morning 5k',
+    startDateTime: '2026-09-05T06:00:00Z',
+    locationName: 'Tineretului Park',
+    city: 'Bucharest',
+  },
+  {
+    id: 2,
+    name: 'Evening 5k',
+    startDateTime: '2026-09-12T17:00:00Z',
+    locationName: 'Herăstrău',
+    city: 'Bucharest',
+  },
 ];
 
 const ADMIN_EVENT: AdminEventItem = {
@@ -75,7 +87,9 @@ describe('EventsService', () => {
       city: 'Bucharest',
     };
     let received: EventItem | undefined;
-    service.create({ name: 'Autumn 5k', startDateTime: '2026-10-01T09:00' }).subscribe((event) => (received = event));
+    service
+      .create({ name: 'Autumn 5k', startDateTime: '2026-10-01T09:00' })
+      .subscribe((event) => (received = event));
 
     const request = httpMock.expectOne('/api/admin/events');
     expect(request.request.method).toBe('POST');

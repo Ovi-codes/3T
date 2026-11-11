@@ -24,5 +24,7 @@ export const authGuard: CanActivateFn = () => {
   if (current === null) {
     return router.parseUrl('/login');
   }
-  return auth.loadCurrentUser().pipe(map((account) => (account ? true : router.parseUrl('/login'))));
+  return auth
+    .loadCurrentUser()
+    .pipe(map((account) => (account ? true : router.parseUrl('/login'))));
 };

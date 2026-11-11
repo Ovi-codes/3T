@@ -1,13 +1,67 @@
-# 3T Run
+# 3T Run — Time Trial Tuesdays
 
-Parkrun-style website for weekly free 5k events in Romania. Runners view upcoming events,
-register for one (anonymously, with a confirmation email), and signed-in users track their
-past and upcoming runs on a dashboard.
+[![CI](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml)
+[![Perf gate](https://github.com/Ovi-codes/3T/actions/workflows/perf.yml/badge.svg?branch=main)](https://github.com/Ovi-codes/3T/actions/workflows/perf.yml)
+[![Backend coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Ovi-codes/3T/badges/backend-coverage.json)](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml)
+[![Frontend coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Ovi-codes/3T/badges/frontend-coverage.json)](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
+![Spring Boot 4](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
+![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?logo=angular)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
-- Scope, architecture and testing strategy: [`docs/charter.md`](docs/charter.md)
-- What's now / next / later: [`docs/roadmap.md`](docs/roadmap.md)
-- Architecture decision records: [`docs/adr/`](docs/adr/) — e.g. [why cancel and delete are different actions](docs/adr/0001-cancel-vs-hard-delete-events.md)
-- Agent context: [`CLAUDE.md`](CLAUDE.md)
+A full-stack website for free, weekly, timed 5k runs in Romania.
+Runners see the upcoming runs, register for one without an account and receive a confirmation
+e-mail - core loop. Signed-in runners get a dashboard that shows their
+upcoming and past runs, their finish times, their place on each run's leaderboard and
+their time trend.
+
+<p align="center">
+  <img src="docs/screenshots/home.png" alt="Home page: the Time Trial Tuesdays hero with the next run's weather forecast, above the upcoming runs" width="74%">
+  &nbsp;
+  <img src="docs/screenshots/home-mobile.png" alt="Home page on a phone" width="22%">
+</p>
+
+| Dashboard: personal stats and time trend | Leaderboard for a past run |
+| :---: | :---: |
+| ![Dashboard with runs finished, personal best, best place and a finish-time chart](docs/screenshots/dashboard.png) | ![Leaderboard with medals for the top three and shared places for equal times](docs/screenshots/leaderboard.png) |
+
+## Highlights
+
+- **Vertical slices.** Each increment goes through all layers: a Flyway migration, a service,
+  a REST API and the Angular UI. The [increment plan](docs/charter.md) and the
+  [roadmap](docs/roadmap.md) show the order.
+- **Tests at each layer.** JUnit unit tests. Integration tests on a real Postgres in
+  Testcontainers. Vitest component tests. Playwright end-to-end tests on desktop and mobile
+  viewports, with axe-core accessibility checks.
+- **Coverage and formatting in CI.** JaCoCo (backend) and Vitest (frontend) coverage is
+  posted to each CI run's summary. Spring Java Format and Prettier fail the build on
+  unformatted code. Dependabot opens weekly update PRs for Maven, npm and GitHub Actions.
+- **Performance gate.** k6 load tests on the two hot paths are a required check on `main`.
+- **Seams at the boundaries.** Authentication and the weather forecast are behind interfaces
+  (`AuthProvider`, `WeatherProvider`). Forecasts come from Open-Meteo and are cached with
+  Caffeine.
+- **Security and GDPR.** Session cookies are `HttpOnly`, `SameSite=Lax` and `Secure`.
+  Passwords are hashed with BCrypt. Admin endpoints are restricted to `ROLE_ADMIN`. Runners can
+  download their data or delete their account. A privacy policy is published in the app.
+- **Ready for the cloud.** All configuration comes from environment variables, and the
+  migrations run at startup, so a new database provisions itself. The deploy workflow targets
+  Azure App Service and Static Web Apps in an EU region.
+- **Decisions are documented.** The [architecture overview](docs/architecture.html) and the
+  [architecture decision records](docs/adr/) give the reasons for decisions that are hard to
+  reverse.
+
+## Documentation
+
+| Document | Contents |
+| :--- | :--- |
+| [`docs/charter.md`](docs/charter.md) | Scope, architecture decisions, increment plan, testing strategy, Definition of Done, GDPR |
+| [`docs/roadmap.md`](docs/roadmap.md) | V1 / V2 / V3: done, next and later |
+| [`docs/architecture.html`](docs/architecture.html) | Architecture overview with diagrams (open it in a browser) |
+| [`docs/adr/`](docs/adr/) | Architecture decision records, e.g. [why cancel and delete are different actions](docs/adr/0001-cancel-vs-hard-delete-events.md) |
+| [`docs/design/`](docs/design/) | The "Floodlight" design language: per-screen handoff and design tokens |
+| [`docs/implementation_details/`](docs/implementation_details/) | Auth, weather and design invariants |
+| [`CLAUDE.md`](CLAUDE.md) | Context and conventions for AI coding agents that work on the repo |
 
 ## Prerequisites
 
@@ -23,11 +77,12 @@ Check with `java -version`, `node -v`, `docker compose version`.
 ## Repo layout
 
 ```
-backend/    Spring Boot (Maven) — Web + Data JPA + Flyway
-frontend/   Angular (standalone components)
-e2e/        Playwright — tests the whole system
-docs/       charter + roadmap
-.github/workflows/   GitHub Actions CI
+backend/             Spring Boot (Maven): Web + Data JPA + Flyway + Security
+frontend/            Angular (standalone components)
+e2e/                 Playwright: tests the whole system (desktop + mobile, a11y)
+perf/                k6 load tests, the committed baseline and the gate scripts
+docs/                charter, roadmap, architecture, ADRs, design, screenshots
+.github              GitHub CI configuration
 docker-compose.yml   Postgres + Mailpit for local dev
 ```
 
@@ -128,15 +183,21 @@ Runs on http://localhost:4200 and calls the backend at `localhost:8080`.
 
 | Layer | Command | Where |
 | :--- | :--- | :--- |
-| Backend unit + integration | `./mvnw verify` | `backend/` |
+| Backend format check + unit + integration + coverage | `./mvnw verify` | `backend/` |
+| Backend format fix | `./mvnw spring-javaformat:apply` | `backend/` |
 | Frontend lint | `npm run lint` | `frontend/` |
+| Frontend / E2E format check (fix: `npm run format`) | `npm run format:check` | `frontend/`, `e2e/` |
 | Frontend unit/component | `npm test` | `frontend/` |
+| Frontend unit/component + coverage | `npm run test:coverage` | `frontend/` |
 | End-to-end (+ axe-core a11y) | `npx playwright test` | `e2e/` |
 | Performance gate (k6) | `node perf/scripts/gate.mjs` | `perf/` |
 
 The performance gate load-tests the two hot paths and fails on a p95 regression or a raised error
 rate. It needs the stack up and [k6](https://k6.io/) on `PATH` — see
 [`perf/baseline.md`](perf/baseline.md) for the numbers, the gate rules, and how to re-baseline.
+
+Coverage reports: the backend writes HTML to `backend/target/site/jacoco/index.html`; the
+frontend writes HTML to `frontend/coverage/threet-run/index.html`.
 
 Backend integration tests use Testcontainers, so Docker must be running. They start their own
 Postgres — they do not use the Compose one.
@@ -153,9 +214,13 @@ pull request, as three jobs that must all pass:
 
 | Job | Does |
 | :--- | :--- |
-| `backend` | JDK 21, `./mvnw verify` (unit + Testcontainers integration). |
-| `frontend` | Node 24, `npm ci`, `npm run lint`, `npm test`. |
-| `e2e` | Builds both apps, runs Playwright against the live stack (backed by a Postgres service), and uploads the HTML report as a build artifact. |
+| `backend` | JDK 21, `./mvnw verify` (Spring Java Format check, unit + Testcontainers integration, JaCoCo). Posts a coverage table to the job summary and uploads the HTML report. |
+| `frontend` | Node 24, `npm ci`, Prettier check, `npm run lint`, `npm run test:coverage`. Posts a coverage table to the job summary and uploads the HTML report. |
+| `e2e` | Prettier check on the tests, then builds both apps, runs Playwright against the live stack (backed by a Postgres service), and uploads the HTML report as a build artifact. |
+
+[`.github/dependabot.yml`](.github/dependabot.yml) opens weekly update PRs for Maven
+(`backend/`), npm (`frontend/` and `e2e/`) and GitHub Actions. Minor and patch updates are grouped
+per ecosystem. Angular packages are grouped so that they move together.
 
 This is the seed of the release gate: the core-scenario E2E tests (charter §5, CS-1..6) plug into
 the `e2e` job as they are built.
@@ -181,12 +246,12 @@ fetched "latest" at build time — versions change only when one of these files 
 
 | File | Controls | Hand-edited or generated? |
 | :--- | :--- | :--- |
-| `backend/pom.xml` | Spring Boot (via the `spring-boot-starter-parent`), the Java language level, and every backend Java dependency. Third-party versions not listed explicitly are inherited from the Spring Boot parent's managed set. | Hand-edited. |
+| `backend/pom.xml` | Spring Boot (via the `spring-boot-starter-parent`), the Java language level, every backend Java dependency, and the build plugins (Spring Java Format, JaCoCo). Third-party versions not listed explicitly are inherited from the Spring Boot parent's managed set. | Hand-edited. |
 | `backend/.mvn/wrapper/maven-wrapper.properties` | The Maven version the wrapper downloads and runs, plus the wrapper script version. | Hand-edited (or regenerated by `./mvnw wrapper:wrapper`). |
 | `backend/mvnw`, `backend/mvnw.cmd` | The wrapper scripts themselves — they download and invoke the pinned Maven, so contributors don't install Maven by hand. Not versions, but the bootstrap. | Generated by Maven; rarely touched. |
 | `frontend/package.json` | Angular, the Angular CLI/build tooling, TypeScript, Vitest, and every other frontend dependency — as **version ranges** (see below). | Hand-edited (directly, or via `ng update` / `npm install <pkg>@<version>`). |
 | `frontend/package-lock.json` | The **exact, fully-resolved** frontend dependency tree — every transitive package pinned to a single version with an integrity hash. This is what actually gets installed, and what guarantees your machine and CI are identical. | **Generated** by npm — updates automatically whenever `npm install` resolves the ranges in `package.json`. Commit the result; don't edit by hand. |
-| `e2e/package.json` | Playwright (`@playwright/test`) — the E2E runner and browser-download tooling — and `@axe-core/playwright` for the accessibility checks the E2E tests run. | Hand-edited. |
+| `e2e/package.json` | Playwright (`@playwright/test`) — the E2E runner and browser-download tooling — `@axe-core/playwright` for the accessibility checks the E2E tests run, and Prettier. | Hand-edited. |
 | `e2e/package-lock.json` | The fully-resolved Playwright dependency tree (same role as the frontend lockfile, for `e2e/`). | **Generated** by npm; updates automatically on `npm install`. |
 | `docker-compose.yml` | The local infrastructure image versions: Postgres and Mailpit. | Hand-edited. |
 
@@ -208,3 +273,7 @@ a range only moves when you re-run `npm install` (or `npm update`) and the lockf
 
 Read the Definition of Done in [`docs/charter.md`](docs/charter.md) §6 before opening a PR.
 Work is tracked as GitHub issues under the V1/V2/V3 milestones.
+
+## License
+
+[MIT](LICENSE)

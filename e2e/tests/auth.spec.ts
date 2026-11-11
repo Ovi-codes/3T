@@ -60,7 +60,9 @@ test('CS-3: an existing account logs in and reaches the dashboard', async ({ pag
   await expect(page.getByTestId('dashboard')).toBeVisible();
 });
 
-test('the header auth action persists across pages and flips after signing in', async ({ page }) => {
+test('the header auth action persists across pages and flips after signing in', async ({
+  page,
+}) => {
   // Signed out: the "Log in" action shows on a public page…
   await page.goto('/');
   await expect(page.getByTestId('nav-login')).toBeVisible();

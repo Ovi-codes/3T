@@ -17,19 +17,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * The caching decorator: a hit inside the TTL never reaches the delegate, the entry expires once the
- * TTL passes, empties aren't cached, and different coordinates/times are independent. A fake
- * {@link Ticker} drives expiry, so the TTL behaviour is proven without real waiting.
+ * The caching decorator: a hit inside the TTL never reaches the delegate, the entry
+ * expires once the TTL passes, empties aren't cached, and different coordinates/times are
+ * independent. A fake {@link Ticker} drives expiry, so the TTL behaviour is proven
+ * without real waiting.
  */
 class CachingWeatherProviderTest {
 
 	private static final double LAT = 44.41;
+
 	private static final double LON = 26.1;
+
 	private static final LocalDateTime DATE_TIME = LocalDateTime.parse("2026-09-18T09:00");
+
 	private static final Duration TTL = Duration.ofHours(1);
 
-	/** A hand-advanced clock for Caffeine, so "an hour later" is a method call, not a sleep. */
+	/**
+	 * A hand-advanced clock for Caffeine, so "an hour later" is a method call, not a
+	 * sleep.
+	 */
 	private static final class FakeTicker implements Ticker {
+
 		private long nanos;
 
 		@Override
@@ -40,6 +48,7 @@ class CachingWeatherProviderTest {
 		void advance(Duration duration) {
 			nanos += duration.toNanos();
 		}
+
 	}
 
 	private static Forecast sampleForecast() {
@@ -77,9 +86,8 @@ class CachingWeatherProviderTest {
 	@Test
 	void emptyResultsAreNotCachedSoRecoveryIsImmediate() {
 		WeatherProvider delegate = Mockito.mock(WeatherProvider.class);
-		when(delegate.forecast(anyDouble(), anyDouble(), eq(DATE_TIME)))
-				.thenReturn(Optional.empty())
-				.thenReturn(Optional.of(sampleForecast()));
+		when(delegate.forecast(anyDouble(), anyDouble(), eq(DATE_TIME))).thenReturn(Optional.empty())
+			.thenReturn(Optional.of(sampleForecast()));
 		CachingWeatherProvider caching = new CachingWeatherProvider(delegate, TTL, new FakeTicker());
 
 		assertThat(caching.forecast(LAT, LON, DATE_TIME)).isEmpty();

@@ -21,19 +21,26 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.http.HttpMethod.GET;
 
 /**
- * The Open-Meteo provider in isolation: the upstream is a {@link MockRestServiceServer} so no real
- * network call happens. "Today" is a fixed clock so the horizon rule is deterministic.
+ * The Open-Meteo provider in isolation: the upstream is a {@link MockRestServiceServer}
+ * so no real network call happens. "Today" is a fixed clock so the horizon rule is
+ * deterministic.
  */
 class OpenMeteoWeatherProviderTest {
 
-	// Fixed "now": 2026-09-15. The Bucharest run three days out (18th) is well inside the horizon.
+	// Fixed "now": 2026-09-15. The Bucharest run three days out (18th) is well inside the
+	// horizon.
 	private static final Clock FIXED = Clock.fixed(Instant.parse("2026-09-15T09:00:00Z"), ZoneOffset.UTC);
+
 	private static final double LAT = 44.41;
+
 	private static final double LON = 26.1;
+
 	private static final LocalDateTime DATE_TIME = LocalDateTime.parse("2026-09-18T09:00");
 
 	private RestClient.Builder builder;
+
 	private MockRestServiceServer server;
+
 	private OpenMeteoWeatherProvider provider;
 
 	@BeforeEach
@@ -45,7 +52,8 @@ class OpenMeteoWeatherProviderTest {
 
 	@Test
 	void parsesTheForecastAtTheEventHour() {
-		// Three hourly slots; the 09:00 one is the run's hour and the only reading that should surface.
+		// Three hourly slots; the 09:00 one is the run's hour and the only reading that
+		// should surface.
 		String body = """
 				{
 				  "hourly": {
@@ -57,11 +65,11 @@ class OpenMeteoWeatherProviderTest {
 				}
 				""";
 		server.expect(method(GET))
-				.andExpect(queryParam("latitude", "44.41"))
-				.andExpect(queryParam("longitude", "26.1"))
-				.andExpect(queryParam("start_date", "2026-09-18"))
-				.andExpect(queryParam("end_date", "2026-09-18"))
-				.andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+			.andExpect(queryParam("latitude", "44.41"))
+			.andExpect(queryParam("longitude", "26.1"))
+			.andExpect(queryParam("start_date", "2026-09-18"))
+			.andExpect(queryParam("end_date", "2026-09-18"))
+			.andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
 
 		Optional<Forecast> forecast = provider.forecast(LAT, LON, DATE_TIME);
 
@@ -77,7 +85,8 @@ class OpenMeteoWeatherProviderTest {
 
 	@Test
 	void fallsBackToTheNearestFutureHourWhenTheEventHourIsAbsent() {
-		// No 09:00 slot: the run reads 10:00 (the nearest hour still ahead), not the earlier 08:00.
+		// No 09:00 slot: the run reads 10:00 (the nearest hour still ahead), not the
+		// earlier 08:00.
 		String body = """
 				{
 				  "hourly": {
@@ -96,15 +105,16 @@ class OpenMeteoWeatherProviderTest {
 		assertThat(forecast).hasValueSatisfying(f -> {
 			assertThat(f.condition()).isEqualTo(WeatherCondition.RAIN);
 			assertThat(f.description()).isEqualTo("Light showers");
-			assertThat(f.temperatureC()).isEqualTo(18); // 18.2 rounded, from the 10:00 slot
+			assertThat(f.temperatureC()).isEqualTo(18); // 18.2 rounded, from the 10:00
+														// slot
 			assertThat(f.precipitationProbability()).isEqualTo(70);
 		});
 	}
 
 	@Test
 	void returnsEmptyWhenNoHourAtOrAfterTheEventHourIsAvailable() {
-		// Only earlier slots came back — nothing ahead of the run to show, so degrade rather than
-		// reach backwards to a stale past hour.
+		// Only earlier slots came back — nothing ahead of the run to show, so degrade
+		// rather than reach backwards to a stale past hour.
 		String body = """
 				{
 				  "hourly": {

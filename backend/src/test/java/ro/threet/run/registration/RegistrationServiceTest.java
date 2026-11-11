@@ -33,19 +33,22 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * The registration rules in isolation, and — the point of the core loop's safety property — that
- * an email only goes out when a registration is actually recorded.
+ * The registration rules in isolation, and — the point of the core loop's safety property
+ * — that an email only goes out when a registration is actually recorded.
  */
 @ExtendWith(MockitoExtension.class)
 class RegistrationServiceTest {
 
 	private static final OffsetDateTime NOW = OffsetDateTime.parse("2026-08-21T09:00:00Z");
+
 	private static final Clock CLOCK = Clock.fixed(NOW.toInstant(), ZoneOffset.UTC);
 
 	@Mock
 	private RegistrationRepository registrationRepository;
+
 	@Mock
 	private EventRepository eventRepository;
+
 	@Mock
 	private EmailSender emailSender;
 
@@ -63,9 +66,10 @@ class RegistrationServiceTest {
 		when(registrationRepository.existsByEventIdAndEmailIgnoreCase(1L, "ana@example.com")).thenReturn(false);
 		when(registrationRepository.save(any(Registration.class))).thenAnswer(call -> call.getArgument(0));
 
-		// Mixed case + surrounding spaces to prove normalisation on the way in. Anonymous: no user.
+		// Mixed case + surrounding spaces to prove normalisation on the way in.
+		// Anonymous: no user.
 		RegistrationResponse response = service()
-				.register(new RegistrationRequest(1L, "  Ana  ", "  Ana@Example.com  "), null);
+			.register(new RegistrationRequest(1L, "  Ana  ", "  Ana@Example.com  "), null);
 
 		verify(registrationRepository).save(savedCaptor.capture());
 		Registration saved = savedCaptor.getValue();
@@ -99,9 +103,8 @@ class RegistrationServiceTest {
 		when(eventRepository.findById(99L)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service().register(new RegistrationRequest(99L, "Ana", "ana@example.com"), null))
-				.isInstanceOf(RegistrationException.class)
-				.satisfies(thrown -> assertThat(((RegistrationException) thrown).status())
-						.isEqualTo(HttpStatus.NOT_FOUND));
+			.isInstanceOf(RegistrationException.class)
+			.satisfies(thrown -> assertThat(((RegistrationException) thrown).status()).isEqualTo(HttpStatus.NOT_FOUND));
 
 		verify(registrationRepository, never()).save(any());
 		verifyNoInteractions(emailSender);
@@ -113,9 +116,9 @@ class RegistrationServiceTest {
 		when(eventRepository.findById(1L)).thenReturn(Optional.of(past));
 
 		assertThatThrownBy(() -> service().register(new RegistrationRequest(1L, "Ana", "ana@example.com"), null))
-				.isInstanceOf(RegistrationException.class)
-				.satisfies(thrown -> assertThat(((RegistrationException) thrown).status())
-						.isEqualTo(HttpStatus.BAD_REQUEST));
+			.isInstanceOf(RegistrationException.class)
+			.satisfies(
+					thrown -> assertThat(((RegistrationException) thrown).status()).isEqualTo(HttpStatus.BAD_REQUEST));
 
 		verify(registrationRepository, never()).save(any());
 		verifyNoInteractions(emailSender);
@@ -128,9 +131,8 @@ class RegistrationServiceTest {
 		when(registrationRepository.existsByEventIdAndEmailIgnoreCase(anyLong(), anyString())).thenReturn(true);
 
 		assertThatThrownBy(() -> service().register(new RegistrationRequest(1L, "Ana", "ana@example.com"), null))
-				.isInstanceOf(RegistrationException.class)
-				.satisfies(thrown -> assertThat(((RegistrationException) thrown).status())
-						.isEqualTo(HttpStatus.CONFLICT));
+			.isInstanceOf(RegistrationException.class)
+			.satisfies(thrown -> assertThat(((RegistrationException) thrown).status()).isEqualTo(HttpStatus.CONFLICT));
 
 		verify(registrationRepository, never()).save(any());
 		verifyNoInteractions(emailSender);
@@ -138,15 +140,14 @@ class RegistrationServiceTest {
 
 	@Test
 	void splitsRegistrationsIntoUpcomingSoonestFirstAndPastMostRecentFirst() {
-		// The repository returns rows newest-run-first (its `order by start_datetime desc`).
+		// The repository returns rows newest-run-first (its `order by start_datetime
+		// desc`).
 		Event future1 = event(10L, NOW.plusDays(3));
 		Event future2 = event(11L, NOW.plusDays(10));
 		Event past1 = event(20L, NOW.minusDays(14));
 		Event past2 = event(21L, NOW.minusDays(7));
-		when(registrationRepository.findByUserIdWithEvent(42L))
-				.thenReturn(List.of(
-						registration(future2), registration(future1),
-						registration(past2), registration(past1)));
+		when(registrationRepository.findByUserIdWithEvent(42L)).thenReturn(
+				List.of(registration(future2), registration(future1), registration(past2), registration(past1)));
 
 		MyRegistrationsResponse response = service().myRegistrations(42L);
 
@@ -161,10 +162,10 @@ class RegistrationServiceTest {
 		bobs.linkUser(99L);
 		when(registrationRepository.findById(7L)).thenReturn(Optional.of(bobs));
 
-		// Ana (42) can't touch Bob's row — and the 404 doesn't confirm that the id exists.
-		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471))
-				.isInstanceOfSatisfying(RegistrationException.class,
-						e -> assertThat(e.status()).isEqualTo(HttpStatus.NOT_FOUND));
+		// Ana (42) can't touch Bob's row — and the 404 doesn't confirm that the id
+		// exists.
+		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471)).isInstanceOfSatisfying(
+				RegistrationException.class, e -> assertThat(e.status()).isEqualTo(HttpStatus.NOT_FOUND));
 		assertThat(bobs.getFinishTime()).isNull();
 	}
 
@@ -175,10 +176,10 @@ class RegistrationServiceTest {
 		when(registrationRepository.findById(7L)).thenReturn(Optional.of(anas));
 
 		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471))
-				.isInstanceOfSatisfying(RegistrationException.class, e -> {
-					assertThat(e.status()).isEqualTo(HttpStatus.BAD_REQUEST);
-					assertThat(e.field()).isEqualTo("finishTimeSeconds");
-				});
+			.isInstanceOfSatisfying(RegistrationException.class, e -> {
+				assertThat(e.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+				assertThat(e.field()).isEqualTo("finishTimeSeconds");
+			});
 		assertThat(anas.getFinishTime()).isNull();
 	}
 
@@ -192,10 +193,10 @@ class RegistrationServiceTest {
 
 		// Its date has gone by, but the run never happened — there's no time to record.
 		assertThatThrownBy(() -> service().recordFinishTime(42L, 7L, 1471))
-				.isInstanceOfSatisfying(RegistrationException.class, e -> {
-					assertThat(e.status()).isEqualTo(HttpStatus.BAD_REQUEST);
-					assertThat(e.field()).isEqualTo("finishTimeSeconds");
-				});
+			.isInstanceOfSatisfying(RegistrationException.class, e -> {
+				assertThat(e.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+				assertThat(e.field()).isEqualTo("finishTimeSeconds");
+			});
 		assertThat(anas.getFinishTime()).isNull();
 	}
 
@@ -212,8 +213,8 @@ class RegistrationServiceTest {
 	}
 
 	private Event event(long id, OffsetDateTime start) {
-		// Lenient: the reject cases throw before touching the event's details, so not every
-		// stub is used on every path.
+		// Lenient: the reject cases throw before touching the event's details, so not
+		// every stub is used on every path.
 		Location location = mock(Location.class);
 		lenient().when(location.getName()).thenReturn("Tineretului Park");
 		lenient().when(location.getCity()).thenReturn("Bucharest");

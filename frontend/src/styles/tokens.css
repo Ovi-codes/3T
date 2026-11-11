@@ -16,33 +16,33 @@
 
 :root {
   /* ---- Color: text (on the light ground) ---- */
-  --color-ink: #201e1d;        /* primary text */
-  --color-ink-soft: #57534f;   /* muted/secondary text (AA on ground) */
-  --color-ink-faint: #6b6560;  /* captions, placeholders (AA on ground) */
+  --color-ink: #201e1d; /* primary text */
+  --color-ink-soft: #57534f; /* muted/secondary text (AA on ground) */
+  --color-ink-faint: #6b6560; /* captions, placeholders (AA on ground) */
 
   /* ---- Color: surfaces ---- */
-  --color-surface: #f3f2f2;        /* page ground */
+  --color-surface: #f3f2f2; /* page ground */
   --color-surface-raised: #eae9e9; /* cards, inputs */
-  --color-surface-sunk: #e2e0df;   /* date chips, muted fills */
-  --color-border: rgba(32, 30, 29, 0.40); /* the 2px rules and 1px hairlines */
+  --color-surface-sunk: #e2e0df; /* date chips, muted fills */
+  --color-border: rgba(32, 30, 29, 0.4); /* the 2px rules and 1px hairlines */
 
   /* ---- Color: brand / primary (orange) ---- */
-  --color-primary: #ff6d00;          /* button fills, accents, the coloured T's */
+  --color-primary: #ff6d00; /* button fills, accents, the coloured T's */
   --color-primary-hover: #e86400;
   --color-primary-active: #c25200;
   --color-primary-contrast: #201e1d; /* text/icon ON a solid orange fill — DARK, not white */
-  --color-primary-ink: #a8480a;      /* orange TEXT on the light ground (links, kickers) — AA */
+  --color-primary-ink: #a8480a; /* orange TEXT on the light ground (links, kickers) — AA */
 
   /* ---- Color: accent (same orange; the single accent — tints for tags) ---- */
   --color-accent: #ff6d00;
-  --color-accent-soft: #fff1e6;   /* tint fill behind tags on ground */
+  --color-accent-soft: #fff1e6; /* tint fill behind tags on ground */
   --color-accent-strong: #7a3600; /* text on the tint fill */
 
   /* ---- Color: the poster / hero field (dark ink statement blocks) ---- */
   --color-poster: #1a1918;
   --color-poster-weave-a: #252220;
   --color-poster-weave-b: #161514;
-  --color-poster-text: #f3f2f2;   /* ground-white text on the poster */
+  --color-poster-text: #f3f2f2; /* ground-white text on the poster */
   --color-poster-muted: rgba(243, 242, 242, 0.62); /* dimmed on poster (AA) */
 
   /* ---- Color: the light weave (header) — the poster weave mirrored, in light greys.
@@ -55,9 +55,9 @@
    * Validation + load errors render in accessible orange (the theme folds alerts into the accent).
    * --color-destructive stays red for irreversible/terminal actions (delete account, admin
    * delete/cancel event), so data loss reads as danger rather than as another CTA. */
-  --color-danger: #a8480a;       /* field + form error text (AA on ground and on the tint) */
-  --color-danger-soft: #fff1e6;  /* error-banner background */
-  --color-destructive: #b3261e;      /* delete-account + admin delete/cancel-event controls */
+  --color-danger: #a8480a; /* field + form error text (AA on ground and on the tint) */
+  --color-danger-soft: #fff1e6; /* error-banner background */
+  --color-destructive: #b3261e; /* delete-account + admin delete/cancel-event controls */
   --color-destructive-soft: #f7e4e2;
 
   /* ---- Color: medals ----
@@ -68,23 +68,23 @@
   --color-medal-bronze: #b8733a;
 
   /* ---- Focus ---- */
-  --color-focus-ring: #ff6d00;   /* visible focus; pair with --focus-offset */
+  --color-focus-ring: #ff6d00; /* visible focus; pair with --focus-offset */
   --focus-offset: 2px;
 
   /* ---- Typography: families (Archivo throughout) ---- */
-  --font-display: "Archivo", system-ui, sans-serif;
-  --font-body: "Archivo", system-ui, -apple-system, sans-serif;
-  --font-mono: "Archivo", system-ui, sans-serif; /* dates/times: Archivo + tabular-nums */
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'Archivo', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Archivo', system-ui, sans-serif; /* dates/times: Archivo + tabular-nums */
 
   /* ---- Typography: scale (rem) ---- */
-  --text-xs: 0.6875rem;  /* 11 — kickers, tags, labels */
-  --text-sm: 0.8125rem;  /* 13 */
-  --text-base: 0.9375rem;/* 15 — body default */
-  --text-lg: 1.125rem;   /* 18 */
-  --text-xl: 1.375rem;   /* 22 */
-  --text-2xl: 1.75rem;   /* 28 — card / section headings */
-  --text-3xl: 2.25rem;   /* 36 */
-  --text-4xl: 3rem;      /* 48 — page h1 */
+  --text-xs: 0.6875rem; /* 11 — kickers, tags, labels */
+  --text-sm: 0.8125rem; /* 13 */
+  --text-base: 0.9375rem; /* 15 — body default */
+  --text-lg: 1.125rem; /* 18 */
+  --text-xl: 1.375rem; /* 22 */
+  --text-2xl: 1.75rem; /* 28 — card / section headings */
+  --text-3xl: 2.25rem; /* 36 */
+  --text-4xl: 3rem; /* 48 — page h1 */
   --text-poster: clamp(2.75rem, 9vw, 5.5rem); /* the display poster wordmark */
 
   /* ---- Typography: weights & leading ---- */
@@ -93,15 +93,15 @@
   --weight-semibold: 600;
   --weight-bold: 800;
   --weight-heading: 800;
-  --leading-tight: 1.12;  /* headings */
+  --leading-tight: 1.12; /* headings */
   --leading-snug: 1.25;
   --leading-normal: 1.55; /* body copy */
-  --leading-poster: 0.9;  /* the stacked display wordmark */
+  --leading-poster: 0.9; /* the stacked display wordmark */
   --tracking-heading: -0.015em;
   --tracking-poster: -0.03em;
 
   /* Times/dates/distances: use tabular figures */
-  --numeric: "tnum" 1, "lnum" 1;
+  --numeric: 'tnum' 1, 'lnum' 1;
 
   /* ---- Spacing scale (4px base) ---- */
   --space-1: 0.25rem;

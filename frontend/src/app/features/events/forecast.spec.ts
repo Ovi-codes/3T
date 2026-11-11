@@ -1,8 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 
 import { ForecastWidget } from './forecast';
@@ -33,7 +30,10 @@ describe('ForecastWidget', () => {
 
   afterEach(() => httpMock.verify());
 
-  async function load(id: number, respond: (req: ReturnType<HttpTestingController['expectOne']>) => void): Promise<void> {
+  async function load(
+    id: number,
+    respond: (req: ReturnType<HttpTestingController['expectOne']>) => void,
+  ): Promise<void> {
     fixture.componentRef.setInput('eventId', id);
     fixture.detectChanges();
     respond(httpMock.expectOne(`/api/events/${id}/forecast`));

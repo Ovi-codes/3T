@@ -19,8 +19,18 @@ function stat(overrides: Partial<MyRunStat> = {}): MyRunStat {
 
 /** Oldest first, as the API sends them: 25:00, then a PB of 23:10, then 23:37. */
 const RUNS: MyRunStat[] = [
-  stat({ eventId: 1, eventName: 'First run', startDateTime: '2026-09-01T15:30:00Z', finishTimeSeconds: 1500 }),
-  stat({ eventId: 2, eventName: 'Second run', startDateTime: '2026-09-08T15:30:00Z', finishTimeSeconds: 1390 }),
+  stat({
+    eventId: 1,
+    eventName: 'First run',
+    startDateTime: '2026-09-01T15:30:00Z',
+    finishTimeSeconds: 1500,
+  }),
+  stat({
+    eventId: 2,
+    eventName: 'Second run',
+    startDateTime: '2026-09-08T15:30:00Z',
+    finishTimeSeconds: 1390,
+  }),
   stat({
     eventId: 3,
     eventName: 'Third run',
@@ -49,7 +59,16 @@ describe('TrendChart', () => {
   /** jsdom lays nothing out, so give the chart a box: 600px wide from the page's left edge. */
   function layOut(svg: SVGSVGElement): void {
     svg.getBoundingClientRect = () =>
-      ({ left: 0, top: 0, right: 600, bottom: 240, width: 600, height: 240, x: 0, y: 0 }) as DOMRect;
+      ({
+        left: 0,
+        top: 0,
+        right: 600,
+        bottom: 240,
+        width: 600,
+        height: 240,
+        x: 0,
+        y: 0,
+      }) as DOMRect;
   }
 
   function pointAt(svg: SVGSVGElement, clientX: number): void {
@@ -97,7 +116,9 @@ describe('TrendChart', () => {
 
     const best = element.querySelectorAll('[data-testid="trend-point"].is-best');
     expect(best.length).toBe(1);
-    expect(element.querySelector('[data-testid="trend-best-label"]')!.textContent).toContain('23:10');
+    expect(element.querySelector('[data-testid="trend-best-label"]')!.textContent).toContain(
+      '23:10',
+    );
   });
 
   it('labels the personal best below its point — the best run is the lowest dip', async () => {
@@ -132,7 +153,9 @@ describe('TrendChart', () => {
 
     // At the left edge, the first run.
     pointAt(svg, 5);
-    expect(element.querySelector('[data-testid="trend-tooltip"]')!.textContent).toContain('First run');
+    expect(element.querySelector('[data-testid="trend-tooltip"]')!.textContent).toContain(
+      'First run',
+    );
 
     svg.dispatchEvent(new MouseEvent('pointerleave'));
     fixture.detectChanges();
@@ -148,6 +171,8 @@ describe('TrendChart', () => {
     svg.dispatchEvent(new MouseEvent('pointerdown', { clientX: 590, clientY: 100, bubbles: true }));
     fixture.detectChanges();
 
-    expect(element.querySelector('[data-testid="trend-tooltip"]')!.textContent).toContain('2nd of 31');
+    expect(element.querySelector('[data-testid="trend-tooltip"]')!.textContent).toContain(
+      '2nd of 31',
+    );
   });
 });

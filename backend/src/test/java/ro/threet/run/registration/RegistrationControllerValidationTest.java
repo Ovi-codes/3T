@@ -14,11 +14,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The web-layer contract: a payload that fails validation is a 400 carrying per-field messages,
- * and the request never reaches the service — so, crucially, no registration is attempted and no
- * email is sent for bad input. The service is mocked; the real one is covered by the integration
- * test. Security filters are off here — this slice is about the validation contract, and the
- * endpoint's public-vs-authenticated behaviour is covered by the integration tests.
+ * The web-layer contract: a payload that fails validation is a 400 carrying per-field
+ * messages, and the request never reaches the service — so, crucially, no registration is
+ * attempted and no email is sent for bad input. The service is mocked; the real one is
+ * covered by the integration test. Security filters are off here — this slice is about
+ * the validation contract, and the endpoint's public-vs-authenticated behaviour is
+ * covered by the integration tests.
  */
 @WebMvcTest(RegistrationController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -36,9 +37,9 @@ class RegistrationControllerValidationTest {
 				{"eventId": 1, "name": "  ", "email": "not-an-email"}""";
 
 		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.errors.name").exists())
-				.andExpect(jsonPath("$.errors.email").exists());
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors.name").exists())
+			.andExpect(jsonPath("$.errors.email").exists());
 
 		verifyNoInteractions(registrationService);
 	}
@@ -49,8 +50,8 @@ class RegistrationControllerValidationTest {
 				{"eventId": 1, "name": "Ana"}""";
 
 		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.errors.email").exists());
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors.email").exists());
 
 		verifyNoInteractions(registrationService);
 	}

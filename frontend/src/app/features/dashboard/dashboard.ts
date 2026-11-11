@@ -81,11 +81,14 @@ export class Dashboard {
    * refresh the stats — the new time changes them (#45).
    */
   protected onRecorded(updated: MyRegistration): void {
-    this.runs.update((runs) =>
-      runs && {
-        ...runs,
-        past: runs.past.map((run) => (run.registrationId === updated.registrationId ? updated : run)),
-      },
+    this.runs.update(
+      (runs) =>
+        runs && {
+          ...runs,
+          past: runs.past.map((run) =>
+            run.registrationId === updated.registrationId ? updated : run,
+          ),
+        },
     );
     this.stats()?.reload();
   }

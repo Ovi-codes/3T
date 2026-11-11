@@ -3,9 +3,10 @@ package ro.threet.run.registration;
 import java.util.Locale;
 
 /**
- * How a runner's name appears on the public leaderboard (#44): the first name plus the initial of
- * the last name — "Ana Maria Pop" is "Ana P.". Enough for a runner to find themselves, not enough to
- * fully identify a stranger (GDPR data minimisation, charter §7). A single-word name is shown as is.
+ * How a runner's name appears on the public leaderboard (#44): the first name plus the
+ * initial of the last name — "Ana Maria Pop" is "Ana P.". Enough for a runner to find
+ * themselves, not enough to fully identify a stranger (GDPR data minimisation, charter
+ * §7). A single-word name is shown as is.
  */
 final class PublicName {
 

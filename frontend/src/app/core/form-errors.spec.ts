@@ -25,7 +25,11 @@ describe('toFormErrors', () => {
 
   it('falls back to the generic form error when there is no error body (network failure)', () => {
     const result = toFormErrors(
-      new HttpErrorResponse({ error: new ProgressEvent('error'), status: 0, statusText: 'Unknown Error' }),
+      new HttpErrorResponse({
+        error: new ProgressEvent('error'),
+        status: 0,
+        statusText: 'Unknown Error',
+      }),
     );
 
     expect(result.fieldErrors).toEqual({});

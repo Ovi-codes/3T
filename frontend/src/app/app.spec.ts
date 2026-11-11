@@ -57,15 +57,22 @@ describe('App', () => {
     settleSession({ id: 1, email: 'ana@example.com' });
 
     const nav = (fixture.nativeElement as HTMLElement).querySelector('nav[aria-label="Primary"]')!;
-    const actions = Array.from(nav.querySelectorAll('[data-testid="nav-dashboard"], [data-testid="logout"]'));
-    expect(actions.map((action) => action.getAttribute('data-testid'))).toEqual(['nav-dashboard', 'logout']);
+    const actions = Array.from(
+      nav.querySelectorAll('[data-testid="nav-dashboard"], [data-testid="logout"]'),
+    );
+    expect(actions.map((action) => action.getAttribute('data-testid'))).toEqual([
+      'nav-dashboard',
+      'logout',
+    ]);
     expect(actions[1].textContent!.trim()).toBe('Sign out');
   });
 
   it('offers no "Sign out" when signed out', () => {
     settleSession('signed-out');
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="logout"]')).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="logout"]'),
+    ).toBeNull();
   });
 
   it('signs out from the header and lands on the login page', async () => {
@@ -73,13 +80,19 @@ describe('App', () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="logout"]')!.click();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('[data-testid="logout"]')!
+      .click();
     httpMock.expectOne({ method: 'POST', url: '/api/auth/logout' }).flush(null);
     fixture.detectChanges();
 
     expect(navigate).toHaveBeenCalledWith('/login');
-    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="logout"]')).toBeNull();
-    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="nav-login"]')).not.toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="logout"]'),
+    ).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="nav-login"]'),
+    ).not.toBeNull();
   });
 
   it('offers a skip-to-content link as the first focusable element (a11y)', () => {
@@ -90,8 +103,9 @@ describe('App', () => {
     expect(skip).not.toBeNull();
     // Targets the page's main landmark and sits before the header in the DOM (so, in tab order).
     expect(skip!.getAttribute('href')).toBe('#main-content');
-    expect(skip!.compareDocumentPosition(el.querySelector('.app-header')!))
-      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(skip!.compareDocumentPosition(el.querySelector('.app-header')!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('always links to the privacy policy in the footer', () => {

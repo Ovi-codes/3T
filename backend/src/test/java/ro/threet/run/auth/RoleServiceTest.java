@@ -18,17 +18,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * The role-provisioning rule in isolation: every authenticated account gets {@code ROLE_USER} as a
- * baseline; an account whose email is named in {@link AdminEmails} additionally gets
- * {@code ROLE_ADMIN} lazily on authentication, and loses it once it is no longer named; and a role
- * already held is not written again. The SQL itself (idempotent under concurrent logins) is proven
- * on a live Postgres by {@link ConcurrentRoleGrantIntegrationTest}.
+ * The role-provisioning rule in isolation: every authenticated account gets
+ * {@code ROLE_USER} as a baseline; an account whose email is named in {@link AdminEmails}
+ * additionally gets {@code ROLE_ADMIN} lazily on authentication, and loses it once it is
+ * no longer named; and a role already held is not written again. The SQL itself
+ * (idempotent under concurrent logins) is proven on a live Postgres by
+ * {@link ConcurrentRoleGrantIntegrationTest}.
  */
 @ExtendWith(MockitoExtension.class)
 class RoleServiceTest {
 
 	private static final long USER_ID = 7L;
+
 	private static final long USER_ROLE_ID = 1L;
+
 	private static final long ADMIN_ROLE_ID = 2L;
 
 	@Mock
@@ -71,7 +74,9 @@ class RoleServiceTest {
 	@Test
 	void aRoleAlreadyHeldIsNotGrantedAgain() {
 		given(adminEmails.isAdmin("boss@example.com")).willReturn(true);
-		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of("ROLE_USER")); // from an earlier sign-up
+		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of("ROLE_USER")); // from an
+																			// earlier
+																			// sign-up
 
 		Set<String> granted = roleService().ensureRolesFor(account("boss@example.com"));
 
@@ -82,7 +87,8 @@ class RoleServiceTest {
 
 	@Test
 	void anAccountRemovedFromTheAdminConfigLosesTheAdminRoleOnReauthentication() {
-		// Previously an admin (holds both roles from an earlier login), now dropped from ADMIN_EMAILS.
+		// Previously an admin (holds both roles from an earlier login), now dropped from
+		// ADMIN_EMAILS.
 		given(adminEmails.isAdmin("boss@example.com")).willReturn(false);
 		given(roles.namesHeldBy(USER_ID)).willReturn(Set.of("ROLE_USER", "ROLE_ADMIN"));
 

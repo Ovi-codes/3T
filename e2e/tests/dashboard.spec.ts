@@ -89,7 +89,10 @@ async function seedPastRegistration(user: NewUser): Promise<void> {
   }
 }
 
-test('CS-5: a registration for a run that has passed shows under Past', async ({ page, request }) => {
+test('CS-5: a registration for a run that has passed shows under Past', async ({
+  page,
+  request,
+}) => {
   const user = await signUp(request);
   await seedPastRegistration(user);
 
@@ -145,7 +148,10 @@ test('CS-6: an anonymous visitor is sent to log in', async ({ page }) => {
   await expect(page.getByTestId('dashboard')).toHaveCount(0);
 });
 
-test('the dashboard has no critical or serious accessibility violations', async ({ page, request }) => {
+test('the dashboard has no critical or serious accessibility violations', async ({
+  page,
+  request,
+}) => {
   const user = await signUp(request);
 
   // Populate it so axe sees the real card layout, including the amber "Next" badge (its ink-on-amber

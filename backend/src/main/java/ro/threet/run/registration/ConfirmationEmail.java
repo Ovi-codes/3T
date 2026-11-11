@@ -3,9 +3,9 @@ package ro.threet.run.registration;
 import ro.threet.run.event.Event;
 
 /**
- * Builds the transactional confirmation email for a registration — naming the event, its date and
- * its location. See {@link RegistrantEmail} for the shared shape (the transport split, the local
- * Bucharest time, the venue line).
+ * Builds the transactional confirmation email for a registration — naming the event, its
+ * date and its location. See {@link RegistrantEmail} for the shared shape (the transport
+ * split, the local Bucharest time, the venue line).
  */
 final class ConfirmationEmail extends RegistrantEmail {
 
@@ -26,8 +26,8 @@ final class ConfirmationEmail extends RegistrantEmail {
 
 				Just turn up and have fun. See you there!
 
-				The 3T Run team""".formatted(registration.getName(), event.getName(),
-				when(event.getStartDateTime()), where(event));
+				The 3T Run team""".formatted(registration.getName(), event.getName(), when(event.getStartDateTime()),
+				where(event));
 
 		return new ConfirmationEmail(subject, body);
 	}

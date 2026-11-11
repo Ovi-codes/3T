@@ -23,9 +23,30 @@ function stat(overrides: Partial<MyRunStat> = {}): MyRunStat {
 /** Oldest first, as the API sends them. Best time 23:10 (2nd run); best place 2nd (3rd run). */
 const STATS: MyStatsBody = {
   runs: [
-    stat({ eventId: 1, eventName: 'First run', startDateTime: '2026-09-01T15:30:00Z', finishTimeSeconds: 1500, position: 9, finishers: 20 }),
-    stat({ eventId: 2, eventName: 'Second run', startDateTime: '2026-09-08T15:30:00Z', finishTimeSeconds: 1390, position: 4, finishers: 25 }),
-    stat({ eventId: 3, eventName: 'Third run', startDateTime: '2026-09-15T15:30:00Z', finishTimeSeconds: 1417, position: 2, finishers: 31 }),
+    stat({
+      eventId: 1,
+      eventName: 'First run',
+      startDateTime: '2026-09-01T15:30:00Z',
+      finishTimeSeconds: 1500,
+      position: 9,
+      finishers: 20,
+    }),
+    stat({
+      eventId: 2,
+      eventName: 'Second run',
+      startDateTime: '2026-09-08T15:30:00Z',
+      finishTimeSeconds: 1390,
+      position: 4,
+      finishers: 25,
+    }),
+    stat({
+      eventId: 3,
+      eventName: 'Third run',
+      startDateTime: '2026-09-15T15:30:00Z',
+      finishTimeSeconds: 1417,
+      position: 2,
+      finishers: 31,
+    }),
   ],
 };
 

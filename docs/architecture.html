@@ -236,12 +236,14 @@
   .verb.get { color: var(--orange-ink); }
   .verb.post { color: var(--ink); }
   .verb.del { color: var(--ink); }
+  .verb.put { color: var(--ink); }
   .pill {
     display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 2px 8px; border: 1.5px solid var(--rule);
   }
   .pill.pub { background: var(--orange); color: var(--poster); border-color: var(--orange); }
   .pill.auth { background: transparent; color: var(--ink-soft); }
+  .pill.admin { background: var(--poster); color: var(--poster-text); border-color: var(--poster); }
 
   /* ---------- callout ---------- */
   .note-box {
@@ -277,8 +279,8 @@
       <h1>3T Run<span class="t">.</span></h1>
     </div>
     <dl class="meta">
-      <div><dt>Backend</dt><dd>Spring Boot 4 · Java 21</dd></div>
-      <div><dt>Frontend</dt><dd>Angular · standalone</dd></div>
+      <div><dt>Backend</dt><dd>Spring Boot 4.1 · Java 21</dd></div>
+      <div><dt>Frontend</dt><dd>Angular 21 · standalone</dd></div>
       <div><dt>Data</dt><dd>PostgreSQL 16 · Flyway</dd></div>
       <div><dt>Cloud</dt><dd>Azure · EU region</dd></div>
     </dl>
@@ -293,12 +295,13 @@
       <p class="eyebrow"><span class="num">01</span> System at a glance</p>
       <p class="lead">The Angular app is served as static files and talks only to <code>/api</code> — through a
         dev proxy locally, same-origin in production. Spring Boot owns all logic and data; a single Postgres
-        instance holds every table. Email is the one outbound dependency.</p>
+        instance holds every table. There are two outbound dependencies: SMTP for email, and
+        Open-Meteo for the next-run weather forecast.</p>
 
       <figure>
         <div class="fig">
           <svg viewBox="0 0 860 380" role="img" aria-labelledby="ctx-title">
-            <title id="ctx-title">Container diagram: browser to Angular SPA to Spring Boot API to Postgres and SMTP</title>
+            <title id="ctx-title">Container diagram: browser to Angular SPA to Spring Boot API to Postgres, SMTP and Open-Meteo</title>
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M0,0 L10,5 L0,10 z" fill="var(--flow)"></path>
@@ -321,8 +324,8 @@
             <rect x="180" y="120" width="200" height="6" class="accent-fill"></rect>
             <text x="280" y="152" text-anchor="middle" class="t-ink" font-size="15" font-weight="800">Angular SPA</text>
             <text x="280" y="174" text-anchor="middle" class="t-soft" font-size="11.5">standalone components</text>
-            <text x="280" y="192" text-anchor="middle" class="t-soft" font-size="11.5">events · register · auth</text>
-            <text x="280" y="210" text-anchor="middle" class="t-soft" font-size="11.5">dashboard · privacy</text>
+            <text x="280" y="192" text-anchor="middle" class="t-soft" font-size="11">events · register · auth · admin</text>
+            <text x="280" y="210" text-anchor="middle" class="t-soft" font-size="11">dashboard · stats · leaderboard</text>
             <text x="280" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">Static Web Apps</text>
 
             <!-- API -->
@@ -347,17 +350,24 @@
             <text x="575" y="326" text-anchor="middle" class="t-ink" font-size="13.5" font-weight="700">Email (SMTP)</text>
             <text x="575" y="345" text-anchor="middle" class="t-faint svg-mono" font-size="10">Mailpit dev · ACS prod</text>
 
+            <!-- Open-Meteo / weather -->
+            <rect x="700" y="20" width="150" height="62" class="ext-fill n-stroke" stroke-width="2"></rect>
+            <text x="775" y="46" text-anchor="middle" class="t-ink" font-size="13.5" font-weight="700">Open-Meteo</text>
+            <text x="775" y="66" text-anchor="middle" class="t-faint svg-mono" font-size="10">weather · no API key</text>
+
             <!-- flows -->
             <g class="flow-stroke" stroke-width="2" fill="none">
               <line x1="98" y1="165" x2="176" y2="180" marker-end="url(#arrow)"></line>
               <line x1="384" y1="180" x2="466" y2="180" marker-end="url(#arrow)"></line>
               <line x1="684" y1="200" x2="748" y2="222" marker-end="url(#arrow)"></line>
               <line x1="575" y1="244" x2="575" y2="296" marker-end="url(#arrow)"></line>
+              <line x1="662" y1="116" x2="722" y2="86" marker-end="url(#arrow)"></line>
             </g>
+            <text x="702" y="112" class="t-faint svg-mono" font-size="10">HTTPS · Caffeine cache</text>
             <text x="137" y="158" text-anchor="middle" class="t-faint svg-mono" font-size="10">HTTPS</text>
             <text x="425" y="172" text-anchor="middle" class="t-orange svg-mono" font-size="10.5" font-weight="600">/api · JSON</text>
             <text x="726" y="198" text-anchor="middle" class="t-faint svg-mono" font-size="10">JPA</text>
-            <text x="605" y="278" text-anchor="middle" class="t-faint svg-mono" font-size="10">confirmation</text>
+            <text x="585" y="274" class="t-faint svg-mono" font-size="10">notifications</text>
           </svg>
           <div class="legend">
             <span><i class="swatch" style="background:var(--node-fill)"></i> Owned service</span>
@@ -375,12 +385,15 @@
     <div class="wrap">
       <p class="eyebrow"><span class="num">02</span> The stack</p>
       <div class="grid cols-3">
-        <div class="cell"><div class="lbl">Backend</div><div class="val">Spring Boot 4.x</div><div class="note">Java 21, Maven wrapper. Web + Data JPA + Flyway.</div></div>
-        <div class="cell"><div class="lbl">Frontend</div><div class="val">Angular</div><div class="note">Standalone components, <code>@if</code>/<code>@for</code>. Node 24 LTS, npm.</div></div>
+        <div class="cell"><div class="lbl">Backend</div><div class="val">Spring Boot 4.1</div><div class="note">Java 21, Maven wrapper. Web + Security + Data JPA + Flyway.</div></div>
+        <div class="cell"><div class="lbl">Frontend</div><div class="val">Angular 21</div><div class="note">Standalone components, <code>@if</code>/<code>@for</code>. Node 24 LTS, npm.</div></div>
         <div class="cell"><div class="lbl">Database</div><div class="val">PostgreSQL 16</div><div class="note">Flyway migrations on startup. Testcontainers in tests.</div></div>
-        <div class="cell"><div class="lbl">Auth</div><div class="val">Spring Security</div><div class="note">Email + BCrypt behind an <code>AuthProvider</code> seam.</div></div>
+        <div class="cell"><div class="lbl">Auth</div><div class="val">Spring Security</div><div class="note">Email + BCrypt behind an <code>AuthProvider</code> seam. <code>ROLE_USER</code> / <code>ROLE_ADMIN</code>.</div></div>
         <div class="cell"><div class="lbl">Email</div><div class="val">SMTP</div><div class="note">Mailpit in dev/tests; a transactional provider in prod.</div></div>
-        <div class="cell"><div class="lbl">CI / CD</div><div class="val">GitHub Actions</div><div class="note">Build, lint, all test layers, deploy on green.</div></div>
+        <div class="cell"><div class="lbl">Weather</div><div class="val">Open-Meteo</div><div class="note">Free, no API key, EU-hosted. Behind a <code>WeatherProvider</code> seam, cached with Caffeine.</div></div>
+        <div class="cell"><div class="lbl">E2E</div><div class="val">Playwright</div><div class="note">Desktop + mobile Chromium, with axe-core accessibility checks.</div></div>
+        <div class="cell"><div class="lbl">Performance</div><div class="val">k6</div><div class="note">Load tests on the two hot paths. A p95 budget gate is a required check.</div></div>
+        <div class="cell"><div class="lbl">CI / CD</div><div class="val">GitHub Actions</div><div class="note">Build, lint, all test layers and the perf gate on every PR. The Azure deploy is manual until Azure is provisioned.</div></div>
       </div>
       <p>Everything runs locally first: <code>docker compose up -d</code> brings up Postgres + Mailpit,
         <code>./mvnw verify</code> runs unit and Testcontainers integration tests, <code>npm test</code> runs
@@ -394,11 +407,14 @@
       <p class="eyebrow"><span class="num">03</span> Backend, by domain</p>
       <p class="lead">Code under <code>ro.threet.run</code> is organised by domain, not by layer — each package
         carries its own entity, repository, service, controller, and DTOs. Cross-cutting concerns
-        (<code>web</code>, <code>config</code>) sit apart.</p>
+        (<code>web</code>, <code>config</code>) sit apart. Where two domains would depend on each other,
+        the dependency is inverted. <code>event</code> owns a <code>RegistrationCounts</code> port, and
+        <code>registration</code> implements it. <code>event</code> publishes <code>EventCancelled</code> and
+        <code>EventRescheduled</code>, and the notifiers in <code>registration</code> listen for them.</p>
 
       <figure>
         <div class="fig">
-          <svg viewBox="0 0 860 300" role="img" aria-labelledby="pkg-title">
+          <svg viewBox="0 0 860 400" role="img" aria-labelledby="pkg-title">
             <title id="pkg-title">Backend packages and their dependencies</title>
             <defs>
               <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -406,58 +422,75 @@
               </marker>
             </defs>
 
-            <!-- event -->
-            <rect x="30" y="40" width="180" height="86" class="n-fill n-stroke" stroke-width="2"></rect>
-            <rect x="30" y="40" width="6" height="86" class="accent-fill"></rect>
-            <text x="48" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">event</text>
-            <text x="48" y="86" class="t-soft" font-size="11">Event · Location ref</text>
-            <text x="48" y="103" class="t-soft" font-size="11">upcoming-events read</text>
-            <text x="48" y="119" class="t-faint svg-mono" font-size="10">Controller · Service · Repo</text>
+            <!-- row 1: weather · event · location -->
+            <rect x="30" y="40" width="200" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="30" y="40" width="6" height="90" class="accent-fill"></rect>
+            <text x="48" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">weather</text>
+            <text x="48" y="86" class="t-soft" font-size="11">WeatherProvider seam</text>
+            <text x="48" y="103" class="t-soft" font-size="11">Open-Meteo · Caffeine cache</text>
+            <text x="48" y="120" class="t-faint svg-mono" font-size="10">next-run forecast</text>
 
-            <!-- registration -->
-            <rect x="340" y="40" width="200" height="86" class="n-fill n-stroke" stroke-width="2"></rect>
-            <rect x="340" y="40" width="6" height="86" class="accent-fill"></rect>
-            <text x="358" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">registration</text>
-            <text x="358" y="86" class="t-soft" font-size="11">core loop + "my runs"</text>
-            <text x="358" y="103" class="t-soft" font-size="11">ConfirmationEmail</text>
-            <text x="358" y="119" class="t-faint svg-mono" font-size="10">anon or attributed</text>
+            <rect x="330" y="40" width="210" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="330" y="40" width="6" height="90" class="accent-fill"></rect>
+            <text x="348" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">event</text>
+            <text x="348" y="86" class="t-soft" font-size="11">public list · admin CRUD</text>
+            <text x="348" y="103" class="t-soft" font-size="11">cancel · reschedule (ADR-0001)</text>
+            <text x="348" y="120" class="t-faint svg-mono" font-size="10">RegistrationCounts port</text>
 
-            <!-- location -->
-            <rect x="30" y="180" width="180" height="76" class="n-fill n-stroke" stroke-width="2"></rect>
-            <rect x="30" y="180" width="6" height="76" class="accent-fill"></rect>
-            <text x="48" y="204" class="t-orange svg-mono" font-size="11" font-weight="600">location</text>
-            <text x="48" y="226" class="t-soft" font-size="11">first-class entity</text>
-            <text x="48" y="243" class="t-faint svg-mono" font-size="10">multi-site seam (V4)</text>
+            <rect x="640" y="40" width="190" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="640" y="40" width="6" height="90" class="accent-fill"></rect>
+            <text x="658" y="64" class="t-orange svg-mono" font-size="11" font-weight="600">location</text>
+            <text x="658" y="86" class="t-soft" font-size="11">first-class entity</text>
+            <text x="658" y="103" class="t-soft" font-size="11">lat / long for weather</text>
+            <text x="658" y="120" class="t-faint svg-mono" font-size="10">multi-site seam (V4)</text>
 
-            <!-- auth -->
-            <rect x="340" y="180" width="200" height="76" class="n-fill n-stroke" stroke-width="2"></rect>
-            <rect x="340" y="180" width="6" height="76" class="accent-fill"></rect>
-            <text x="358" y="204" class="t-orange svg-mono" font-size="11" font-weight="600">auth</text>
-            <text x="358" y="226" class="t-soft" font-size="11">AuthProvider · Security</text>
-            <text x="358" y="243" class="t-faint svg-mono" font-size="10">AppUser · privacy (GDPR)</text>
+            <!-- row 2: email · registration · auth -->
+            <rect x="30" y="200" width="200" height="90" class="ext-fill n-stroke" stroke-width="2"></rect>
+            <text x="130" y="234" text-anchor="middle" class="t-orange svg-mono" font-size="11" font-weight="600">email</text>
+            <text x="130" y="256" text-anchor="middle" class="t-soft" font-size="11">EmailSender</text>
+            <text x="130" y="273" text-anchor="middle" class="t-faint svg-mono" font-size="10">SmtpEmailSender</text>
 
-            <!-- email -->
-            <rect x="660" y="40" width="170" height="76" class="ext-fill n-stroke" stroke-width="2"></rect>
-            <text x="745" y="70" text-anchor="middle" class="t-orange svg-mono" font-size="11" font-weight="600">email</text>
-            <text x="745" y="92" text-anchor="middle" class="t-soft" font-size="11">EmailSender</text>
-            <text x="745" y="108" text-anchor="middle" class="t-faint svg-mono" font-size="10">SmtpEmailSender</text>
+            <rect x="330" y="200" width="210" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="330" y="200" width="6" height="90" class="accent-fill"></rect>
+            <text x="348" y="224" class="t-orange svg-mono" font-size="11" font-weight="600">registration</text>
+            <text x="348" y="246" class="t-soft" font-size="11">core loop · my runs</text>
+            <text x="348" y="263" class="t-soft" font-size="11">finish times · leaderboard · stats</text>
+            <text x="348" y="280" class="t-faint svg-mono" font-size="10">Ranking · notifiers</text>
 
-            <!-- web + config -->
-            <rect x="660" y="180" width="170" height="76" class="ext-fill n-stroke" stroke-width="2"></rect>
-            <text x="745" y="210" text-anchor="middle" class="t-ink svg-mono" font-size="11" font-weight="600">web · config</text>
-            <text x="745" y="232" text-anchor="middle" class="t-soft" font-size="11">ApiExceptionHandler</text>
-            <text x="745" y="248" text-anchor="middle" class="t-faint svg-mono" font-size="10">ClockConfig</text>
+            <rect x="640" y="200" width="190" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="640" y="200" width="6" height="90" class="accent-fill"></rect>
+            <text x="658" y="224" class="t-orange svg-mono" font-size="11" font-weight="600">auth</text>
+            <text x="658" y="246" class="t-soft" font-size="11">AuthProvider · Security</text>
+            <text x="658" y="263" class="t-soft" font-size="11">roles · ADMIN_EMAILS</text>
+            <text x="658" y="280" class="t-faint svg-mono" font-size="10">AppUser · GDPR export/erase</text>
+
+            <!-- row 3: cross-cutting -->
+            <rect x="30" y="330" width="800" height="50" class="ext-fill n-stroke" stroke-width="2"></rect>
+            <text x="48" y="360" class="t-ink svg-mono" font-size="11" font-weight="600">web · config</text>
+            <text x="160" y="360" class="t-soft" font-size="11">ApiExceptionHandler maps domain exceptions to HTTP · ClockConfig · DemoDataConfig (opt-in demo seed)</text>
 
             <g class="flow-stroke" stroke-width="2" fill="none">
-              <line x1="210" y1="90" x2="336" y2="90" marker-end="url(#arrow2)"></line>
-              <line x1="120" y1="180" x2="120" y2="130" marker-end="url(#arrow2)"></line>
-              <line x1="440" y1="180" x2="440" y2="130" marker-end="url(#arrow2)"></line>
-              <line x1="540" y1="84" x2="656" y2="80" marker-end="url(#arrow2)"></line>
+              <line x1="230" y1="85" x2="326" y2="85" marker-end="url(#arrow2)"></line>
+              <path d="M130,40 C130,8 735,8 735,36" marker-end="url(#arrow2)"></path>
+              <line x1="540" y1="85" x2="636" y2="85" marker-end="url(#arrow2)"></line>
+              <line x1="380" y1="200" x2="380" y2="134" marker-end="url(#arrow2)"></line>
+              <line x1="330" y1="245" x2="234" y2="245" marker-end="url(#arrow2)"></line>
+              <line x1="540" y1="232" x2="636" y2="232" marker-end="url(#arrow2)"></line>
+              <line x1="640" y1="262" x2="544" y2="262" marker-end="url(#arrow2)"></line>
             </g>
-            <text x="273" y="82" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">reads events</text>
-            <text x="600" y="75" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">sends</text>
+            <text x="278" y="77" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">reads events</text>
+            <text x="432" y="33" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">coordinates</text>
+            <text x="588" y="77" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">location ref</text>
+            <g class="t-faint svg-mono" font-size="9.5">
+              <text x="390" y="152">reads events</text>
+              <text x="390" y="166">implements RegistrationCounts</text>
+              <text x="390" y="180">listens: EventCancelled / Rescheduled</text>
+            </g>
+            <text x="282" y="237" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">sends</text>
+            <text x="588" y="226" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">principal</text>
+            <text x="590" y="278" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">export · erase</text>
           </svg>
-          <figcaption>Arrows show the direction of dependency.</figcaption>
+          <figcaption>Arrows show the direction of dependency. <code>auth</code> and <code>registration</code> depend on each other on purpose: registration links rows to the signed-in account, and the GDPR export and erasure in auth read and delete the account's registrations.</figcaption>
         </div>
       </figure>
     </div>
@@ -470,12 +503,15 @@
       <p class="lead">Two seams are deliberately built into the schema now (charter §3):
         <code>location</code> is a first-class entity, and <code>registration</code> is stored in a
         leaderboard-friendly shape — one row per <em>(event, participant)</em> with <code>finish_time</code>
-        and <code>user_id</code> nullable. Both make V2 additive, not a migration.</p>
+        and <code>user_id</code> nullable. The leaderboard-friendly shape has already paid off. Finish-time
+        entry, the leaderboards and personal stats (Increments 11–13) needed no change to the
+        <code>registration</code> table. Later migrations only <em>added</em> things: names on accounts,
+        coordinates on locations, roles, and an event status.</p>
 
       <figure>
         <div class="fig">
-          <svg viewBox="0 0 860 400" role="img" aria-labelledby="erd-title">
-            <title id="erd-title">Entity relationship diagram for location, event, registration, and app_user</title>
+          <svg viewBox="0 100 860 385" role="img" aria-labelledby="erd-title">
+            <title id="erd-title">Entity relationship diagram for location, event, registration, app_user, user_roles and role</title>
             <defs>
               <marker id="crow" viewBox="0 0 16 16" refX="2" refY="8" markerWidth="15" markerHeight="15" orient="auto">
                 <path d="M14,8 L2,2 M14,8 L2,8 M14,8 L2,14" fill="none" stroke="var(--flow)" stroke-width="1.4"></path>
@@ -487,30 +523,32 @@
 
             <!-- location -->
             <g class="svg-mono">
-              <rect x="40" y="150" width="180" height="110" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="40" y="150" width="180" height="130" class="n-fill n-stroke" stroke-width="2"></rect>
               <rect x="40" y="150" width="180" height="26" class="accent-fill"></rect>
               <text x="52" y="168" fill="var(--poster)" font-size="12.5" font-weight="600">location</text>
               <text x="52" y="196" class="t-ink" font-size="11">🔑 id</text>
               <text x="52" y="216" class="t-soft" font-size="11">name</text>
               <text x="52" y="234" class="t-soft" font-size="11">city</text>
-              <text x="52" y="252" class="t-faint" font-size="11">created_at</text>
+              <text x="52" y="252" class="t-soft" font-size="11">latitude · longitude ∅</text>
+              <text x="52" y="270" class="t-faint" font-size="11">created_at</text>
             </g>
 
             <!-- event -->
             <g class="svg-mono">
-              <rect x="330" y="140" width="200" height="130" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="330" y="140" width="200" height="150" class="n-fill n-stroke" stroke-width="2"></rect>
               <rect x="330" y="140" width="200" height="26" class="accent-fill"></rect>
               <text x="342" y="158" fill="var(--poster)" font-size="12.5" font-weight="600">event</text>
               <text x="342" y="186" class="t-ink" font-size="11">🔑 id</text>
               <text x="342" y="206" class="t-orange" font-size="11">↳ location_id</text>
               <text x="342" y="224" class="t-soft" font-size="11">name</text>
               <text x="342" y="242" class="t-soft" font-size="11">start_datetime ⌁idx</text>
-              <text x="342" y="260" class="t-faint" font-size="11">created_at</text>
+              <text x="342" y="260" class="t-soft" font-size="11">status ⌁idx</text>
+              <text x="342" y="280" class="t-faint" font-size="10">SCHEDULED | CANCELLED</text>
             </g>
 
             <!-- registration -->
             <g class="svg-mono">
-              <rect x="640" y="120" width="190" height="170" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="640" y="120" width="190" height="190" class="n-fill n-stroke" stroke-width="2"></rect>
               <rect x="640" y="120" width="190" height="26" class="accent-fill"></rect>
               <text x="652" y="138" fill="var(--poster)" font-size="12.5" font-weight="600">registration</text>
               <text x="652" y="166" class="t-ink" font-size="11">🔑 id</text>
@@ -524,22 +562,48 @@
 
             <!-- app_user -->
             <g class="svg-mono">
-              <rect x="330" y="310" width="200" height="80" class="n-fill n-stroke" stroke-width="2"></rect>
-              <rect x="330" y="310" width="200" height="26" class="accent-fill"></rect>
-              <text x="342" y="328" fill="var(--poster)" font-size="12.5" font-weight="600">app_user</text>
-              <text x="342" y="356" class="t-ink" font-size="11">🔑 id · email uq</text>
-              <text x="342" y="374" class="t-soft" font-size="11">name · password_hash</text>
+              <rect x="40" y="360" width="180" height="110" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="40" y="360" width="180" height="26" class="accent-fill"></rect>
+              <text x="52" y="378" fill="var(--poster)" font-size="12.5" font-weight="600">app_user</text>
+              <text x="52" y="406" class="t-ink" font-size="11">🔑 id · email uq</text>
+              <text x="52" y="424" class="t-soft" font-size="11">name</text>
+              <text x="52" y="442" class="t-soft" font-size="11">password_hash</text>
+              <text x="52" y="460" class="t-faint" font-size="11">created_at</text>
+            </g>
+
+            <!-- user_roles -->
+            <g class="svg-mono">
+              <rect x="330" y="370" width="200" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="330" y="370" width="200" height="26" class="accent-fill"></rect>
+              <text x="342" y="388" fill="var(--poster)" font-size="12.5" font-weight="600">user_roles</text>
+              <text x="342" y="416" class="t-orange" font-size="11">🔑↳ user_id</text>
+              <text x="342" y="434" class="t-orange" font-size="11">🔑↳ role_id</text>
+              <text x="342" y="452" class="t-faint" font-size="10">on delete cascade (user)</text>
+            </g>
+
+            <!-- role -->
+            <g class="svg-mono">
+              <rect x="640" y="370" width="190" height="90" class="n-fill n-stroke" stroke-width="2"></rect>
+              <rect x="640" y="370" width="190" height="26" class="accent-fill"></rect>
+              <text x="652" y="388" fill="var(--poster)" font-size="12.5" font-weight="600">role</text>
+              <text x="652" y="416" class="t-ink" font-size="11">🔑 id</text>
+              <text x="652" y="434" class="t-soft" font-size="11">name uq</text>
+              <text x="652" y="452" class="t-faint" font-size="10">ROLE_USER · ROLE_ADMIN</text>
             </g>
 
             <!-- relations -->
             <g class="flow-stroke" stroke-width="1.6" fill="none">
-              <line x1="220" y1="205" x2="330" y2="205" marker-start="url(#one)" marker-end="url(#crow)"></line>
-              <line x1="530" y1="190" x2="640" y2="190" marker-start="url(#one)" marker-end="url(#crow)"></line>
-              <path d="M530,350 C580,350 600,260 640,235" marker-start="url(#one)" marker-end="url(#crow)"></path>
+              <line x1="220" y1="215" x2="330" y2="215" marker-start="url(#one)" marker-end="url(#crow)"></line>
+              <line x1="530" y1="193" x2="640" y2="193" marker-start="url(#one)" marker-end="url(#crow)"></line>
+              <path d="M200,360 C260,330 735,350 735,312" marker-start="url(#one)" marker-end="url(#crow)"></path>
+              <line x1="220" y1="425" x2="330" y2="425" marker-start="url(#one)" marker-end="url(#crow)"></line>
+              <line x1="640" y1="425" x2="530" y2="425" marker-start="url(#one)" marker-end="url(#crow)"></line>
             </g>
-            <text x="275" y="198" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">has many</text>
+            <text x="275" y="208" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">has many</text>
             <text x="585" y="183" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">has many</text>
-            <text x="600" y="312" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">0..1 (anon = ∅)</text>
+            <text x="470" y="328" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">0..1 (anon = ∅)</text>
+            <text x="275" y="418" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">has</text>
+            <text x="585" y="418" text-anchor="middle" class="t-faint svg-mono" font-size="9.5">granted as</text>
           </svg>
           <div class="legend">
             <span><b class="mono" style="color:var(--ink)">🔑</b> primary key</span>
@@ -551,7 +615,8 @@
       </figure>
       <div class="note-box">
         <b>Why nullable everywhere it counts.</b> An anonymous registration carries <code>name</code> + <code>email</code> with a null <code>user_id</code>;
-        a signed-in one is attributed to the account. V2 results write into <code>finish_time</code>. Neither needs a schema change — the columns already exist.
+        a signed-in one is attributed to the account. A runner's own result writes into <code>finish_time</code>. Neither needed a schema change, because the columns were there from V3.
+        <br><b>Cancel, don't delete.</b> A cancelled event keeps its registrations (<a href="adr/0001-cancel-vs-hard-delete-events.md">ADR-0001</a>). The <code>(status, start_datetime)</code> index serves the public list, which leaves out cancelled runs.
       </div>
     </div>
   </section>
@@ -606,7 +671,65 @@
             <text x="400" y="251" text-anchor="middle" class="t-faint svg-mono" font-size="10.5">RegistrationResponse</text>
             <text x="196" y="291" text-anchor="middle" class="t-faint svg-mono" font-size="10.5">201 → confirmation page</text>
           </svg>
-          <figcaption><b>Guarded by the DB.</b> <code>uq_registration_event_email</code> rejects a second registration for the same email + event; an invalid email fails validation and no email is sent.</figcaption>
+          <figcaption><b>Guarded twice.</b> The service refuses an unknown run (404), a run that has started or is cancelled (400), and an email that is already registered for the run (409). <code>uq_registration_event_email</code> is the backstop: if two requests race past the duplicate check, the database still keeps only one row. The insert and the email are in one transaction, so a failed send leaves no row.</figcaption>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== EVENT LIFECYCLE ===================== -->
+  <section id="lifecycle">
+    <div class="wrap">
+      <p class="eyebrow"><span class="num">06</span> Event lifecycle</p>
+      <h2>Admins manage runs; registrants are told about changes</h2>
+      <p class="lead">Admins create, edit, delete and cancel runs under <code>/api/admin/**</code>. Delete and cancel
+        are different actions on purpose (<a href="adr/0001-cancel-vs-hard-delete-events.md">ADR-0001</a>), so
+        removing a run never silently destroys other people's data.</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 860 230" role="img" aria-labelledby="life-title">
+            <title id="life-title">Event states: scheduled, cancelled, deleted, with the emails each change sends</title>
+            <defs>
+              <marker id="arrow4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--flow)"></path>
+              </marker>
+            </defs>
+
+            <!-- create -->
+            <circle cx="50" cy="110" r="9" class="accent-fill"></circle>
+            <text x="50" y="140" text-anchor="middle" class="t-faint svg-mono" font-size="10">create</text>
+
+            <!-- SCHEDULED -->
+            <rect x="140" y="75" width="210" height="70" class="n-fill n-stroke" stroke-width="2"></rect>
+            <rect x="140" y="75" width="210" height="6" class="accent-fill"></rect>
+            <text x="245" y="108" text-anchor="middle" class="t-ink svg-mono" font-size="14" font-weight="600">SCHEDULED</text>
+            <text x="245" y="128" text-anchor="middle" class="t-soft" font-size="11">on the public list</text>
+
+            <!-- CANCELLED -->
+            <rect x="560" y="20" width="270" height="80" class="n-fill n-stroke" stroke-width="2"></rect>
+            <text x="695" y="50" text-anchor="middle" class="t-ink svg-mono" font-size="14" font-weight="600">CANCELLED</text>
+            <text x="695" y="70" text-anchor="middle" class="t-soft" font-size="11">terminal · read-only · registrations kept</text>
+            <text x="695" y="87" text-anchor="middle" class="t-soft" font-size="11">badged on dashboards, off the public list</text>
+
+            <!-- deleted -->
+            <rect x="560" y="140" width="270" height="66" class="ext-fill n-stroke" stroke-width="2" stroke-dasharray="6 4"></rect>
+            <text x="695" y="168" text-anchor="middle" class="t-ink svg-mono" font-size="14" font-weight="600">deleted</text>
+            <text x="695" y="188" text-anchor="middle" class="t-soft" font-size="11">only with 0 registrations, else 409</text>
+
+            <g class="flow-stroke" stroke-width="2" fill="none">
+              <line x1="60" y1="110" x2="136" y2="110" marker-end="url(#arrow4)"></line>
+              <line x1="350" y1="95" x2="556" y2="62" marker-end="url(#arrow4)"></line>
+              <line x1="350" y1="128" x2="556" y2="170" marker-end="url(#arrow4)" stroke-dasharray="5 4"></line>
+              <path d="M200,75 C200,25 290,25 290,71" marker-end="url(#arrow4)"></path>
+            </g>
+            <text x="245" y="22" text-anchor="middle" class="t-soft svg-mono" font-size="10.5">edit</text>
+            <text x="245" y="170" text-anchor="middle" class="t-orange svg-mono" font-size="10.5" font-weight="600">time changed → reschedule email</text>
+            <text x="440" y="50" text-anchor="middle" class="t-soft svg-mono" font-size="10.5">cancel + reason</text>
+            <text x="440" y="66" text-anchor="middle" class="t-orange svg-mono" font-size="10.5" font-weight="600">→ cancellation email</text>
+            <text x="455" y="170" text-anchor="middle" class="t-soft svg-mono" font-size="10.5">delete</text>
+          </svg>
+          <figcaption><b>Email after commit.</b> <code>EventService</code> publishes <code>EventCancelled</code> / <code>EventRescheduled</code>. The notifiers in <code>registration</code> are <code>@TransactionalEventListener</code>s, so they email only after the change commits. The emails are best effort: a failed send is logged and never rolls the change back.</figcaption>
         </div>
       </figure>
     </div>
@@ -615,11 +738,13 @@
   <!-- ===================== API + SECURITY ===================== -->
   <section id="api">
     <div class="wrap">
-      <p class="eyebrow"><span class="num">06</span> API &amp; security</p>
+      <p class="eyebrow"><span class="num">07</span> API &amp; security</p>
       <h2>Deny-by-default, with the public surface enumerated</h2>
       <p class="lead">Authorisation is deny-by-default in <code>SecurityConfig</code>: anything not listed is
         <code>authenticated()</code>, so a new endpoint is closed until deliberately opened. A protected hit
-        without a session is a plain <code>401</code> — this is an API; the SPA owns the login UI.</p>
+        without a session is a plain <code>401</code> — this is an API; the SPA owns the login UI.
+        <code>/api/admin/**</code> needs <code>ROLE_ADMIN</code>, and a signed-in non-admin gets <code>403</code>.
+        The server enforces this boundary; hiding the admin controls in the UI is only a convenience.</p>
 
       <div class="tbl-scroll">
         <table>
@@ -627,16 +752,25 @@
             <tr><th>Endpoint</th><th>Purpose</th><th>Access</th></tr>
           </thead>
           <tbody>
-            <tr><td><span class="verb get">GET</span> <span class="path">/api/events</span></td><td>Upcoming events, ordered by date</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/events</span></td><td>Upcoming scheduled events, ordered by date (cancelled ones left out)</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/events/{id}/forecast</span></td><td>Weather at the run's hour, from the cache or Open-Meteo</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/events/{id}/leaderboard</span></td><td>Results of a past, not-cancelled run (else 409). Shared places for equal times; first name + initial only</td><td><span class="pill pub">Public</span></td></tr>
             <tr><td><span class="verb post">POST</span> <span class="path">/api/registrations</span></td><td>Register for a run — anonymous or attributed</td><td><span class="pill pub">Public</span></td></tr>
             <tr><td><span class="verb post">POST</span> <span class="path">/api/auth/signup</span></td><td>Create account (captures name), logs in · 201</td><td><span class="pill pub">Public</span></td></tr>
             <tr><td><span class="verb post">POST</span> <span class="path">/api/auth/login</span></td><td>Log in · 200</td><td><span class="pill pub">Public</span></td></tr>
             <tr><td><span class="verb post">POST</span> <span class="path">/api/auth/logout</span></td><td>Invalidate session, expire cookie · 204</td><td><span class="pill auth">Session</span></td></tr>
             <tr><td><span class="verb get">GET</span> <span class="path">/api/auth/me</span></td><td>Current account or 401</td><td><span class="pill auth">Session</span></td></tr>
             <tr><td><span class="verb get">GET</span> <span class="path">/api/me/registrations</span></td><td>Dashboard: upcoming + past runs</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb put">PUT</span> <span class="path">/api/me/registrations/{id}/finish-time</span></td><td>Enter or correct your own time on a past, not-cancelled run (10:00–1:00:00)</td><td><span class="pill auth">Session</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/me/stats</span></td><td>Runs finished, personal best, best place, time trend</td><td><span class="pill auth">Session</span></td></tr>
             <tr><td><span class="verb get">GET</span> <span class="path">/api/me/export</span></td><td>GDPR access — account + registrations as JSON</td><td><span class="pill auth">Session</span></td></tr>
             <tr><td><span class="verb del">DELETE</span> <span class="path">/api/me</span></td><td>GDPR erasure — hard-delete account + data</td><td><span class="pill auth">Session</span></td></tr>
-            <tr><td><span class="verb get">GET</span> <span class="path">/actuator/health</span></td><td>Liveness probe</td><td><span class="pill pub">Public</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/api/admin/events</span></td><td>The admin schedule: upcoming runs, cancelled included, with registration counts</td><td><span class="pill admin">Admin</span></td></tr>
+            <tr><td><span class="verb post">POST</span> <span class="path">/api/admin/events</span></td><td>Create a run · 201</td><td><span class="pill admin">Admin</span></td></tr>
+            <tr><td><span class="verb put">PUT</span> <span class="path">/api/admin/events/{id}</span></td><td>Edit name / time. A time change emails the registrants</td><td><span class="pill admin">Admin</span></td></tr>
+            <tr><td><span class="verb del">DELETE</span> <span class="path">/api/admin/events/{id}</span></td><td>Hard delete, only when nobody is registered (else 409)</td><td><span class="pill admin">Admin</span></td></tr>
+            <tr><td><span class="verb post">POST</span> <span class="path">/api/admin/events/{id}/cancel</span></td><td>Cancel with a reason. Terminal; emails the registrants</td><td><span class="pill admin">Admin</span></td></tr>
+            <tr><td><span class="verb get">GET</span> <span class="path">/actuator/health</span></td><td>Health probe; reports UP only when Postgres is reachable</td><td><span class="pill pub">Public</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -654,8 +788,11 @@
   <!-- ===================== AUTH SEAM ===================== -->
   <section id="auth">
     <div class="wrap">
-      <p class="eyebrow"><span class="num">07</span> The auth seam</p>
-      <p class="lead">Everything above <code>AuthProvider</code> deals in <code>AccountPrincipal</code> — never in
+      <p class="eyebrow"><span class="num">08</span> The seams</p>
+      <p class="lead">Each external dependency, and the one cross-domain dependency, sits behind an
+        interface. So a provider can change without edits across the app, and tests can use a stand-in.</p>
+      <h2>Auth</h2>
+      <p>Everything above <code>AuthProvider</code> deals in <code>AccountPrincipal</code> — never in
         the users table or BCrypt. Credential logic and session mechanics are split so an OIDC provider that
         manages its own session drops in without edits across the app.</p>
       <ul class="clean">
@@ -663,6 +800,13 @@
         <li><b>SessionAuthenticator</b> — session mechanics live in the web layer, kept out of the provider, so a provider that owns its own session slots in cleanly.</li>
         <li><b>AccountPrincipal</b> — the currency above the seam. The rest of the app knows this, not rows or hashes.</li>
         <li><b>Registration linkage</b> — <code>POST /api/registrations</code> stays anonymous, but a session attributes the row to its account; a signed-in registration form prefills from the account (still editable).</li>
+        <li><b>Roles</b> — <code>RoleService</code> checks the roles against <code>ADMIN_EMAILS</code> each time a user signs up or logs in. Every account has <code>ROLE_USER</code>. An account named in <code>ADMIN_EMAILS</code> gets <code>ROLE_ADMIN</code>, and an account that is no longer named loses it. The variable is empty by default, so a new deploy has no admins.</li>
+      </ul>
+      <h2>The other seams</h2>
+      <ul class="clean">
+        <li><b>WeatherProvider</b> — takes a coordinate and the run's local date and time, and returns an <code>Optional&lt;Forecast&gt;</code> for that hour. <code>OpenMeteoWeatherProvider</code> calls Open-Meteo's hourly forecast. <code>CachingWeatherProvider</code> wraps it in a Caffeine cache (<code>WEATHER_CACHE_TTL</code>, default 1 h), so most page views make no upstream call. A run beyond <code>WEATHER_FORECAST_HORIZON_DAYS</code> (default 8) has no forecast.</li>
+        <li><b>EmailSender</b> — <code>SmtpEmailSender</code> sends to Mailpit in dev and tests, and to a transactional provider in prod. The confirmation, cancellation and reschedule emails are plain message types in <code>registration</code>.</li>
+        <li><b>RegistrationCounts</b> — the only thing <code>event</code> needs to know about registrations is a count. It is a port that <code>event</code> owns and <code>registration</code> implements. The names and addresses of registrants never cross it.</li>
       </ul>
     </div>
   </section>
@@ -670,7 +814,7 @@
   <!-- ===================== TESTING ===================== -->
   <section id="testing">
     <div class="wrap">
-      <p class="eyebrow"><span class="num">08</span> Testing &amp; the release gate</p>
+      <p class="eyebrow"><span class="num">09</span> Testing &amp; the release gate</p>
       <h2>Acceptance-test-driven RAD</h2>
       <p class="lead">Requirements stay thin on purpose; rigour goes into tests. Six core E2E scenarios
         (CS-1…6) are the release contract — green before every release.</p>
@@ -699,10 +843,10 @@
               <text x="450" y="172" class="t-ink">CS-4 · signed-in run under "Upcoming"</text>
               <text x="450" y="200" class="t-ink">CS-5 · attended run under "Past"</text>
               <text x="450" y="228" class="t-ink">CS-6 · anon dashboard → sign-up/login</text>
-              <text x="450" y="262" class="t-faint">+ axe-core a11y · k6 perf (p95 &lt; 20% regression)</text>
+              <text x="450" y="262" class="t-faint">+ axe-core a11y · k6 perf (p95 ≤ 40 ms read / 120 ms write)</text>
             </g>
           </svg>
-          <figcaption><b>E2E suites:</b> events · registration · auth · dashboard · gdpr · a11y. Perf gate is a required check on <code>main</code>.</figcaption>
+          <figcaption><b>E2E suites</b> (each on desktop and mobile Chromium): events · registration · auth · dashboard · admin · leaderboard · stats · gdpr · a11y. The perf gate is a required check on <code>main</code>. Its budgets are fixed limits, not a multiple of the last run, so recording a new baseline never makes the gate less strict.</figcaption>
         </div>
       </figure>
       <div class="note-box">
@@ -718,6 +862,8 @@
     <span>3T Run — architecture reference</span>
     <span>·</span>
     <span>Generated from the codebase &amp; <code>docs/charter.md</code></span>
+    <span>·</span>
+    <span>Current to Increment 13 · 10 Nov 2026</span>
     <span>·</span>
     <span>Floodlight theme</span>
   </div>

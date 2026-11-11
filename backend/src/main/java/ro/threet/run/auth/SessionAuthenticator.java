@@ -13,17 +13,19 @@ import org.springframework.stereotype.Component;
 
 /**
  * Turns a verified {@link AccountPrincipal} into a logged-in HTTP session: it builds the
- * authentication, stores it in a fresh {@link SecurityContext}, and persists that to the session so
- * the httpOnly cookie carries it on the next request. Kept out of {@link AuthProvider} on purpose —
- * this is the cookie-session mechanism, which an OIDC provider would replace wholesale.
+ * authentication, stores it in a fresh {@link SecurityContext}, and persists that to the
+ * session so the httpOnly cookie carries it on the next request. Kept out of
+ * {@link AuthProvider} on purpose — this is the cookie-session mechanism, which an OIDC
+ * provider would replace wholesale.
  *
- * The session id is rotated on login to defend against session fixation (a pre-login session can't
- * be promoted to an authenticated one).
+ * The session id is rotated on login to defend against session fixation (a pre-login
+ * session can't be promoted to an authenticated one).
  */
 @Component
 class SessionAuthenticator {
 
 	private final SecurityContextRepository securityContextRepository;
+
 	private final SecurityContextHolderStrategy holderStrategy = SecurityContextHolder.getContextHolderStrategy();
 
 	SessionAuthenticator(SecurityContextRepository securityContextRepository) {
@@ -35,8 +37,8 @@ class SessionAuthenticator {
 			request.changeSessionId();
 		}
 
-		Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(
-				principal, null, principal.authorities());
+		Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(principal, null,
+				principal.authorities());
 		SecurityContext context = holderStrategy.createEmptyContext();
 		context.setAuthentication(authentication);
 		holderStrategy.setContext(context);

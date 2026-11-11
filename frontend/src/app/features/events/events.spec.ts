@@ -1,9 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
@@ -87,7 +84,13 @@ describe('Events', () => {
   it('renders the events in the order the API returns them', async () => {
     await flush([
       EVENT_1,
-      { id: 2, name: 'Evening 5k', startDateTime: '2026-09-12T17:00:00Z', locationName: 'Tineretului Park', city: 'Bucharest' },
+      {
+        id: 2,
+        name: 'Evening 5k',
+        startDateTime: '2026-09-12T17:00:00Z',
+        locationName: 'Tineretului Park',
+        city: 'Bucharest',
+      },
     ]);
 
     const cards = fixture.nativeElement.querySelectorAll('[data-testid="event-item"]');
@@ -179,7 +182,10 @@ describe('Events', () => {
     const post = httpMock.expectOne('/api/admin/events');
     expect(post.request.method).toBe('POST');
     // Bucharest wall-clock, zone-less — the server applies the zone.
-    expect(post.request.body).toEqual({ name: 'Autumn Night 5k', startDateTime: '2026-10-01T18:30' });
+    expect(post.request.body).toEqual({
+      name: 'Autumn Night 5k',
+      startDateTime: '2026-10-01T18:30',
+    });
     const created: EventItem = {
       id: 2,
       name: 'Autumn Night 5k',
@@ -215,10 +221,12 @@ describe('Events', () => {
     query('create-submit')!.closest('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
-    httpMock.expectOne('/api/admin/events').flush(
-      { errors: { startDateTime: 'The start must be in the future.' } },
-      { status: 400, statusText: 'Bad Request' },
-    );
+    httpMock
+      .expectOne('/api/admin/events')
+      .flush(
+        { errors: { startDateTime: 'The start must be in the future.' } },
+        { status: 400, statusText: 'Bad Request' },
+      );
     await fixture.whenStable();
     fixture.detectChanges();
 

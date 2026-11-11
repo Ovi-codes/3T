@@ -1,10 +1,11 @@
 package ro.threet.run.weather;
 
 /**
- * Maps a WMO weather-interpretation code (WW) — what Open-Meteo returns in {@code weather_code} —
- * to a {@link WeatherCondition} and a short human label. One switch keeps the category and the
- * label in sync. Unknown codes fall back to {@link WeatherCondition#UNKNOWN} rather than throwing,
- * so a new upstream code never breaks a forecast.
+ * Maps a WMO weather-interpretation code (WW) — what Open-Meteo returns in
+ * {@code weather_code} — to a {@link WeatherCondition} and a short human label. One
+ * switch keeps the category and the label in sync. Unknown codes fall back to
+ * {@link WeatherCondition#UNKNOWN} rather than throwing, so a new upstream code never
+ * breaks a forecast.
  *
  * @see <a href="https://open-meteo.com/en/docs">Open-Meteo docs — WMO weather codes</a>
  */

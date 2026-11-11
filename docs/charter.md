@@ -34,7 +34,7 @@ Runners view upcoming events, register for one, and (if they hold an account) tr
 | Auth | Spring Security, email + BCrypt | Swappable behind an interface; migrate to **Microsoft Entra External ID** before a real go-live if desired. **Core loop needs no auth.** |
 | Email | Mailpit in dev/tests; Azure Communication Services Email (or a free-tier provider) in prod | Confirmation email is transactional → clean lawful basis. |
 | Hosting | Local first → Azure | Azure App Service (backend) + Static Web Apps (Angular), or a single container app. Choose the free/low tiers; use new-account credits. Deploy to an **EU region** (North/West Europe) for GDPR. |
-| CI/CD | GitHub Actions | Build, lint, all test layers, and a deploy step gated on green tests. |
+| CI/CD | GitHub Actions | Build, format check, lint, all test layers with coverage, and a deploy step gated on green tests. |
 
 ### Seams to leave in **now** so V2 stays cheap
 
@@ -134,7 +134,7 @@ A feature is shippable when:
 - [ ] If a **core scenario (CS-1..6)** is affected, its E2E test is added/updated — green.
 - [ ] New UI passes axe-core (no critical/serious) and works at mobile + desktop viewports.
 - [ ] Personal data touched? → data minimised, consent captured where required, covered by export/erasure.
-- [ ] CI green (build, lint, all test layers).
+- [ ] CI green (build, format check, lint, all test layers).
 - [ ] Self-review against this feature's acceptance criteria, as the target user.
 - [ ] Merged to `main`; anything incomplete sits behind a feature flag.
 

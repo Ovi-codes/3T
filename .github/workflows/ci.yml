@@ -23,11 +23,29 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      # verify = unit tests + Testcontainers integration. Docker is present on the runner,
-      # so the throwaway Postgres spins up with no extra setup.
+      # verify = format check (Spring Java Format, validate phase) + unit tests + Testcontainers
+      # integration + JaCoCo report. Docker is present on the runner, so the throwaway Postgres
+      # spins up with no extra setup.
       - name: mvn verify
         working-directory: backend
         run: ./mvnw -B verify
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('backend/target/site/jacoco/jacoco.csv') != '' }}
+        run: node .github/scripts/coverage-summary.mjs backend backend/target/site/jacoco/jacoco.csv backend-coverage.json
+      - name: Upload coverage report
+        if: ${{ !cancelled() && hashFiles('backend/target/site/jacoco/jacoco.csv') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+          retention-days: 7
+      - name: Upload coverage badge
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-coverage-badge
+          path: backend-coverage.json
+          retention-days: 1
 
   frontend:
     name: Frontend (Node 24)
@@ -42,12 +60,32 @@ jobs:
       - name: Install
         working-directory: frontend
         run: npm ci
+      - name: Format check
+        working-directory: frontend
+        run: npm run format:check
       - name: Lint
         working-directory: frontend
         run: npm run lint
-      - name: Unit tests
+      - name: Unit tests + coverage
         working-directory: frontend
-        run: npm test
+        run: npm run test:coverage
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('frontend/coverage/threet-run/coverage-summary.json') != '' }}
+        run: node .github/scripts/coverage-summary.mjs frontend frontend/coverage/threet-run/coverage-summary.json frontend-coverage.json
+      - name: Upload coverage report
+        if: ${{ !cancelled() && hashFiles('frontend/coverage/threet-run/coverage-summary.json') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/threet-run/
+          retention-days: 7
+      - name: Upload coverage badge
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-coverage-badge
+          path: frontend-coverage.json
+          retention-days: 1
 
   e2e:
     name: E2E (Playwright)
@@ -98,6 +136,9 @@ jobs:
       - name: Install E2E deps
         working-directory: e2e
         run: npm ci
+      - name: Format check (E2E)
+        working-directory: e2e
+        run: npm run format:check
       - name: Install Playwright browser
         working-directory: e2e
         run: npx playwright install --with-deps chromium
@@ -125,3 +166,28 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 7
+
+  # On main only: publish the coverage badge JSON to the `badges` branch, which the README's
+  # shields.io endpoint badges read. Kept off main itself so CI never commits to the protected branch.
+  coverage-badges:
+    name: Publish coverage badges
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: '*-coverage-badge'
+          merge-multiple: true
+          path: badges
+      - name: Push to the badges branch
+        working-directory: badges
+        run: |
+          git init -q -b badges
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -q -m "Coverage badges for ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" badges

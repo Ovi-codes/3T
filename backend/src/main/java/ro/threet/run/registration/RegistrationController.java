@@ -24,13 +24,13 @@ public class RegistrationController {
 	}
 
 	/**
-	 * Register for an event. {@code @Valid} enforces name + email before the service runs;
-	 * business rules (unknown/past event, duplicate) come back as errors from the service. A
-	 * success is 201 with the created registration and its {@code Location}.
+	 * Register for an event. {@code @Valid} enforces name + email before the service
+	 * runs; business rules (unknown/past event, duplicate) come back as errors from the
+	 * service. A success is 201 with the created registration and its {@code Location}.
 	 *
-	 * The endpoint stays open to anonymous visitors (the core loop). If a session happens to be
-	 * signed in, the principal is bound and the registration is attributed to that account; a plain
-	 * anonymous request binds null and is recorded exactly as before.
+	 * The endpoint stays open to anonymous visitors (the core loop). If a session happens
+	 * to be signed in, the principal is bound and the registration is attributed to that
+	 * account; a plain anonymous request binds null and is recorded exactly as before.
 	 */
 	@PostMapping("/registrations")
 	public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody RegistrationRequest request,

@@ -32,7 +32,9 @@ describe('Signup', () => {
   }
 
   function submitForm(): void {
-    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
     fixture.detectChanges();
   }
 
@@ -66,7 +68,9 @@ describe('Signup', () => {
     submitForm();
 
     httpMock.expectNone('/api/auth/signup');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name can’t be only numbers.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Name can’t be only numbers.',
+    );
   });
 
   it('rejects an email without a valid extension (e.g. a@a)', () => {
@@ -76,7 +80,9 @@ describe('Signup', () => {
     submitForm();
 
     httpMock.expectNone('/api/auth/signup');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Enter a valid email address.',
+    );
   });
 
   it('rejects a password shorter than eight characters', () => {
@@ -115,10 +121,12 @@ describe('Signup', () => {
     setInput('password', 'correct horse');
     submitForm();
 
-    httpMock.expectOne('/api/auth/signup').flush(
-      { errors: { email: 'An account already exists for this email.' } },
-      { status: 409, statusText: 'Conflict' },
-    );
+    httpMock
+      .expectOne('/api/auth/signup')
+      .flush(
+        { errors: { email: 'An account already exists for this email.' } },
+        { status: 409, statusText: 'Conflict' },
+      );
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(

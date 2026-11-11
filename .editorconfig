@@ -1,4 +1,5 @@
 # Editor configuration, see https://editorconfig.org
+# Formatting is enforced in CI: Spring Java Format (backend) and Prettier (frontend, e2e).
 root = true
 
 [*]
@@ -8,6 +9,15 @@ indent_size = 2
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+# Spring Java Format style: tabs, 4 wide.
+[*.java]
+indent_style = tab
+indent_size = 4
+
+[pom.xml]
+indent_style = tab
+indent_size = 4
+
 [*.ts]
 quote_type = single
 ij_typescript_use_double_quotes = false
@@ -15,3 +25,6 @@ ij_typescript_use_double_quotes = false
 [*.md]
 max_line_length = off
 trim_trailing_whitespace = false
+
+[*.{cmd,bat}]
+end_of_line = crlf

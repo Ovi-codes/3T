@@ -1,0 +1,39 @@
+version: 2
+
+# Weekly update PRs. Minor + patch bumps are grouped per ecosystem to keep the PR count low;
+# majors still arrive one per PR so each can be reviewed on its own.
+updates:
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      maven-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      # Angular packages must move together.
+      angular:
+        patterns: ['@angular/*', '@angular-devkit/*', 'angular-eslint']
+      frontend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+    groups:
+      e2e-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

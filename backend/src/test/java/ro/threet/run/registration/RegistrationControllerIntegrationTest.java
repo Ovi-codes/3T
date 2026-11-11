@@ -36,10 +36,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * CS-1 proven at the backend boundary against real infrastructure: Postgres (Testcontainers) and a
- * real SMTP server (Mailpit, also a container). A valid submit persists exactly one row and puts
- * exactly one message in Mailpit addressed to the registrant; an invalid email is a 400 that
- * touches neither. Mailpit is queried over its HTTP API, the same way the E2E test will.
+ * CS-1 proven at the backend boundary against real infrastructure: Postgres
+ * (Testcontainers) and a real SMTP server (Mailpit, also a container). A valid submit
+ * persists exactly one row and puts exactly one message in Mailpit addressed to the
+ * registrant; an invalid email is a 400 that touches neither. Mailpit is queried over its
+ * HTTP API, the same way the E2E test will.
  */
 @Import(TestcontainersConfiguration.class)
 @Testcontainers
@@ -48,12 +49,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RegistrationControllerIntegrationTest {
 
 	@Container
-	static final GenericContainer<?> mailpit =
-			new GenericContainer<>(DockerImageName.parse("axllent/mailpit:v1.30.7"))
-					.withExposedPorts(1025, 8025)
-					.withEnv("MP_SMTP_AUTH_ACCEPT_ANY", "1")
-					.withEnv("MP_SMTP_AUTH_ALLOW_INSECURE", "1")
-					.waitingFor(Wait.forHttp("/readyz").forPort(8025));
+	static final GenericContainer<?> mailpit = new GenericContainer<>(DockerImageName.parse("axllent/mailpit:v1.30.7"))
+		.withExposedPorts(1025, 8025)
+		.withEnv("MP_SMTP_AUTH_ACCEPT_ANY", "1")
+		.withEnv("MP_SMTP_AUTH_ALLOW_INSECURE", "1")
+		.waitingFor(Wait.forHttp("/readyz").forPort(8025));
 
 	@DynamicPropertySource
 	static void mailProperties(DynamicPropertyRegistry registry) {
@@ -89,9 +89,9 @@ class RegistrationControllerIntegrationTest {
 				{"eventId": %d, "name": "Ana Pop", "email": "ana.pop@example.com"}""".formatted(eventId);
 
 		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.eventId").value(eventId))
-				.andExpect(jsonPath("$.email").value("ana.pop@example.com"));
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.eventId").value(eventId))
+			.andExpect(jsonPath("$.email").value("ana.pop@example.com"));
 
 		assertThat(registrationRepository.count()).isEqualTo(1);
 
@@ -107,24 +107,22 @@ class RegistrationControllerIntegrationTest {
 				{"eventId": %d, "name": "Ana Pop", "email": "not-an-email"}""".formatted(eventId);
 
 		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.errors.email").exists());
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors.email").exists());
 
 		assertThat(registrationRepository.count()).isZero();
 		assertThat(mailpitMessages()).isEmpty();
 	}
 
 	private long firstUpcomingEventId() {
-		return eventRepository
-				.findByStartDateTimeGreaterThanEqualOrderByStartDateTimeAsc(OffsetDateTime.now())
-				.get(0)
-				.getId();
+		return eventRepository.findByStartDateTimeGreaterThanEqualOrderByStartDateTimeAsc(OffsetDateTime.now())
+			.get(0)
+			.getId();
 	}
 
 	@SuppressWarnings("unchecked")
 	private List<Map<String, Object>> mailpitMessages() throws Exception {
-		HttpResponse<String> response = HTTP.send(
-				HttpRequest.newBuilder(mailpitUri("/api/v1/messages")).GET().build(),
+		HttpResponse<String> response = HTTP.send(HttpRequest.newBuilder(mailpitUri("/api/v1/messages")).GET().build(),
 				HttpResponse.BodyHandlers.ofString());
 		Map<String, Object> payload = objectMapper.readValue(response.body(), new TypeReference<>() {
 		});

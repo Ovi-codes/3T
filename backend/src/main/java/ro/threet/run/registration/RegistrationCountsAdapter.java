@@ -11,9 +11,9 @@ import ro.threet.run.event.RegistrationCounts;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Answers the events slice's {@link RegistrationCounts} seam from the registration table. Lives here,
- * next to the data it reads, so the events package never has to know the registration repository
- * exists (charter §3).
+ * Answers the events slice's {@link RegistrationCounts} seam from the registration table.
+ * Lives here, next to the data it reads, so the events package never has to know the
+ * registration repository exists (charter §3).
  */
 @Component
 class RegistrationCountsAdapter implements RegistrationCounts {
@@ -34,11 +34,13 @@ class RegistrationCountsAdapter implements RegistrationCounts {
 	@Transactional(readOnly = true)
 	public Map<Long, Long> forEvents(Collection<Long> eventIds) {
 		if (eventIds.isEmpty()) {
-			// `in ()` is not valid SQL — and with nothing to count there is nothing to ask.
+			// `in ()` is not valid SQL — and with nothing to count there is nothing to
+			// ask.
 			return Map.of();
 		}
-		return registrations.countByEventIdIn(eventIds).stream()
-				.collect(toMap(EventRegistrationCount::eventId, EventRegistrationCount::total));
+		return registrations.countByEventIdIn(eventIds)
+			.stream()
+			.collect(toMap(EventRegistrationCount::eventId, EventRegistrationCount::total));
 	}
 
 }

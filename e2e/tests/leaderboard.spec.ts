@@ -93,7 +93,13 @@ async function seedPastRun(name: string, runners: Runner[]): Promise<number> {
       await client.query(
         'insert into registration (event_id, name, email, user_id, finish_time) ' +
           "values ($1, $2, $3, $4, $5 * interval '1 second')",
-        [eventId, runner.name, `runner-${index}-${uniqueEmail()}`, runner.userId ?? null, runner.finishTimeSeconds],
+        [
+          eventId,
+          runner.name,
+          `runner-${index}-${uniqueEmail()}`,
+          runner.userId ?? null,
+          runner.finishTimeSeconds,
+        ],
       );
     }
     seeded.push(eventId);
@@ -121,11 +127,18 @@ async function rowsOf(page: Page): Promise<string[][]> {
   const rows = page.getByTestId('leaderboard-row');
   await expect(rows.first()).toBeVisible();
   return rows.evaluateAll((trs) =>
-    trs.map((tr) => Array.from(tr.querySelectorAll('th, td:not(.col-medal)')).map((cell) => (cell as HTMLElement).innerText.trim())),
+    trs.map((tr) =>
+      Array.from(tr.querySelectorAll('th, td:not(.col-medal)')).map((cell) =>
+        (cell as HTMLElement).innerText.trim(),
+      ),
+    ),
   );
 }
 
-test('CS-5: a runner opens a past run’s results from their dashboard', async ({ page, request }) => {
+test('CS-5: a runner opens a past run’s results from their dashboard', async ({
+  page,
+  request,
+}) => {
   const user = await signUp(request);
   const runName = `Results run ${Date.now()}`;
   const eventId = await seedPastRun(runName, field(user));
@@ -156,7 +169,9 @@ test('anyone can open a past run’s results, no sign-in needed', async ({ page 
   await page.goto(`/leaderboard/${eventId}`);
 
   expect((await rowsOf(page)).slice(0, 5)).toEqual(EXPECTED_ROWS);
-  await expect(page.getByTestId('leaderboard-summary')).toHaveText('5 of 6 runners have entered a time.');
+  await expect(page.getByTestId('leaderboard-summary')).toHaveText(
+    '5 of 6 runners have entered a time.',
+  );
   // The podium gets medals; the tie for 3rd means two bronzes.
   const board = page.getByTestId('leaderboard');
   await expect(board.getByRole('img', { name: 'Gold medal' })).toHaveCount(1);

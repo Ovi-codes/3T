@@ -16,9 +16,9 @@ import ro.threet.run.registration.RegistrationException;
 
 /**
  * Turns validation and business failures into one predictable JSON shape:
- * {@code {"errors": {"<field>": "<message>"}}}. Bean Validation (a missing name, a malformed
- * email) and business rules (unknown/past event, duplicate registration) come back the same way,
- * so the form can surface either against the right field.
+ * {@code {"errors": {"<field>": "<message>"}}}. Bean Validation (a missing name, a
+ * malformed email) and business rules (unknown/past event, duplicate registration) come
+ * back the same way, so the form can surface either against the right field.
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -36,7 +36,9 @@ public class ApiExceptionHandler {
 		return ResponseEntity.badRequest().body(new ApiErrors(errors));
 	}
 
-	/** A business rule rejected the request — the exception carries its field and status. */
+	/**
+	 * A business rule rejected the request — the exception carries its field and status.
+	 */
 	@ExceptionHandler(RegistrationException.class)
 	public ResponseEntity<ApiErrors> onRegistration(RegistrationException exception) {
 		HttpStatus status = exception.status();
@@ -45,9 +47,9 @@ public class ApiExceptionHandler {
 	}
 
 	/**
-	 * An admin event operation failed a business rule — the exception carries its status (400 for a
-	 * rejected value, 404 for an unknown run, 409 for one the event's own state forbids) and the
-	 * field it concerns.
+	 * An admin event operation failed a business rule — the exception carries its status
+	 * (400 for a rejected value, 404 for an unknown run, 409 for one the event's own
+	 * state forbids) and the field it concerns.
 	 */
 	@ExceptionHandler(EventException.class)
 	public ResponseEntity<ApiErrors> onEvent(EventException exception) {
@@ -63,8 +65,8 @@ public class ApiExceptionHandler {
 	}
 
 	/**
-	 * Login failed. One generic, form-level message under {@code credentials} — never a field-level
-	 * hint about whether the email or the password was the wrong one.
+	 * Login failed. One generic, form-level message under {@code credentials} — never a
+	 * field-level hint about whether the email or the password was the wrong one.
 	 */
 	@ExceptionHandler(BadCredentialsException.class)
 	public ResponseEntity<ApiErrors> onBadCredentials(BadCredentialsException exception) {

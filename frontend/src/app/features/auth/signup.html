@@ -65,9 +65,16 @@
         }
       </div>
 
-      <button class="btn btn-primary btn-block" type="submit" [disabled]="submitting()" data-testid="signup-submit">
+      <button
+        class="btn btn-primary btn-block"
+        type="submit"
+        [disabled]="submitting()"
+        data-testid="signup-submit"
+      >
         {{ submitting() ? 'Creating account…' : 'Create account' }}
-        <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
       </button>
     </form>
 

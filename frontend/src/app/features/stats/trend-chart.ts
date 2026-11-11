@@ -85,7 +85,8 @@ export class TrendChart {
   protected readonly label = computed(() => {
     const runs = this.runs();
     const best = formatFinishTime(runs[this.bestIndex()].finishTimeSeconds);
-    const at = (run: MyRunStat) => `${formatFinishTime(run.finishTimeSeconds)} on ${this.date(run)}`;
+    const at = (run: MyRunStat) =>
+      `${formatFinishTime(run.finishTimeSeconds)} on ${this.date(run)}`;
     if (runs.length === 1) {
       return `Finish time for 1 run: ${at(runs[0])}. Personal best ${best}.`;
     }

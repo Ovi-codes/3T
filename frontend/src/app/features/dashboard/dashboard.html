@@ -47,7 +47,9 @@
     <section class="runs" aria-labelledby="past-heading" data-testid="section-past">
       <h2 id="past-heading" class="section-heading section-heading-accent">Past</h2>
       @if (runs()!.past.length === 0) {
-        <p class="state-empty">No past runs yet — once a run you've joined is over, it'll show here.</p>
+        <p class="state-empty">
+          No past runs yet — once a run you've joined is over, it'll show here.
+        </p>
       } @else {
         <ul class="run-list" role="list">
           @for (run of runs()!.past; track run.registrationId) {
@@ -78,7 +80,6 @@
         </ul>
       }
     </section>
-
   }
 
   <hr class="course-rule" aria-hidden="true" />
@@ -93,7 +94,9 @@
     <div class="data-row">
       <div class="data-copy">
         <h3 class="data-title">Download your data</h3>
-        <p class="data-note">Your account, every run you've registered for and your finish times, as a JSON file.</p>
+        <p class="data-note">
+          Your account, every run you've registered for and your finish times, as a JSON file.
+        </p>
       </div>
       <button
         class="btn btn-secondary"
@@ -112,7 +115,9 @@
     <div class="data-row">
       <div class="data-copy">
         <h3 class="data-title">Delete your account</h3>
-        <p class="data-note">Removes your account and all your registrations. This can't be undone.</p>
+        <p class="data-note">
+          Removes your account and all your registrations. This can't be undone.
+        </p>
       </div>
       @if (!confirmingDelete()) {
         <button

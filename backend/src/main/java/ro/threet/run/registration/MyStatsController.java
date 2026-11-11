@@ -9,8 +9,8 @@ import ro.threet.run.auth.AccountPrincipal;
 
 /**
  * The current user's personal stats (#45). Requires a session: it is not enumerated in
- * {@code SecurityConfig}, so the deny-by-default rule closes it and an anonymous request gets a
- * plain 401. Because it is authenticated, {@code principal} is always present.
+ * {@code SecurityConfig}, so the deny-by-default rule closes it and an anonymous request
+ * gets a plain 401. Because it is authenticated, {@code principal} is always present.
  */
 @RestController
 @RequestMapping("/api")

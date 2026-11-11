@@ -13,50 +13,59 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
- * The site is public-first: browsing runs and registering for one stay anonymous (the core loop,
- * charter §3). Accounts add a small authenticated surface — {@code /api/auth/me} and the
- * dashboard's {@code /api/me/registrations}, and the user's own GDPR data controls
- * ({@code GET /api/me/export}, {@code DELETE /api/me}). Authorisation is therefore deny-by-default
- * with the public API enumerated explicitly, so a new endpoint (like those) is closed until
- * deliberately opened — an anonymous hit is a plain 401.
+ * The site is public-first: browsing runs and registering for one stay anonymous (the
+ * core loop, charter §3). Accounts add a small authenticated surface —
+ * {@code /api/auth/me} and the dashboard's {@code /api/me/registrations}, and the user's
+ * own GDPR data controls ({@code GET /api/me/export}, {@code DELETE /api/me}).
+ * Authorisation is therefore deny-by-default with the public API enumerated explicitly,
+ * so a new endpoint (like those) is closed until deliberately opened — an anonymous hit
+ * is a plain 401.
  *
- * Sessions are an httpOnly cookie (Spring Security's default {@code SecurityContextRepository}).
- * CSRF's token machinery is switched off for this JSON API: it is served same-origin and the
- * session cookie is SameSite=Lax (see application.yml), which blocks the cross-site form POST that
- * CSRF tokens defend against, without forcing a token round-trip onto the anonymous registration
- * POST. A token-based CSRF layer is a pre-go-live hardening item, tracked alongside the Entra swap.
+ * Sessions are an httpOnly cookie (Spring Security's default
+ * {@code SecurityContextRepository}). CSRF's token machinery is switched off for this
+ * JSON API: it is served same-origin and the session cookie is SameSite=Lax (see
+ * application.yml), which blocks the cross-site form POST that CSRF tokens defend
+ * against, without forcing a token round-trip onto the anonymous registration POST. A
+ * token-based CSRF layer is a pre-go-live hardening item, tracked alongside the Entra
+ * swap.
  */
 @Configuration
 class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/registrations").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
-						.requestMatchers("/actuator/health").permitAll()
-						// Admin surface (issue #57): the real boundary is here, not the hidden UI. An
-						// authenticated non-admin gets 403; an anonymous caller gets the deny-by-default
-						// 401 above (this API has no login page to redirect to).
-						.requestMatchers("/api/admin/**").hasRole(Roles.ADMIN)
-						.anyRequest().authenticated())
-				.csrf(csrf -> csrf.disable())
-				// A protected endpoint hit without a session is a plain 401, not a redirect to a
-				// (non-existent) login page — this is an API, the SPA owns the login UI.
-				.exceptionHandling(handling -> handling
-						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-				.formLogin(form -> form.disable())
-				.httpBasic(basic -> basic.disable())
-				// POST /api/auth/logout: drop the session, clear the context, expire the cookie, and
-				// answer 204 — no redirect (the SPA handles what comes next).
-				.logout(logout -> logout
-						.logoutUrl("/api/auth/logout")
-						.invalidateHttpSession(true)
-						.deleteCookies("JSESSIONID")
-						.logoutSuccessHandler((request, response, authentication) ->
-								response.setStatus(HttpStatus.NO_CONTENT.value())));
+		http.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/events/**")
+			.permitAll()
+			.requestMatchers(HttpMethod.POST, "/api/registrations")
+			.permitAll()
+			.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login")
+			.permitAll()
+			.requestMatchers("/actuator/health")
+			.permitAll()
+			// Admin surface (issue #57): the real boundary is here, not the hidden UI. An
+			// authenticated non-admin gets 403; an anonymous caller gets the
+			// deny-by-default
+			// 401 above (this API has no login page to redirect to).
+			.requestMatchers("/api/admin/**")
+			.hasRole(Roles.ADMIN)
+			.anyRequest()
+			.authenticated())
+			.csrf(csrf -> csrf.disable())
+			// A protected endpoint hit without a session is a plain 401, not a redirect
+			// to a
+			// (non-existent) login page — this is an API, the SPA owns the login UI.
+			.exceptionHandling(
+					handling -> handling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+			.formLogin(form -> form.disable())
+			.httpBasic(basic -> basic.disable())
+			// POST /api/auth/logout: drop the session, clear the context, expire the
+			// cookie, and
+			// answer 204 — no redirect (the SPA handles what comes next).
+			.logout(logout -> logout.logoutUrl("/api/auth/logout")
+				.invalidateHttpSession(true)
+				.deleteCookies("JSESSIONID")
+				.logoutSuccessHandler(
+						(request, response, authentication) -> response.setStatus(HttpStatus.NO_CONTENT.value())));
 		return http.build();
 	}
 
@@ -65,7 +74,9 @@ class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	/** Where the authenticated context is persisted between requests: the HTTP session. */
+	/**
+	 * Where the authenticated context is persisted between requests: the HTTP session.
+	 */
 	@Bean
 	SecurityContextRepository securityContextRepository() {
 		return new HttpSessionSecurityContextRepository();

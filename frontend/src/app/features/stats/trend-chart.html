@@ -11,8 +11,21 @@
   >
     <!-- Time axis: hairline gridlines at whole minutes, labelled on the left. -->
     @for (tick of plot().ticks; track tick.seconds) {
-      <line class="grid" [attr.x1]="plotLeft" [attr.x2]="plotRight()" [attr.y1]="tick.y" [attr.y2]="tick.y" />
-      <text class="axis-label" data-testid="trend-tick" [attr.x]="plotLeft - 10" [attr.y]="tick.y" text-anchor="end" dominant-baseline="middle">
+      <line
+        class="grid"
+        [attr.x1]="plotLeft"
+        [attr.x2]="plotRight()"
+        [attr.y1]="tick.y"
+        [attr.y2]="tick.y"
+      />
+      <text
+        class="axis-label"
+        data-testid="trend-tick"
+        [attr.x]="plotLeft - 10"
+        [attr.y]="tick.y"
+        text-anchor="end"
+        dominant-baseline="middle"
+      >
         {{ formatTime(tick.seconds) }}
       </text>
     }
@@ -20,7 +33,12 @@
     <!-- Run axis: the first and latest dates bracket the line. -->
     @let all = runs();
     @let first = plot().points[0];
-    <text class="axis-label" [attr.x]="all.length === 1 ? first.x : plotLeft" [attr.y]="plotBottom + 50" [attr.text-anchor]="all.length === 1 ? 'middle' : 'start'">
+    <text
+      class="axis-label"
+      [attr.x]="all.length === 1 ? first.x : plotLeft"
+      [attr.y]="plotBottom + 50"
+      [attr.text-anchor]="all.length === 1 ? 'middle' : 'start'"
+    >
       {{ all[0].startDateTime | date: 'd MMM y' }}
     </text>
     @if (all.length > 1) {
@@ -30,7 +48,14 @@
     }
 
     @if (activePoint(); as point) {
-      <line class="crosshair" data-testid="trend-crosshair" [attr.x1]="point.x" [attr.x2]="point.x" [attr.y1]="plotTop" [attr.y2]="plotBottom" />
+      <line
+        class="crosshair"
+        data-testid="trend-crosshair"
+        [attr.x1]="point.x"
+        [attr.x2]="point.x"
+        [attr.y1]="plotTop"
+        [attr.y2]="plotBottom"
+      />
     }
 
     <path class="line" data-testid="trend-line" [attr.d]="plot().line" />
@@ -53,7 +78,9 @@
       data-testid="trend-best-label"
       [attr.x]="best.x"
       [attr.y]="best.y + 24"
-      [attr.text-anchor]="best.x < plotLeft + 40 ? 'start' : best.x > plotRight() - 40 ? 'end' : 'middle'"
+      [attr.text-anchor]="
+        best.x < plotLeft + 40 ? 'start' : best.x > plotRight() - 40 ? 'end' : 'middle'
+      "
     >
       Best {{ formatTime(all[bestIndex()].finishTimeSeconds) }}
     </text>

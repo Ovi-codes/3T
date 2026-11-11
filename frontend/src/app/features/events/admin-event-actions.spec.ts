@@ -117,10 +117,12 @@ describe('AdminEventActions', () => {
       setField('edit-date', '2020-01-01');
       click('edit-save');
 
-      httpMock.expectOne('/api/admin/events/7').flush(
-        { errors: { startDateTime: 'The start must be in the future.' } },
-        { status: 400, statusText: 'Bad Request' },
-      );
+      httpMock
+        .expectOne('/api/admin/events/7')
+        .flush(
+          { errors: { startDateTime: 'The start must be in the future.' } },
+          { status: 400, statusText: 'Bad Request' },
+        );
       fixture.detectChanges();
 
       expect(text()).toContain('The start must be in the future.');
@@ -221,10 +223,12 @@ describe('AdminEventActions', () => {
       click('event-remove');
       click('remove-cancel-run');
 
-      httpMock.expectOne('/api/admin/events/7/cancel').flush(
-        { errors: { event: 'This run has been cancelled and can no longer be changed.' } },
-        { status: 409, statusText: 'Conflict' },
-      );
+      httpMock
+        .expectOne('/api/admin/events/7/cancel')
+        .flush(
+          { errors: { event: 'This run has been cancelled and can no longer be changed.' } },
+          { status: 409, statusText: 'Conflict' },
+        );
       fixture.detectChanges();
 
       expect(text()).toContain('can no longer be changed');
