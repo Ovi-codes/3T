@@ -11,10 +11,10 @@
   "type": "commonjs",
   "private": true,
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.62.1",
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0",
     "@types/pg": "^8.23.1",
-    "pg": "^8.23.0",
+    "pg": "^8.23.1",
     "prettier": "^3.9.10"
   }
 }
