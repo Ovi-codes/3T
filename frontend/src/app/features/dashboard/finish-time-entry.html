@@ -1,5 +1,11 @@
 @if (editing()) {
-  <form class="entry" data-testid="finish-time-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <form
+    class="entry"
+    data-testid="finish-time-form"
+    [formGroup]="form"
+    (ngSubmit)="save()"
+    novalidate
+  >
     <div class="field">
       <label [attr.for]="'finish-time-' + run().registrationId">Finish time</label>
       <input
@@ -15,7 +21,12 @@
       />
     </div>
     <div class="entry-actions">
-      <button class="btn btn-primary" type="submit" [disabled]="busy()" data-testid="finish-time-save">
+      <button
+        class="btn btn-primary"
+        type="submit"
+        [disabled]="busy()"
+        data-testid="finish-time-save"
+      >
         {{ busy() ? 'Saving…' : 'Save time' }}
       </button>
       <button

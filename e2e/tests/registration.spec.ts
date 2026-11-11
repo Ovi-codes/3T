@@ -12,7 +12,10 @@ import AxeBuilder from '@axe-core/playwright';
 const MAILPIT = 'http://localhost:8025';
 const BACKEND = 'http://localhost:8080';
 
-test('CS-1: an anonymous visitor registers and receives a confirmation email', async ({ page, request }) => {
+test('CS-1: an anonymous visitor registers and receives a confirmation email', async ({
+  page,
+  request,
+}) => {
   // Unique per run so re-runs (and the desktop/mobile projects) never hit the duplicate guard.
   const email = `runner-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 
@@ -30,7 +33,9 @@ test('CS-1: an anonymous visitor registers and receives a confirmation email', a
 
   // And the email really arrived — poll Mailpit for a message addressed to this run's email.
   await expect(async () => {
-    const response = await request.get(`${MAILPIT}/api/v1/search?query=${encodeURIComponent('to:' + email)}`);
+    const response = await request.get(
+      `${MAILPIT}/api/v1/search?query=${encodeURIComponent('to:' + email)}`,
+    );
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
     expect((body.messages ?? []).length).toBeGreaterThan(0);
@@ -63,7 +68,9 @@ test('a signed-in visitor has the registration form prefilled from their account
   await expect(page.getByLabel('Email')).toHaveValue(email);
 });
 
-test('the registration form has no critical or serious accessibility violations', async ({ page }) => {
+test('the registration form has no critical or serious accessibility violations', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.getByTestId('event-item').first().getByRole('link', { name: 'Register' }).click();
   await page.getByTestId('register-submit').waitFor();

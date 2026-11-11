@@ -40,7 +40,9 @@ describe('AuthService', () => {
 
   it('login records the account', () => {
     service.login('ana@example.com', 'correct horse').subscribe();
-    httpMock.expectOne('/api/auth/login').flush({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
+    httpMock
+      .expectOne('/api/auth/login')
+      .flush({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
 
     expect(service.user()).toEqual({ id: 1, email: 'ana@example.com', name: 'Ana Pop' });
   });

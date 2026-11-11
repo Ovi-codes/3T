@@ -1,8 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
@@ -31,7 +28,10 @@ describe('Register', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         // The route names the event to register for.
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ eventId: '3' }) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ eventId: '3' }) } },
+        },
       ],
     }).compileComponents();
 
@@ -72,7 +72,9 @@ describe('Register', () => {
     signedInAs('Ana Pop', 'ana@example.com');
     await loadEvent();
 
-    expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe('Ana Pop');
+    expect((fixture.nativeElement.querySelector('#name') as HTMLInputElement).value).toBe(
+      'Ana Pop',
+    );
     expect((fixture.nativeElement.querySelector('#email') as HTMLInputElement).value).toBe(
       'ana@example.com',
     );
@@ -118,7 +120,9 @@ describe('Register', () => {
     submitForm();
 
     httpMock.expectNone('/api/registrations');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Enter a valid email address.',
+    );
   });
 
   it('rejects a name shorter than three characters', async () => {
@@ -129,7 +133,9 @@ describe('Register', () => {
     submitForm();
 
     httpMock.expectNone('/api/registrations');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name must be at least 3 characters.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Name must be at least 3 characters.',
+    );
   });
 
   it('rejects a name that is only numbers', async () => {
@@ -140,7 +146,9 @@ describe('Register', () => {
     submitForm();
 
     httpMock.expectNone('/api/registrations');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Name can’t be only numbers.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Name can’t be only numbers.',
+    );
   });
 
   it('rejects an email without a valid extension (e.g. a@a)', async () => {
@@ -151,7 +159,9 @@ describe('Register', () => {
     submitForm();
 
     httpMock.expectNone('/api/registrations');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Enter a valid email address.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Enter a valid email address.',
+    );
   });
 
   it('posts a valid registration and shows the confirmation', async () => {
@@ -163,7 +173,11 @@ describe('Register', () => {
 
     const request = httpMock.expectOne('/api/registrations');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ eventId: 3, name: 'Ana Pop', email: 'ana.pop@example.com' });
+    expect(request.request.body).toEqual({
+      eventId: 3,
+      name: 'Ana Pop',
+      email: 'ana.pop@example.com',
+    });
 
     request.flush({
       eventName: 'Tineretului parkrun',
@@ -214,10 +228,12 @@ describe('Register', () => {
     setInput('email', 'ana.pop@example.com');
     submitForm();
 
-    httpMock.expectOne('/api/registrations').flush(
-      { errors: { email: 'This email is already registered for this run.' } },
-      { status: 409, statusText: 'Conflict' },
-    );
+    httpMock
+      .expectOne('/api/registrations')
+      .flush(
+        { errors: { email: 'This email is already registered for this run.' } },
+        { status: 409, statusText: 'Conflict' },
+      );
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent;

@@ -27,7 +27,12 @@
       <p class="summary" data-testid="leaderboard-summary">{{ summary() }}</p>
 
       <table class="results">
-        <caption class="sr-only">Results for {{ board.eventName }}, fastest first</caption>
+        <caption class="sr-only">
+          Results for
+          {{
+            board.eventName
+          }}, fastest first
+        </caption>
         <thead>
           <tr>
             <th scope="col" class="col-position">Position</th>

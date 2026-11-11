@@ -45,7 +45,9 @@
   <!-- The chart's accessible view: the same runs, time and place, for screen readers only — on screen
        it would repeat the chart (whose tooltip shows each run's place on hover or tap). -->
   <table class="sr-only" data-testid="stats-table">
-    <caption>Your time and place on each run, newest first</caption>
+    <caption>
+      Your time and place on each run, newest first
+    </caption>
     <thead>
       <tr>
         <th scope="col">Date</th>
@@ -58,7 +60,9 @@
       @for (run of newestFirst(); track run.eventId) {
         <tr>
           <td>
-            <time [attr.datetime]="run.startDateTime">{{ run.startDateTime | date: 'd MMM y' }}</time>
+            <time [attr.datetime]="run.startDateTime">{{
+              run.startDateTime | date: 'd MMM y'
+            }}</time>
           </td>
           <th scope="row">{{ run.eventName }}</th>
           <td>{{ formatTime(run.finishTimeSeconds) }}</td>

@@ -33,7 +33,11 @@ describe('RegistrationsService', () => {
 
     const request = httpMock.expectOne('/api/registrations');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ eventId: 3, name: 'Ana Pop', email: 'ana.pop@example.com' });
+    expect(request.request.body).toEqual({
+      eventId: 3,
+      name: 'Ana Pop',
+      email: 'ana.pop@example.com',
+    });
     request.flush(result);
 
     expect(received).toEqual(result);

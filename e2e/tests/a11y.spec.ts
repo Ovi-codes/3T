@@ -25,7 +25,9 @@ test('the privacy policy has no critical or serious accessibility violations', a
   expect(seriousOrWorse).toEqual([]);
 });
 
-test('the skip link is the first tab stop and jumps focus to the main content', async ({ page }) => {
+test('the skip link is the first tab stop and jumps focus to the main content', async ({
+  page,
+}) => {
   await page.goto('/');
 
   // First Tab from the top of the page lands on the skip link…

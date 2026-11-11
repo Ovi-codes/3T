@@ -83,17 +83,29 @@
     @if (deletable()) {
       <p class="admin-prompt">Nobody has registered. Delete “{{ event().name }}” for good?</p>
       <div class="admin-actions">
-        <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="remove()" data-testid="remove-delete">
+        <button
+          class="btn btn-danger"
+          type="button"
+          [disabled]="busy()"
+          (click)="remove()"
+          data-testid="remove-delete"
+        >
           {{ busy() ? 'Deleting…' : 'Delete run' }}
         </button>
-        <button class="btn btn-ghost" type="button" (click)="dismiss()" data-testid="remove-dismiss">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          (click)="dismiss()"
+          data-testid="remove-dismiss"
+        >
           Keep it
         </button>
       </div>
     } @else {
       <p class="admin-prompt">
-        This run has {{ event().registrationCount }} registration{{ event().registrationCount === 1 ? '' : 's' }}, so
-        it can't be deleted. Cancelling calls it off for good and emails everyone registered.
+        This run has {{ event().registrationCount }} registration{{
+          event().registrationCount === 1 ? '' : 's'
+        }}, so it can't be deleted. Cancelling calls it off for good and emails everyone registered.
       </p>
 
       <div class="field">
@@ -116,7 +128,9 @@
 
       @if (showCustom()) {
         <div class="field">
-          <label [attr.for]="'cancel-custom-' + event().id">Reason (this is emailed to registrants)</label>
+          <label [attr.for]="'cancel-custom-' + event().id"
+            >Reason (this is emailed to registrants)</label
+          >
           <input
             [attr.id]="'cancel-custom-' + event().id"
             type="text"
@@ -141,7 +155,12 @@
         >
           {{ busy() ? 'Cancelling…' : 'Cancel run' }}
         </button>
-        <button class="btn btn-ghost" type="button" (click)="dismiss()" data-testid="remove-dismiss">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          (click)="dismiss()"
+          data-testid="remove-dismiss"
+        >
           Keep it
         </button>
       </div>

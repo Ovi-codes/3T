@@ -127,9 +127,9 @@ describe('Dashboard', () => {
   it('shows the runner’s stats first, above their runs (#45)', async () => {
     await flush({ upcoming: [], past: [run()] });
 
-    const sections = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('section')).map(
-      (section) => section.getAttribute('data-testid'),
-    );
+    const sections = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('section'),
+    ).map((section) => section.getAttribute('data-testid'));
     expect(sections.slice(0, 3)).toEqual(['section-stats', 'section-upcoming', 'section-past']);
     httpMock.expectOne('/api/me/stats');
   });
@@ -168,7 +168,9 @@ describe('Dashboard', () => {
   it('shows the upcoming empty state while past still lists runs', async () => {
     await flush({ upcoming: [], past: [run()] });
 
-    expect(section('section-upcoming').querySelectorAll('[data-testid="upcoming-item"]').length).toBe(0);
+    expect(
+      section('section-upcoming').querySelectorAll('[data-testid="upcoming-item"]').length,
+    ).toBe(0);
     expect(section('section-upcoming').textContent).toContain('No upcoming runs yet');
     expect(section('section-past').querySelectorAll('[data-testid="past-item"]').length).toBe(1);
   });
@@ -178,7 +180,9 @@ describe('Dashboard', () => {
 
     expect(section('section-past').querySelectorAll('[data-testid="past-item"]').length).toBe(0);
     expect(section('section-past').textContent).toContain('No past runs yet');
-    expect(section('section-upcoming').querySelectorAll('[data-testid="upcoming-item"]').length).toBe(1);
+    expect(
+      section('section-upcoming').querySelectorAll('[data-testid="upcoming-item"]').length,
+    ).toBe(1);
   });
 
   it('shows an error message when the runs cannot be loaded', async () => {
@@ -187,7 +191,9 @@ describe('Dashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not load your runs');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'could not load your runs',
+    );
   });
 
   describe('Finish times (#43)', () => {
@@ -198,7 +204,9 @@ describe('Dashboard', () => {
     it('shows a recorded time on its past run, as a clock time', async () => {
       await flush({ upcoming: [], past: [run({ finishTimeSeconds: 1471 })] });
 
-      expect(pastItem().querySelector('[data-testid="finish-time"]')!.textContent!.trim()).toBe('24:31');
+      expect(pastItem().querySelector('[data-testid="finish-time"]')!.textContent!.trim()).toBe(
+        '24:31',
+      );
     });
 
     function type(testid: string, value: string): void {
@@ -387,9 +395,7 @@ describe('Dashboard', () => {
       const url = 'blob:fake';
       const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue(url);
       const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
-      const clickAnchor = vi
-        .spyOn(HTMLAnchorElement.prototype, 'click')
-        .mockReturnValue(undefined);
+      const clickAnchor = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockReturnValue(undefined);
 
       await flush(EMPTY);
       click('export-data');
@@ -412,7 +418,9 @@ describe('Dashboard', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not prepare your download');
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+        'could not prepare your download',
+      );
     });
 
     it('deletes the account only after confirmation, then leaves for home', async () => {
@@ -450,7 +458,9 @@ describe('Dashboard', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not delete your account');
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+        'could not delete your account',
+      );
     });
 
     // Opening the confirmation removes the button that had focus; without a deliberate move, focus

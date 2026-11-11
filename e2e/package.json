@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "test": "playwright test",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "license": "ISC",
   "type": "commonjs",
@@ -12,6 +14,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
     "@types/pg": "^8.23.1",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "prettier": "^3.9.10"
   }
 }

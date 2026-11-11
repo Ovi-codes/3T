@@ -52,8 +52,10 @@ export function plotTrend(times: readonly number[], area: PlotArea): TrendPlot {
   const fastest = Math.min(...times);
   const slowest = Math.max(...times);
   const step =
-    STEPS.find((candidate) => Math.ceil(slowest / candidate) - Math.floor(fastest / candidate) <= MAX_INTERVALS) ??
-    STEPS.at(-1)!;
+    STEPS.find(
+      (candidate) =>
+        Math.ceil(slowest / candidate) - Math.floor(fastest / candidate) <= MAX_INTERVALS,
+    ) ?? STEPS.at(-1)!;
   let low = Math.floor(fastest / step) * step;
   let high = Math.ceil(slowest / step) * step;
   if (low === high) {
@@ -67,10 +69,15 @@ export function plotTrend(times: readonly number[], area: PlotArea): TrendPlot {
   const plotHeight = area.height - area.top - area.bottom;
   const plotLeft = area.left;
   const plotWidth = area.width - area.left - area.right;
-  const yFor = (seconds: number): number => round(plotBottom - ((seconds - low) / (high - low)) * plotHeight);
+  const yFor = (seconds: number): number =>
+    round(plotBottom - ((seconds - low) / (high - low)) * plotHeight);
 
   const points = times.map((seconds, index) => ({
-    x: round(times.length === 1 ? plotLeft + plotWidth / 2 : plotLeft + (index / (times.length - 1)) * plotWidth),
+    x: round(
+      times.length === 1
+        ? plotLeft + plotWidth / 2
+        : plotLeft + (index / (times.length - 1)) * plotWidth,
+    ),
     y: yFor(seconds),
   }));
 
@@ -79,6 +86,8 @@ export function plotTrend(times: readonly number[], area: PlotArea): TrendPlot {
     ticks.push({ y: yFor(seconds), seconds });
   }
 
-  const line = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`).join(' ');
+  const line = points
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`)
+    .join(' ');
   return { points, line, ticks };
 }

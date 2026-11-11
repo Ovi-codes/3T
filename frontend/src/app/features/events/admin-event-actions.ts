@@ -254,6 +254,8 @@ export class AdminEventActions {
     if (!(control.value ?? '').trim()) {
       return 'Enter a reason for cancelling.';
     }
-    return control.hasError('maxlength') ? `Reason must be at most ${MAX_REASON} characters.` : null;
+    return control.hasError('maxlength')
+      ? `Reason must be at most ${MAX_REASON} characters.`
+      : null;
   }
 }

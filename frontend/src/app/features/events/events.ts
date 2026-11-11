@@ -205,7 +205,10 @@ export class Events {
         // Reset back to the default time but drop the name/date so the form is ready for the next
         // run. emitEvent:false so this programmatic reset doesn't trip the valueChanges handler that
         // clears the just-created banner.
-        this.createForm.reset({ name: '', date: '', hour: '19', minute: '30' }, { emitEvent: false });
+        this.createForm.reset(
+          { name: '', date: '', hour: '19', minute: '30' },
+          { emitEvent: false },
+        );
         this.justCreated.set(created.name);
         this.load();
       },

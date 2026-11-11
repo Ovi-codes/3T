@@ -106,7 +106,10 @@ async function dashboardOf(browser: Browser, email: string): Promise<Page> {
   return runnerPage;
 }
 
-test('an admin creates a run inline and it appears in the upcoming list', async ({ page, request }) => {
+test('an admin creates a run inline and it appears in the upcoming list', async ({
+  page,
+  request,
+}) => {
   await loginAsAdmin(page, request);
 
   const name = `E2E Autumn Run ${Date.now()}`;
@@ -116,7 +119,10 @@ test('an admin creates a run inline and it appears in the upcoming list', async 
   await expect(runCard(page, name)).toBeVisible();
 });
 
-test('an admin edits a run and the change is what the server now holds', async ({ page, request }) => {
+test('an admin edits a run and the change is what the server now holds', async ({
+  page,
+  request,
+}) => {
   await loginAsAdmin(page, request);
   const name = `E2E Edit Run ${Date.now()}`;
   await createRun(page, name);
@@ -221,7 +227,10 @@ async function seriousViolations(page: Page) {
   );
 }
 
-test('the admin create form has no critical or serious accessibility violations', async ({ page, request }) => {
+test('the admin create form has no critical or serious accessibility violations', async ({
+  page,
+  request,
+}) => {
   await loginAsAdmin(page, request);
   await page.goto('/');
   await page.getByTestId('admin-create').waitFor();

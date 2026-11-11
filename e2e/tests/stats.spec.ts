@@ -47,7 +47,13 @@ const seeded: number[] = [];
 /**
  * A past run `daysAgo` days back: the signed-in runner on `mine`, plus anonymous runners on `others`.
  */
-async function seedPastRun(name: string, daysAgo: number, user: NewUser, mine: number, others: number[]): Promise<number> {
+async function seedPastRun(
+  name: string,
+  daysAgo: number,
+  user: NewUser,
+  mine: number,
+  others: number[],
+): Promise<number> {
   const client = new Client(PG);
   await client.connect();
   try {
@@ -57,12 +63,21 @@ async function seedPastRun(name: string, daysAgo: number, user: NewUser, mine: n
       [name, daysAgo],
     );
     const eventId = rows[0].id as number;
-    const runners = [{ userId: user.id as number | null, time: mine }, ...others.map((time) => ({ userId: null, time }))];
+    const runners = [
+      { userId: user.id as number | null, time: mine },
+      ...others.map((time) => ({ userId: null, time })),
+    ];
     for (const [index, runner] of runners.entries()) {
       await client.query(
         'insert into registration (event_id, name, email, user_id, finish_time) ' +
           "values ($1, $2, $3, $4, $5 * interval '1 second')",
-        [eventId, index === 0 ? 'Ana Pop' : `Runner ${index}`, `runner-${index}-${uniqueEmail()}`, runner.userId, runner.time],
+        [
+          eventId,
+          index === 0 ? 'Ana Pop' : `Runner ${index}`,
+          `runner-${index}-${uniqueEmail()}`,
+          runner.userId,
+          runner.time,
+        ],
       );
     }
     seeded.push(eventId);
@@ -114,7 +129,11 @@ test('a runner sees their place on each run and their time trend', async ({ page
   await expect(rows.nth(1)).toContainText('4th of 4');
 });
 
-test('hovering — or, on touch, tapping — the chart shows that run’s time and place', async ({ page, request, isMobile }) => {
+test('hovering — or, on touch, tapping — the chart shows that run’s time and place', async ({
+  page,
+  request,
+  isMobile,
+}) => {
   const user = await signUp(request);
   await seedTwoRuns(user);
 
@@ -146,7 +165,10 @@ test('a runner with no finished runs is invited to add a time', async ({ page, r
   await expect(page.getByTestId('section-stats').locator('svg[role="img"]')).toHaveCount(0);
 });
 
-test('the stats have no critical or serious accessibility violations', async ({ page, request }) => {
+test('the stats have no critical or serious accessibility violations', async ({
+  page,
+  request,
+}) => {
   const user = await signUp(request);
   await seedTwoRuns(user);
 
