@@ -36,8 +36,8 @@ docker-compose.yml   # Postgres + Mailpit for local dev
 ## Canonical commands
 
 - `docker compose up -d` — local Postgres + Mailpit
-- `./mvnw verify` (in `backend/`) — format check + unit + Testcontainers integration
-- `npm test` (in `frontend/`) — Vitest (Angular's built-in test runner)
+- `./mvnw verify` (in `backend/`) — format check + unit + Testcontainers integration + JaCoCo coverage
+- `npm test` (in `frontend/`) — Vitest (Angular's built-in test runner); `npm run test:coverage` adds coverage
 - Formatting is a CI gate. Before committing, run `./mvnw spring-javaformat:apply` (in `backend/`)
   and `npm run format` (in `frontend/` and `e2e/`; Prettier config is the root `.prettierrc`).
 - `npx playwright test` (in `e2e/`) — E2E, desktop + mobile viewports

@@ -23,11 +23,22 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      # verify = unit tests + Testcontainers integration. Docker is present on the runner,
-      # so the throwaway Postgres spins up with no extra setup.
+      # verify = format check (Spring Java Format, validate phase) + unit tests + Testcontainers
+      # integration + JaCoCo report. Docker is present on the runner, so the throwaway Postgres
+      # spins up with no extra setup.
       - name: mvn verify
         working-directory: backend
         run: ./mvnw -B verify
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('backend/target/site/jacoco/jacoco.csv') != '' }}
+        run: node .github/scripts/coverage-summary.mjs backend backend/target/site/jacoco/jacoco.csv
+      - name: Upload coverage report
+        if: ${{ !cancelled() && hashFiles('backend/target/site/jacoco/jacoco.csv') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+          retention-days: 7
 
   frontend:
     name: Frontend (Node 24)
@@ -48,9 +59,19 @@ jobs:
       - name: Lint
         working-directory: frontend
         run: npm run lint
-      - name: Unit tests
+      - name: Unit tests + coverage
         working-directory: frontend
-        run: npm test
+        run: npm run test:coverage
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('frontend/coverage/threet-run/coverage-summary.json') != '' }}
+        run: node .github/scripts/coverage-summary.mjs frontend frontend/coverage/threet-run/coverage-summary.json
+      - name: Upload coverage report
+        if: ${{ !cancelled() && hashFiles('frontend/coverage/threet-run/coverage-summary.json') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/threet-run/
+          retention-days: 7
 
   e2e:
     name: E2E (Playwright)

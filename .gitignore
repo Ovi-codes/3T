@@ -29,3 +29,6 @@ Thumbs.db
 
 # Perf — transient k6 summary exports (baseline.json is committed; these are not)
 perf/results/
+
+# Coverage reports (Vitest)
+coverage/
