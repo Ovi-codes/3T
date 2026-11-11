@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml)
 [![Perf gate](https://github.com/Ovi-codes/3T/actions/workflows/perf.yml/badge.svg?branch=main)](https://github.com/Ovi-codes/3T/actions/workflows/perf.yml)
+[![Backend coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Ovi-codes/3T/badges/backend-coverage.json)](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml)
+[![Frontend coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Ovi-codes/3T/badges/frontend-coverage.json)](https://github.com/Ovi-codes/3T/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
 ![Spring Boot 4](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)

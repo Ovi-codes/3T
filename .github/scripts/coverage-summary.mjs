@@ -1,14 +1,16 @@
-// Writes a coverage table to the GitHub Actions job summary (or stdout when run locally).
+// Writes a coverage table to the GitHub Actions job summary (or stdout when run locally), and
+// optionally a shields.io endpoint badge JSON for line coverage.
 //
-//   node .github/scripts/coverage-summary.mjs backend  backend/target/site/jacoco/jacoco.csv
-//   node .github/scripts/coverage-summary.mjs frontend frontend/coverage/threet-run/coverage-summary.json
+//   node .github/scripts/coverage-summary.mjs backend  backend/target/site/jacoco/jacoco.csv [badge.json]
+//   node .github/scripts/coverage-summary.mjs frontend frontend/coverage/threet-run/coverage-summary.json [badge.json]
 //
 // Backend input is JaCoCo's CSV report; frontend input is Vitest's (istanbul) json-summary report.
-import { appendFileSync, readFileSync } from 'node:fs';
+// The badge JSON is published to the `badges` branch by CI and rendered by the README badges.
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 
-const [kind, file] = process.argv.slice(2);
+const [kind, file, badgeFile] = process.argv.slice(2);
 if (!kind || !file) {
-  console.error('usage: coverage-summary.mjs <backend|frontend> <report file>');
+  console.error('usage: coverage-summary.mjs <backend|frontend> <report file> [badge json out]');
   process.exit(2);
 }
 
@@ -71,3 +73,21 @@ if (process.env.GITHUB_STEP_SUMMARY) {
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown + '\n');
 }
 console.log(markdown);
+
+if (badgeFile) {
+  const linePct = pct(metrics.Lines.covered, metrics.Lines.total);
+  const color =
+    [
+      [90, 'brightgreen'],
+      [80, 'green'],
+      [70, 'yellowgreen'],
+      [60, 'yellow'],
+    ].find(([min]) => linePct >= min)?.[1] ?? 'red';
+  const badge = {
+    schemaVersion: 1,
+    label: `${kind} coverage`,
+    message: `${linePct.toFixed(0)}%`,
+    color,
+  };
+  writeFileSync(badgeFile, JSON.stringify(badge) + '\n');
+}
