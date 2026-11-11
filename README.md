@@ -220,7 +220,9 @@ pull request, as three jobs that must all pass:
 
 [`.github/dependabot.yml`](.github/dependabot.yml) opens weekly update PRs for Maven
 (`backend/`), npm (`frontend/` and `e2e/`) and GitHub Actions. Minor and patch updates are grouped
-per ecosystem. Angular packages are grouped so that they move together.
+per ecosystem. Angular packages are grouped so that they move together. TypeScript major and minor
+updates are ignored, because each Angular release accepts only a narrow TypeScript range. Bump
+TypeScript by hand together with Angular.
 
 This is the seed of the release gate: the core-scenario E2E tests (charter §5, CS-1..6) plug into
 the `e2e` job as they are built.
