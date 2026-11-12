@@ -282,7 +282,7 @@
       <div><dt>Backend</dt><dd>Spring Boot 4.1 · Java 21</dd></div>
       <div><dt>Frontend</dt><dd>Angular 22 · standalone</dd></div>
       <div><dt>Data</dt><dd>PostgreSQL 16 · Flyway</dd></div>
-      <div><dt>Cloud</dt><dd>Azure · EU region</dd></div>
+      <div><dt>Cloud</dt><dd>Azure Container Apps · EU region</dd></div>
     </dl>
   </div>
 </header>
@@ -293,8 +293,9 @@
   <section id="overview">
     <div class="wrap">
       <p class="eyebrow"><span class="num">01</span> System at a glance</p>
-      <p class="lead">The Angular app is served as static files and talks only to <code>/api</code> — through a
-        dev proxy locally, same-origin in production. Spring Boot owns all logic and data; a single Postgres
+      <p class="lead">The Angular app talks only to <code>/api</code> — through a dev proxy locally, and
+        same-origin in production, where Spring Boot serves the Angular build from the same container
+        (<a href="adr/0002-single-container-on-container-apps.md">ADR 0002</a>). Spring Boot owns all logic and data; a single Postgres
         instance holds every table. There are two outbound dependencies: SMTP for email, and
         Open-Meteo for the next-run weather forecast.</p>
 
@@ -326,7 +327,7 @@
             <text x="280" y="174" text-anchor="middle" class="t-soft" font-size="11.5">standalone components</text>
             <text x="280" y="192" text-anchor="middle" class="t-soft" font-size="11">events · register · auth · admin</text>
             <text x="280" y="210" text-anchor="middle" class="t-soft" font-size="11">dashboard · stats · leaderboard</text>
-            <text x="280" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">Static Web Apps</text>
+            <text x="280" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">served by Spring Boot</text>
 
             <!-- API -->
             <rect x="470" y="120" width="210" height="120" class="n-fill n-stroke" stroke-width="2"></rect>
@@ -335,7 +336,7 @@
             <text x="575" y="174" text-anchor="middle" class="t-soft" font-size="11.5">Web · Security · Data JPA</text>
             <text x="575" y="192" text-anchor="middle" class="t-soft" font-size="11.5">domain services + Flyway</text>
             <text x="575" y="210" text-anchor="middle" class="t-soft" font-size="11.5">session cookie auth</text>
-            <text x="575" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">App Service</text>
+            <text x="575" y="228" text-anchor="middle" class="t-faint svg-mono" font-size="10">one image · Container Apps</text>
 
             <!-- DB -->
             <g>
@@ -389,11 +390,11 @@
         <div class="cell"><div class="lbl">Frontend</div><div class="val">Angular 22</div><div class="note">Standalone components, <code>@if</code>/<code>@for</code>. Node 24 LTS, npm.</div></div>
         <div class="cell"><div class="lbl">Database</div><div class="val">PostgreSQL 16</div><div class="note">Flyway migrations on startup. Testcontainers in tests.</div></div>
         <div class="cell"><div class="lbl">Auth</div><div class="val">Spring Security</div><div class="note">Email + BCrypt behind an <code>AuthProvider</code> seam. <code>ROLE_USER</code> / <code>ROLE_ADMIN</code>.</div></div>
-        <div class="cell"><div class="lbl">Email</div><div class="val">SMTP</div><div class="note">Mailpit in dev/tests; a transactional provider in prod.</div></div>
+        <div class="cell"><div class="lbl">Email</div><div class="val">SMTP</div><div class="note">Mailpit in dev/tests; Azure Communication Services in prod.</div></div>
         <div class="cell"><div class="lbl">Weather</div><div class="val">Open-Meteo</div><div class="note">Free, no API key, EU-hosted. Behind a <code>WeatherProvider</code> seam, cached with Caffeine.</div></div>
         <div class="cell"><div class="lbl">E2E</div><div class="val">Playwright</div><div class="note">Desktop + mobile Chromium, with axe-core accessibility checks.</div></div>
         <div class="cell"><div class="lbl">Performance</div><div class="val">k6</div><div class="note">Load tests on the two hot paths. A p95 budget gate is a required check.</div></div>
-        <div class="cell"><div class="lbl">CI / CD</div><div class="val">GitHub Actions</div><div class="note">Build, lint, all test layers and the perf gate on every PR. The Azure deploy is manual until Azure is provisioned.</div></div>
+        <div class="cell"><div class="lbl">CI / CD</div><div class="val">GitHub Actions</div><div class="note">Build, lint, all test layers, the image smoke check and the perf gate on every PR. After green CI on <code>main</code>, one Docker image (GHCR) is rolled out to Azure Container Apps.</div></div>
       </div>
       <p>Everything runs locally first: <code>docker compose up -d</code> brings up Postgres + Mailpit,
         <code>./mvnw verify</code> runs unit and Testcontainers integration tests, <code>npm test</code> runs

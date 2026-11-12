@@ -27,7 +27,9 @@
 
 ## Next — V3
 - Post-event time upload via Strava/Garmin screenshot + AI extraction (vision model reads pace + distance, validates ≥5k, computes time).
-- Azure stand up incl CSRF token layer and full-target soak toward ~5,000 concurrent
+- ~~Azure stand up incl CSRF token layer~~ ✓ Increment 14 (#88) — one container on Azure Container Apps, see [ADR 0002](./adr/0002-single-container-on-container-apps.md)
+- Full-target soak toward ~5,000 concurrent users (#89).
+- Swap local accounts for Microsoft Entra External ID before a real go-live (#90).
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).
 - Volunteering interest registration.
 - Medical waiver users must accept before registering for a run.
