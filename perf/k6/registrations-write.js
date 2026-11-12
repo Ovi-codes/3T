@@ -6,6 +6,12 @@
 // request into a 409 — the run measures the success path. A per-run id keeps emails unique
 // across repeated runs against the same DB, too.
 //
+// CSRF: like the SPA, each write echoes the XSRF-TOKEN cookie in the X-XSRF-TOKEN header. The
+// token is fetched once in setup() (from the same GET that picks the event) and shared by every
+// VU. That is valid because the token is a stateless double-submit cookie, and anonymous
+// registrations don't rotate it. So the measured loop stays one request per iteration, and p95
+// is still the POST's alone.
+//
 // Run locally:            k6 run perf/k6/registrations-write.js
 // Gate in CI:             P95_BUDGET_MS=<baseline p95 * 1.2> k6 run perf/k6/registrations-write.js
 import http from 'k6/http';
@@ -26,14 +32,19 @@ export function setup() {
   if (!Array.isArray(events) || events.length === 0) {
     fail('No upcoming events returned by GET /api/events — is the seed data present?');
   }
-  return { eventId: events[0].id, runId: Date.now().toString(36) };
+  const xsrf = res.cookies['XSRF-TOKEN'];
+  if (!xsrf || xsrf.length === 0) {
+    fail('GET /api/events set no XSRF-TOKEN cookie — is the CSRF token layer running?');
+  }
+  return { eventId: events[0].id, runId: Date.now().toString(36), csrfToken: xsrf[0].value };
 }
 
 export default function (data) {
   const email = `lt-${data.runId}-${__VU}-${__ITER}@loadtest.local`;
   const payload = JSON.stringify({ eventId: data.eventId, name: 'Load test runner', email });
   const res = http.post(`${BASE_URL}/api/registrations`, payload, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': data.csrfToken },
+    cookies: { 'XSRF-TOKEN': data.csrfToken },
   });
   check(res, { 'status is 201': (r) => r.status === 201 });
 }

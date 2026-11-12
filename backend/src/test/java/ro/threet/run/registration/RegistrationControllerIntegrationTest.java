@@ -31,6 +31,7 @@ import ro.threet.run.TestcontainersConfiguration;
 import ro.threet.run.event.EventRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -88,7 +89,7 @@ class RegistrationControllerIntegrationTest {
 		String body = """
 				{"eventId": %d, "name": "Ana Pop", "email": "ana.pop@example.com"}""".formatted(eventId);
 
-		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
+		mockMvc.perform(post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.eventId").value(eventId))
 			.andExpect(jsonPath("$.email").value("ana.pop@example.com"));
@@ -106,7 +107,7 @@ class RegistrationControllerIntegrationTest {
 		String body = """
 				{"eventId": %d, "name": "Ana Pop", "email": "not-an-email"}""".formatted(eventId);
 
-		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
+		mockMvc.perform(post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors.email").exists());
 

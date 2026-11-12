@@ -80,10 +80,9 @@ GDPR essentials (§7), accessibility pass, performance baseline captured (§5), 
 
 **Deferred to a later pre-go-live hardening step (not in Increment 5 scope):**
 
-- **CSRF token layer** for the state-changing API. Increment 3 relies on a same-origin, httpOnly,
-  `SameSite=Lax` session cookie (which blocks the classic cross-site POST) and disables Spring's
-  CSRF tokens to keep the anonymous registration POST token-free. Before go-live, add token-based
-  CSRF protection (e.g. `CookieCsrfTokenRepository` + an Angular interceptor).
+- ~~**CSRF token layer** for the state-changing API.~~ **Done in Increment 14 (#88):** a
+  double-submit `XSRF-TOKEN` cookie + `X-XSRF-TOKEN` header on every write, the anonymous
+  registration POST included. See `docs/implementation_details/auth.md`.
 - **Full-target soak** toward ~5,000 concurrent (see the performance baseline task) — before a real launch, not now.
 
 ---
@@ -158,8 +157,10 @@ A feature is shippable when:
   finished runs — time, place and field size — computed on read from their registrations. No new
   data is stored, so the export already covers it and there is nothing new to disclose.
 - **Consent + cookies:** privacy policy page; cookie/consent banner only for non-essential cookies.
-  We set **no non-essential cookies** — the only cookie is the strictly-necessary `JSESSIONID` session
-  cookie (no analytics, no tracking), so **no consent banner is needed** (per the Increment 5 brief); the
-  privacy policy states this. Revisit if analytics or any tracking cookie is ever added.
+  We set **no non-essential cookies**. There are two cookies, both strictly necessary: the
+  `XSRF-TOKEN` security cookie (every visitor; it blocks forged requests, Increment 14) and the
+  `JSESSIONID` session cookie (signed-in users only). There are no analytics and no tracking, so **no
+  consent banner is needed** (ePrivacy exempts strictly necessary cookies; per the Increment 5 brief).
+  The privacy policy names both cookies. Revisit if analytics or any tracking cookie is ever added.
 - **Storage:** EU region; encryption in transit (HTTPS) and at rest (managed DB default).
 - **Transactional email** (confirmation) is fine without marketing consent.

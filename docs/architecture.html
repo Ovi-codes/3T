@@ -778,9 +778,9 @@
       <div class="note-box">
         <b>Session, not a token in JS.</b> An httpOnly <code>JSESSIONID</code> cookie — <code>SameSite=Lax</code>,
         <code>Secure</code> on by default (dropped only for local http). Rotated on login (fixation defence).
-        Spring's CSRF tokens are <em>off</em>: the API is same-origin and <code>SameSite=Lax</code> blocks the
-        cross-site form POST, keeping the anonymous registration token-free. A token-based CSRF layer is a
-        tracked pre-go-live hardening item.
+        No session for anonymous visitors. <b>CSRF tokens on every write</b> (Increment 14): a JS-readable
+        <code>XSRF-TOKEN</code> cookie, echoed by Angular in <code>X-XSRF-TOKEN</code>; a missing or wrong token
+        is a 403, the anonymous registration POST included. Login and logout swap the token.
       </div>
     </div>
   </section>

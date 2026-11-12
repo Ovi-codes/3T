@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { csrfHeaders } from './support/csrf';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -52,6 +53,7 @@ test('a signed-in visitor has the registration form prefilled from their account
 
   // Seed the account through the API, then log in through the UI so the session cookie is set.
   const created = await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name, email, password: 'correct horse battery' },
   });
   expect(created.ok()).toBeTruthy();

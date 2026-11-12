@@ -25,6 +25,7 @@ import ro.threet.run.registration.Registration;
 import ro.threet.run.registration.RegistrationRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -91,7 +92,7 @@ class AuthIntegrationTest {
 
 	@Test
 	void signupWithoutANameIsRejected() throws Exception {
-		mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "ana@example.com", "password": "correct horse"}"""))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors.name").exists());
@@ -120,7 +121,7 @@ class AuthIntegrationTest {
 			.andReturn();
 		MockHttpSession session = sessionOf(signup);
 
-		mockMvc.perform(post("/api/auth/logout").session(session)).andExpect(status().isNoContent());
+		mockMvc.perform(post("/api/auth/logout").with(csrf()).session(session)).andExpect(status().isNoContent());
 
 		// The (now invalidated) session no longer authenticates.
 		mockMvc.perform(get("/api/auth/me").session(session)).andExpect(status().isUnauthorized());
@@ -194,19 +195,19 @@ class AuthIntegrationTest {
 		// Name is required at the API from Increment 7; these credential tests don't vary
 		// it, so a fixed value keeps them focused on the email/password behaviour they
 		// assert.
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder loginRequest(String email,
 			String password) {
-		return post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder registrationRequest(
 			long eventId, String name, String email) {
-		return post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"eventId": %d, "name": "%s", "email": "%s"}""".formatted(eventId, name, email));
 	}
 

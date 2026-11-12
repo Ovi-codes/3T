@@ -62,9 +62,26 @@ stays local (charter §3).
     each registrant's dashboard until its date passes, and every registrant is emailed **the reason**
     (deduped by email, best-effort after commit, so a mail failure never rolls the cancel back). Why the
     two removals differ: [ADR-0001](../adr/0001-cancel-vs-hard-delete-events.md).
-- **CSRF:** Spring's CSRF token machinery is **off** for the JSON API — it's served same-origin and the
-  `SameSite=Lax` session cookie blocks the cross-site form POST tokens defend against, without forcing
-  a token round-trip onto the anonymous registration POST. A token-based CSRF layer is a **pre-go-live
-  hardening item, tracked in the charter's Increment 5 (Hardening).**
-- **Logout:** `POST /api/auth/logout` invalidates the session, clears the security context, and
-  expires the cookie (204). Handled by Spring Security's logout filter (configured in `SecurityConfig`).
+- **CSRF (Increment 14, #88):** every state-changing request needs a token, the anonymous registration
+  POST included. This is a double-submit cookie, set up with Spring's `csrf.spa()`:
+  - The server sets a JS-readable `XSRF-TOKEN` cookie (`SameSite=Lax`; `Secure` over HTTPS). A write
+    must echo it in the `X-XSRF-TOKEN` header. A missing or wrong token gets a **403**.
+  - `CsrfCookieFilter` sets the cookie on **every** response, the first one included. Spring defers
+    the token, and a JSON API would otherwise never load it.
+  - Angular's `HttpClient` copies the cookie into the header for relative URLs by itself.
+    `csrfBootstrapInterceptor` covers the gap before the first response lands (a fast submit, or a
+    cold start): if a write has no cookie yet, it first calls `GET /api/auth/csrf` (public, 204), then
+    sends the write with the header.
+  - Login and logout each replace the token in the same response, so the next write already has the
+    new one. Login does this in `SessionAuthenticator`, because our controller login bypasses
+    Spring's login filters.
+  - Tests: integration tests use `.with(csrf())`. `CsrfIntegrationTest` exercises the real cookie
+    flow on a fresh context, because `csrf()` swaps the cached context's token repository.
+    E2E API seeding uses `e2e/tests/support/csrf.ts`.
+  - The servlet ERROR dispatch is `permitAll`. Otherwise deny-by-default would turn the CSRF 403 (or
+    any other error) into a 401 for an anonymous caller.
+- **No anonymous sessions:** the request cache is disabled, so a 401 doesn't open a session. A
+  `JSESSIONID` exists only after sign-in. Anonymous visitors get only the `XSRF-TOKEN` cookie.
+- **Logout:** `POST /api/auth/logout` invalidates the session, clears the security context, expires
+  the session cookie, and issues a fresh CSRF token (204). Spring Security's logout filter handles it
+  (configured in `SecurityConfig`).

@@ -54,6 +54,16 @@ class AuthController {
 	}
 
 	/**
+	 * Hands out a CSRF token: {@link CsrfCookieFilter} sets the {@code XSRF-TOKEN} cookie
+	 * on this (and every) response. The SPA calls it only when a write is about to go out
+	 * before any other response has set the cookie (a fast submit, or a cold start).
+	 */
+	@GetMapping("/csrf")
+	public ResponseEntity<Void> csrf() {
+		return ResponseEntity.noContent().build();
+	}
+
+	/**
 	 * The current account, or 401 if the session isn't authenticated (enforced by the
 	 * filter chain).
 	 */

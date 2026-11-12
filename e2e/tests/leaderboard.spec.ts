@@ -1,4 +1,5 @@
 import { test, expect, APIRequestContext, Page } from '@playwright/test';
+import { csrfHeaders } from './support/csrf';
 import AxeBuilder from '@axe-core/playwright';
 import { Client } from 'pg';
 
@@ -30,6 +31,7 @@ async function signUp(request: APIRequestContext): Promise<NewUser> {
   const email = uniqueEmail();
   const password = 'correct horse battery';
   const response = await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'Ana Pop', email, password },
   });
   expect(response.ok()).toBeTruthy();

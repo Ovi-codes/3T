@@ -17,6 +17,7 @@ import ro.threet.run.registration.RegistrationRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -93,12 +94,12 @@ class AdminRevocationIntegrationTest {
 	}
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder signup(String email) {
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Ex Admin", "email": "%s", "password": "correct horse battery"}""".formatted(email));
 	}
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder login(String email) {
-		return post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "correct horse battery"}""".formatted(email));
 	}
 

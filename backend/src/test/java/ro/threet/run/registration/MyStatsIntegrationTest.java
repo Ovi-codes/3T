@@ -28,6 +28,7 @@ import ro.threet.run.event.Event;
 import ro.threet.run.event.EventRepository;
 import ro.threet.run.location.LocationRepository;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -218,7 +219,7 @@ class MyStatsIntegrationTest {
 	}
 
 	private static MockHttpServletRequestBuilder signupRequest(String email) {
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Ana Pop", "email": "%s", "password": "correct horse"}""".formatted(email));
 	}
 

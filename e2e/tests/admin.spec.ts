@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Page, type APIRequestContext } from '@playwright/test';
+import { csrfHeaders } from './support/csrf';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -44,6 +45,7 @@ function futureDate(): string {
  */
 async function loginAsAdmin(page: Page, request: APIRequestContext): Promise<void> {
   await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'E2E Admin', email: ADMIN_EMAIL, password: PASSWORD },
   });
   await page.goto('/login');
@@ -85,9 +87,11 @@ async function eventIdByName(request: APIRequestContext, name: string): Promise<
 async function registerSomeone(request: APIRequestContext, eventId: number): Promise<string> {
   const email = uniqueEmail();
   await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'Ana Pop', email, password: PASSWORD },
   });
   const registered = await request.post(`${BACKEND}/api/registrations`, {
+    headers: await csrfHeaders(request),
     data: { eventId, name: 'Ana Pop', email },
   });
   expect(registered.ok()).toBeTruthy();
@@ -200,6 +204,7 @@ test('a run people have signed up for can only be cancelled, and everyone sees i
 test('a regular account does not see the create form', async ({ page, request }) => {
   const email = uniqueEmail();
   await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'Ana Pop', email, password: PASSWORD },
   });
   await page.goto('/login');

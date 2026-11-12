@@ -1,4 +1,5 @@
 import { test, expect, APIRequestContext, Page } from '@playwright/test';
+import { csrfHeaders } from './support/csrf';
 import AxeBuilder from '@axe-core/playwright';
 import { Client } from 'pg';
 
@@ -32,6 +33,7 @@ async function signUp(request: APIRequestContext): Promise<NewUser> {
   const email = uniqueEmail();
   const password = 'correct horse battery';
   const response = await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'Ana Pop', email, password },
   });
   expect(response.ok()).toBeTruthy();
@@ -55,6 +57,7 @@ test('CS-4: a registration for an upcoming run shows under Upcoming', async ({ p
   const events = await (await request.get(`${BACKEND}/api/events`)).json();
   const soonest = events[0];
   const registered = await request.post(`${BACKEND}/api/registrations`, {
+    headers: await csrfHeaders(request),
     data: { eventId: soonest.id, name: 'Test Runner', email: user.email },
   });
   expect(registered.ok()).toBeTruthy();
@@ -158,6 +161,7 @@ test('the dashboard has no critical or serious accessibility violations', async 
   // contrast is exactly the kind of thing this guards).
   const events = await (await request.get(`${BACKEND}/api/events`)).json();
   await request.post(`${BACKEND}/api/registrations`, {
+    headers: await csrfHeaders(request),
     data: { eventId: events[0].id, name: 'Test Runner', email: user.email },
   });
 
