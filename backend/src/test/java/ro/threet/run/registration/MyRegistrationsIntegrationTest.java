@@ -25,6 +25,7 @@ import ro.threet.run.TestcontainersConfiguration;
 import ro.threet.run.event.Event;
 import ro.threet.run.event.EventRepository;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -205,7 +206,8 @@ class MyRegistrationsIntegrationTest {
 		Registration registration = seedRegistration(aPastEvent(), userIdOf(signup), "ana@example.com");
 
 		mockMvc
-			.perform(put("/api/me/registrations/" + registration.getId() + "/finish-time").session(sessionOf(signup))
+			.perform(put("/api/me/registrations/" + registration.getId() + "/finish-time").with(csrf())
+				.session(sessionOf(signup))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{}"))
 			.andExpect(status().isBadRequest())
@@ -238,7 +240,8 @@ class MyRegistrationsIntegrationTest {
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder finishTimeRequest(
 			long registrationId, int finishTimeSeconds) {
-		return put("/api/me/registrations/" + registrationId + "/finish-time").contentType(MediaType.APPLICATION_JSON)
+		return put("/api/me/registrations/" + registrationId + "/finish-time").with(csrf())
+			.contentType(MediaType.APPLICATION_JSON)
 			.content("""
 					{"finishTimeSeconds": %d}""".formatted(finishTimeSeconds));
 	}
@@ -256,7 +259,7 @@ class MyRegistrationsIntegrationTest {
 
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder signupRequest(
 			String email, String password) {
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 

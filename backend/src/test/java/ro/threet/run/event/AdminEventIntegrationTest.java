@@ -35,6 +35,7 @@ import ro.threet.run.registration.RegistrationRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -225,7 +226,8 @@ class AdminEventIntegrationTest {
 		MockHttpSession admin = adminSession();
 		long id = createdEventId(admin, "Created by mistake", futureLocal());
 
-		mockMvc.perform(delete("/api/admin/events/" + id).session(admin)).andExpect(status().isNoContent());
+		mockMvc.perform(delete("/api/admin/events/" + id).with(csrf()).session(admin))
+			.andExpect(status().isNoContent());
 
 		assertThat(events.findById(id)).isEmpty();
 		mockMvc.perform(get("/api/events")).andExpect(jsonPath("$[?(@.name == 'Created by mistake')]").doesNotExist());
@@ -237,7 +239,7 @@ class AdminEventIntegrationTest {
 		long id = createdEventId(admin, "Popular 5k", futureLocal());
 		register(id, "Ana Pop", "ana.pop@example.com");
 
-		mockMvc.perform(delete("/api/admin/events/" + id).session(admin))
+		mockMvc.perform(delete("/api/admin/events/" + id).with(csrf()).session(admin))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.errors.event").exists());
 
@@ -248,7 +250,8 @@ class AdminEventIntegrationTest {
 
 	@Test
 	void deletingAnUnknownEventIsNotFound() throws Exception {
-		mockMvc.perform(delete("/api/admin/events/9999999").session(adminSession())).andExpect(status().isNotFound());
+		mockMvc.perform(delete("/api/admin/events/9999999").with(csrf()).session(adminSession()))
+			.andExpect(status().isNotFound());
 	}
 
 	// Cancel
@@ -297,8 +300,12 @@ class AdminEventIntegrationTest {
 		long id = createdEventId(admin, "Cancelled 5k", futureLocal());
 		MockHttpSession runner = sessionOf(
 				mockMvc.perform(signup(USER_EMAIL, "Ana Pop")).andExpect(status().isCreated()).andReturn());
-		mockMvc.perform(post("/api/registrations").session(runner).contentType(MediaType.APPLICATION_JSON).content("""
-				{"eventId": %d, "name": "Ana Pop", "email": "%s"}""".formatted(id, USER_EMAIL)))
+		mockMvc
+			.perform(post("/api/registrations").with(csrf())
+				.session(runner)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"eventId": %d, "name": "Ana Pop", "email": "%s"}""".formatted(id, USER_EMAIL)))
 			.andExpect(status().isCreated());
 
 		mockMvc.perform(cancelEvent(admin, id, WEATHER_REASON)).andExpect(status().isOk());
@@ -310,7 +317,7 @@ class AdminEventIntegrationTest {
 			.andExpect(jsonPath("$.upcoming[?(@.eventName == 'Cancelled 5k')].cancelled").value(true));
 
 		// And a stale page can't sign anyone else up for it.
-		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"eventId": %d, "name": "Radu Ion", "email": "radu.ion@example.com"}""".formatted(id)))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors.eventId").exists());
@@ -471,8 +478,9 @@ class AdminEventIntegrationTest {
 
 		mockMvc.perform(get("/api/admin/events").session(user)).andExpect(status().isForbidden());
 		mockMvc.perform(updateEvent(user, id, "Hijacked", futureLocal())).andExpect(status().isForbidden());
-		mockMvc.perform(delete("/api/admin/events/" + id).session(user)).andExpect(status().isForbidden());
-		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").session(user)).andExpect(status().isForbidden());
+		mockMvc.perform(delete("/api/admin/events/" + id).with(csrf()).session(user)).andExpect(status().isForbidden());
+		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").with(csrf()).session(user))
+			.andExpect(status().isForbidden());
 
 		Event untouched = events.findById(id).orElseThrow();
 		assertThat(untouched.getName()).isEqualTo("Not yours");
@@ -486,14 +494,14 @@ class AdminEventIntegrationTest {
 		long id = createdEventId(adminSession(), "Untouchable", futureLocal());
 
 		mockMvc.perform(get("/api/admin/events")).andExpect(status().isUnauthorized());
-		mockMvc.perform(post("/api/admin/events").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/admin/events").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Sneaky run", "startDateTime": "%s"}""".formatted(futureLocal())))
 			.andExpect(status().isUnauthorized());
-		mockMvc.perform(put("/api/admin/events/" + id).contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(put("/api/admin/events/" + id).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Hijacked", "startDateTime": "%s"}""".formatted(futureLocal())))
 			.andExpect(status().isUnauthorized());
-		mockMvc.perform(delete("/api/admin/events/" + id)).andExpect(status().isUnauthorized());
-		mockMvc.perform(post("/api/admin/events/" + id + "/cancel")).andExpect(status().isUnauthorized());
+		mockMvc.perform(delete("/api/admin/events/" + id).with(csrf())).andExpect(status().isUnauthorized());
+		mockMvc.perform(post("/api/admin/events/" + id + "/cancel").with(csrf())).andExpect(status().isUnauthorized());
 
 		Event untouched = events.findById(id).orElseThrow();
 		assertThat(untouched.getName()).isEqualTo("Untouchable");
@@ -524,7 +532,7 @@ class AdminEventIntegrationTest {
 	 * registrants.
 	 */
 	private void register(long eventId, String name, String email) throws Exception {
-		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"eventId": %d, "name": "%s", "email": "%s"}""".formatted(eventId, name, email)))
 			.andExpect(status().isCreated());
 	}
@@ -534,25 +542,32 @@ class AdminEventIntegrationTest {
 	}
 
 	private static MockHttpServletRequestBuilder signup(String email, String name) {
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "%s", "email": "%s", "password": "correct horse battery"}""".formatted(name, email));
 	}
 
 	private static MockHttpServletRequestBuilder createEvent(MockHttpSession session, String name,
 			String startDateTime) {
-		return post("/api/admin/events").session(session).contentType(MediaType.APPLICATION_JSON).content("""
-				{"name": "%s", "startDateTime": "%s"}""".formatted(name, startDateTime));
+		return post("/api/admin/events").with(csrf())
+			.session(session)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("""
+					{"name": "%s", "startDateTime": "%s"}""".formatted(name, startDateTime));
 	}
 
 	private static MockHttpServletRequestBuilder updateEvent(MockHttpSession session, long id, String name,
 			String startDateTime) {
-		return put("/api/admin/events/" + id).session(session).contentType(MediaType.APPLICATION_JSON).content("""
-				{"name": "%s", "startDateTime": "%s"}""".formatted(name, startDateTime));
+		return put("/api/admin/events/" + id).with(csrf())
+			.session(session)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("""
+					{"name": "%s", "startDateTime": "%s"}""".formatted(name, startDateTime));
 	}
 
 	/** A cancel with an explicit reason body — the reason is plain text (issue #58). */
 	private static MockHttpServletRequestBuilder cancelEvent(MockHttpSession session, long id, String reasonJson) {
-		return post("/api/admin/events/" + id + "/cancel").session(session)
+		return post("/api/admin/events/" + id + "/cancel").with(csrf())
+			.session(session)
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(reasonJson);
 	}

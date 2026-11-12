@@ -30,6 +30,7 @@ import ro.threet.run.registration.RegistrationRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -81,7 +82,7 @@ class AccountPrivacyIntegrationTest {
 
 	@Test
 	void anonymousDeleteIsUnauthorised() throws Exception {
-		mockMvc.perform(delete("/api/me")).andExpect(status().isUnauthorized());
+		mockMvc.perform(delete("/api/me").with(csrf())).andExpect(status().isUnauthorized());
 	}
 
 	@Test
@@ -134,7 +135,7 @@ class AccountPrivacyIntegrationTest {
 		upcomingEvents(3).forEach(event -> seedRegistration(event, userId, "Ana", "ana@example.com"));
 		MockHttpSession session = sessionOf(signup);
 
-		mockMvc.perform(delete("/api/me").session(session)).andExpect(status().isNoContent());
+		mockMvc.perform(delete("/api/me").with(csrf()).session(session)).andExpect(status().isNoContent());
 
 		assertThat(appUsers.findById(userId)).isEmpty();
 		assertThat(registrations.findByUserIdWithEvent(userId)).isEmpty();
@@ -155,7 +156,7 @@ class AccountPrivacyIntegrationTest {
 		long bobId = userIdOf(bob);
 		seedRegistration(event, bobId, "Bob", "bob@example.com");
 
-		mockMvc.perform(delete("/api/me").session(sessionOf(ana))).andExpect(status().isNoContent());
+		mockMvc.perform(delete("/api/me").with(csrf()).session(sessionOf(ana))).andExpect(status().isNoContent());
 
 		// Bob is a bystander — his account and his registration survive Ana's erasure.
 		assertThat(appUsers.findById(bobId)).isPresent();
@@ -205,7 +206,7 @@ class AccountPrivacyIntegrationTest {
 	private static MockHttpServletRequestBuilder signupRequest(String email, String password) {
 		// Name is required at the API from Increment 7; a fixed value keeps these GDPR
 		// tests focused.
-		return post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
+		return post("/api/auth/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 				{"name": "Ana Pop", "email": "%s", "password": "%s"}""".formatted(email, password));
 	}
 

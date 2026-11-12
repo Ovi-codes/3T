@@ -1,4 +1,5 @@
 import { test, expect, APIRequestContext, Page } from '@playwright/test';
+import { csrfHeaders } from './support/csrf';
 
 /**
  * Increment 5 (GDPR, charter §7): a signed-in user can download everything held about them and can
@@ -25,6 +26,7 @@ interface NewUser {
 async function signUpAndLogIn(page: Page, request: APIRequestContext): Promise<NewUser> {
   const user = { email: uniqueEmail(), password: 'correct horse battery' };
   const created = await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'Ana Pop', ...user },
   });
   expect(created.ok()).toBeTruthy();
@@ -43,6 +45,7 @@ test('a user can download all their data as a JSON file', async ({ page, request
   // Register for the soonest run so the export has a registration to carry.
   const events = await (await request.get(`${BACKEND}/api/events`)).json();
   await request.post(`${BACKEND}/api/registrations`, {
+    headers: await csrfHeaders(request),
     data: { eventId: events[0].id, name: 'Test Runner', email: user.email },
   });
 
@@ -79,6 +82,9 @@ test('a user can permanently delete their account, which ends their session', as
   await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/login$/);
   // …and the account itself is erased, not just signed out: the old credentials no longer log in.
-  const relogin = await request.post(`${BACKEND}/api/auth/login`, { data: user });
+  const relogin = await request.post(`${BACKEND}/api/auth/login`, {
+    headers: await csrfHeaders(request),
+    data: user,
+  });
   expect(relogin.status()).toBe(401);
 });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { csrfHeaders } from './support/csrf';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -47,6 +48,7 @@ test('CS-3: an existing account logs in and reaches the dashboard', async ({ pag
 
   // Seed the account straight through the API (its own session; the browser logs in fresh below).
   const created = await request.post(`${BACKEND}/api/auth/signup`, {
+    headers: await csrfHeaders(request),
     data: { name: 'Ana Pop', email, password },
   });
   expect(created.ok()).toBeTruthy();

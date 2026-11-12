@@ -9,6 +9,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,7 +37,7 @@ class RegistrationControllerValidationTest {
 		String body = """
 				{"eventId": 1, "name": "  ", "email": "not-an-email"}""";
 
-		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
+		mockMvc.perform(post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors.name").exists())
 			.andExpect(jsonPath("$.errors.email").exists());
@@ -49,7 +50,7 @@ class RegistrationControllerValidationTest {
 		String body = """
 				{"eventId": 1, "name": "Ana"}""";
 
-		mockMvc.perform(post("/api/registrations").contentType(MediaType.APPLICATION_JSON).content(body))
+		mockMvc.perform(post("/api/registrations").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors.email").exists());
 

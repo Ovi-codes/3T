@@ -19,6 +19,7 @@ import ro.threet.run.TestcontainersConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -56,7 +57,7 @@ class DemoDataIntegrationTest {
 		@Test
 		void seedsAPastRunWithARankedLeaderboardTheDemoAccountRan() throws Exception {
 			MvcResult login = mockMvc
-				.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+				.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 						{"email": "demo@example.com", "password": "demo-run-5k"}"""))
 				.andExpect(status().isOk())
 				.andReturn();
@@ -90,7 +91,7 @@ class DemoDataIntegrationTest {
 		@Test
 		void seedsAHistoryOfRunsSoTheDemoAccountHasATimeTrend() throws Exception {
 			MvcResult login = mockMvc
-				.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+				.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
 						{"email": "demo@example.com", "password": "demo-run-5k"}"""))
 				.andExpect(status().isOk())
 				.andReturn();

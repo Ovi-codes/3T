@@ -9,6 +9,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Component;
  * provider would replace wholesale.
  *
  * The session id is rotated on login to defend against session fixation (a pre-login
- * session can't be promoted to an authenticated one).
+ * session can't be promoted to an authenticated one). The CSRF token is rotated too, as
+ * Spring's own login filters do: the pre-login token cookie is replaced by a fresh one in
+ * the same response, so the SPA's next write already carries the new token.
  */
 @Component
 class SessionAuthenticator {
@@ -28,8 +32,14 @@ class SessionAuthenticator {
 
 	private final SecurityContextHolderStrategy holderStrategy = SecurityContextHolder.getContextHolderStrategy();
 
-	SessionAuthenticator(SecurityContextRepository securityContextRepository) {
+	private final CsrfAuthenticationStrategy csrfRotation;
+
+	SessionAuthenticator(SecurityContextRepository securityContextRepository, CsrfTokenRepository csrfTokenRepository) {
 		this.securityContextRepository = securityContextRepository;
+		this.csrfRotation = new CsrfAuthenticationStrategy(csrfTokenRepository);
+		// Load the new token straight away, so its cookie goes out with the login
+		// response.
+		this.csrfRotation.setRequestHandler((request, response, token) -> token.get());
 	}
 
 	void establishSession(AccountPrincipal principal, HttpServletRequest request, HttpServletResponse response) {
@@ -43,6 +53,7 @@ class SessionAuthenticator {
 		context.setAuthentication(authentication);
 		holderStrategy.setContext(context);
 		securityContextRepository.saveContext(context, request, response);
+		csrfRotation.onAuthentication(authentication, request, response);
 	}
 
 }
