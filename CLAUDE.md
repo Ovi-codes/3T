@@ -24,13 +24,16 @@ Don't duplicate facts from those docs here — link to them so nothing drifts.
 - **Email:** Mailpit in dev/tests; a transactional provider in prod.
 - **Weather:** Open-Meteo (free, no API key, EU-hosted) behind a `WeatherProvider` seam; forecasts
   cached in-process (Caffeine).
-- **CI/CD:** GitHub Actions. **Cloud:** Azure (App Service + Static Web Apps + Postgres Flexible Server), EU region.
+- **CI/CD:** GitHub Actions. **Cloud:** Azure, EU region: one Docker image (Spring Boot serves the Angular
+  build) on Container Apps + Postgres Flexible Server. Why: [ADR 0002](./docs/adr/0002-single-container-on-container-apps.md).
 
 ## Repo layout
 
 ```
-backend/    frontend/    e2e/    docs/    .github/workflows/
+backend/    frontend/    e2e/    docs/    perf/    infra/    .github/workflows/
 docker-compose.yml   # Postgres + Mailpit for local dev
+Dockerfile           # the single prod image (Angular build → Spring's static/ → JRE)
+infra/main.bicep     # Azure resources; infra/README.md has the one-time setup
 ```
 
 ## Canonical commands
@@ -80,12 +83,15 @@ See [`docs/implementation_details/design-direction.md`](./docs/implementation_de
 for the "Floodlight" theme invariants — tokens, palette, type, the poster element, quality floor, and copy style.
 
 ## Azure deployment
-Azure is not fully up yet, so let's make sure we respect the following:
+`deploy.yml` ships `main` after green CI (GHCR image → Container Apps). Respect the following:
 - All config (DB URL/creds, SMTP host, mail-from, weather API URL/TTL, admin emails) via env vars,
   never hardcoded. Weather vars: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL`
   (all defaulted; the defaults hit the public Open-Meteo endpoint, so prod works with none set).
   `ADMIN_EMAILS`: comma-separated accounts granted `ROLE_ADMIN` (defaulted empty — no admin unless set).
   `DEMO_DATA`: `true` adds the `db/demo` Flyway seed (fake leaderboard runners + a demo account with
   a run history for its stats) — local demos only, **never set in prod**.
+- `DB_SSLMODE` (default `prefer`) is appended to the JDBC URL; Azure sets `require`.
 - Flyway migrations run on startup so a fresh Azure DB self-provisions.
+- The Angular build is served by Spring (`SpaHostingConfig`): a new public SPA route needs no
+  backend change, but a new top-level path must not start with `/api` or `/actuator`.
 - No localhost-baked URLs in app code; the Angular app talks to /api (proxy in dev, same-origin in prod).

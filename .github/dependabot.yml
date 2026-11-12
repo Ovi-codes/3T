@@ -48,3 +48,9 @@ updates:
     groups:
       actions:
         patterns: ['*']
+
+  # Base images in the root Dockerfile (node, eclipse-temurin).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

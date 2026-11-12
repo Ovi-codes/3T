@@ -1,93 +1,117 @@
 name: Deploy (Azure)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DISABLED / MANUAL-ONLY until Azure is provisioned (Task 8, the human portion).
+# Ships main to Azure Container Apps (ADR 0002, infra/README.md).
 #
-# This workflow never runs on push or merge. It only runs when triggered by hand
-# from the Actions tab (workflow_dispatch). Right now it is a skeleton: the secrets
-# and variables it references do not exist yet, so do not trigger it until the
-# Azure resources below are created.
+#   image   Builds the single image (Spring Boot + Angular) and pushes it to GHCR as
+#           ghcr.io/<owner>/3t:<sha> and :main.
+#   deploy  Points the Container App at :<sha> and waits for /actuator/health to report UP.
+#           It is skipped until the repository variable AZURE_CONTAINER_APP is set. That way
+#           the first image can exist in GHCR before the Azure resources do.
 #
-# TO STAND IT UP (Task 8 checklist, human):
-#   1. Create, in an EU region (North/West Europe):
-#        - a resource group
-#        - an App Service (Linux, Java 21) for the backend
-#        - a Static Web App for the frontend
-#        - an Azure Database for PostgreSQL Flexible Server (Burstable / free-eligible)
-#   2. Add these GitHub repository secrets:
-#        - AZURE_WEBAPP_PUBLISH_PROFILE        (App Service > Get publish profile)
-#        - AZURE_STATIC_WEB_APPS_API_TOKEN     (Static Web App > deployment token)
-#      and this repository variable:
-#        - AZURE_WEBAPP_NAME                   (the App Service name)
-#   3. On the App Service, set application settings so the app reaches Azure Postgres
-#      (Flyway then migrates on startup; /actuator/health then reports the DB as UP):
-#        DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD   (or a full DB connection string)
-#   4. Configure how the Static Web App forwards /api/* to the backend App Service
-#      (a staticwebapp.config.json route, or a linked backend) so the SPA's relative
-#      /api/* calls reach Spring Boot in production.
+# It runs after CI succeeds on a push to main (the release gate, charter §6), or by hand from
+# the Actions tab. Azure login uses GitHub OIDC: no long-lived secrets.
 #
-# TO ENABLE AUTO-DEPLOY (gated on green CI on main):
-#   Replace the `on:` block with the commented `workflow_run` version below, and
-#   uncomment the `if:` success guard on each job. That makes deploy run only after
-#   the CI workflow succeeds on main — the release gate the charter describes.
-# ─────────────────────────────────────────────────────────────────────────────
+# Repository secrets:   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# Repository variables: AZURE_RESOURCE_GROUP, AZURE_CONTAINER_APP
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
-  # Enable after Task 8 to auto-deploy once CI is green on main:
-  # workflow_run:
-  #   workflows: [CI]
-  #   types: [completed]
-  #   branches: [main]
 
 permissions:
   contents: read
 
-jobs:
-  deploy-backend:
-    name: Deploy backend to App Service
-    runs-on: ubuntu-latest
-    environment: production
-    # if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-      - name: Build jar
-        working-directory: backend
-        run: ./mvnw -B -DskipTests package
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: backend/target/*.jar
+# One deploy at a time, in order. A queued one is not cancelled: each is a released commit.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
-  deploy-frontend:
-    name: Deploy frontend to Static Web Apps
+jobs:
+  image:
+    name: Build and push image
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
-    environment: production
-    # if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.tags.outputs.image }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
         with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install
-        working-directory: frontend
-        run: npm ci
-      - name: Build
-        working-directory: frontend
-        run: npm run build
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
+          # workflow_run checks out the default branch head; deploy exactly what CI tested.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Image name
+        id: tags
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/3t"
+          echo "image=${repo}:${SHA}" >> "$GITHUB_OUTPUT"
+          echo "latest=${repo}:main" >> "$GITHUB_OUTPUT"
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          action: upload
-          app_location: frontend/dist/threet-run/browser
-          skip_app_build: true
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.image }}
+            ${{ steps.tags.outputs.latest }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Container Apps
+    needs: image
+    if: ${{ vars.AZURE_CONTAINER_APP != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      APP: ${{ vars.AZURE_CONTAINER_APP }}
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      IMAGE: ${{ needs.image.outputs.image }}
+    steps:
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Roll out the new image
+        run: az containerapp update --name "$APP" --resource-group "$RG" --image "$IMAGE" --output none
+      # The app may be scaled to zero, so the first request waits for a cold start (~20–40 s).
+      # Up to 5 minutes for the new revision to report UP with its database connected.
+      - name: Smoke check
+        run: |
+          fqdn=$(az containerapp show --name "$APP" --resource-group "$RG" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          url="https://${fqdn}"
+          for attempt in $(seq 1 30); do
+            health=$(curl -fsS --max-time 30 "${url}/actuator/health" || true)
+            if echo "$health" | grep -q '"status":"UP"'; then
+              echo "Health UP after attempt ${attempt}"
+              curl -fsS --max-time 30 "${url}/dashboard" | grep -q '<app-root>' \
+                || { echo "::error::${url}/dashboard did not return the SPA shell"; exit 1; }
+              status=$(curl -s -o /dev/null -w '%{http_code}' "${url}/api/me/registrations")
+              [ "$status" = "401" ] \
+                || { echo "::error::anonymous /api/me/registrations returned ${status}, expected 401"; exit 1; }
+              echo "### Deployed ${IMAGE} to ${url}" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Attempt ${attempt}: not UP yet (${health:-no response})"
+            sleep 10
+          done
+          echo "::error::${url}/actuator/health never reported UP"
+          exit 1

@@ -1,0 +1,13 @@
+# Only frontend/ and backend/ go into the image; keep the build context small and free of
+# local build output, secrets and dependencies.
+*
+!frontend/
+!backend/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+backend/target/
+backend/src/test/
+**/.env
+**/.env.*

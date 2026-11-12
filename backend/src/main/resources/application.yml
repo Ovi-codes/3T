@@ -5,7 +5,8 @@ spring:
   # Defaults match docker-compose.yml, so a local run needs no environment at all.
   # Every value is overridable for CI and for Azure.
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:runro}
+    # DB_SSLMODE: Azure Postgres only accepts TLS, so the deploy sets "require".
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:runro}?sslmode=${DB_SSLMODE:prefer}
     username: ${DB_USER:runro}
     password: ${DB_PASSWORD:runro}
 
@@ -33,6 +34,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  # In Azure, TLS ends at the Container Apps ingress, which forwards plain http with
+  # X-Forwarded-Proto. Trusting it makes request.isSecure() true there, so the CSRF cookie
+  # gets the Secure flag and redirects keep https.
+  forward-headers-strategy: native
   servlet:
     session:
       cookie:
@@ -47,11 +52,22 @@ server:
 
 # Actuator: the readiness probe. Expose only the health endpoint (E2E and the deploy smoke
 # check hit /actuator/health); its "db" indicator reports UP only once Postgres is reachable.
+# /actuator/health/liveness reports only the process itself: Container Apps restarts the
+# container on that one, so a Postgres blip doesn't cause a restart loop.
 management:
   endpoints:
     web:
       exposure:
         include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    # SMTP is not part of health. If the mail provider is down, browsing and signing in
+    # still work (a registration then fails with its own error), so the app stays up.
+    mail:
+      enabled: false
 
 # Application settings not owned by a Spring namespace.
 app:
