@@ -83,7 +83,7 @@ frontend/            Angular (standalone components)
 e2e/                 Playwright: tests the whole system (desktop + mobile, a11y)
 perf/                k6 load tests, the committed baseline and the gate scripts
 docs/                charter, roadmap, architecture, ADRs, design, screenshots
-infra/               AWS infrastructure and the one-time setup (in progress, #98)
+infra/               AWS infrastructure (CloudFormation) and the one-time setup
 .github              GitHub CI configuration
 docker-compose.yml   Postgres + Mailpit for local dev
 backend/Dockerfile   the API image: Spring Boot on a JRE
@@ -237,7 +237,8 @@ the runner. It is a **required status check** on `main`, failing on a p95 over b
 120 ms write) or a raised error rate. A p95-only failure is retried once, to absorb runner noise
 (see [`perf/baseline.md`](perf/baseline.md)).
 
-The CI `image` job builds both production images for arm64 and smoke-checks them.
+The CI `image` job builds both production images for arm64 and smoke-checks them. The `infra`
+job runs `cfn-lint` on the CloudFormation templates and `shellcheck` on the deploy smoke check.
 
 ### Deploy
 
@@ -245,8 +246,11 @@ Production is two Docker images on **AWS ECS** behind **CloudFront**. CloudFront
 sends `/api/*` and `/actuator/*` to the Spring Boot API and everything else to the Angular build
 on nginx, so the browser sees one origin
 ([ADR 0003](docs/adr/0003-two-containers-on-ecs-behind-cloudfront.md)).
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs after CI succeeds on `main`
-and pushes `ghcr.io/ovi-codes/3t-backend:<sha>` and `ghcr.io/ovi-codes/3t-frontend:<sha>`.
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs after CI succeeds on `main`.
+It pushes `ghcr.io/ovi-codes/3t-backend:<sha>` and `ghcr.io/ovi-codes/3t-frontend:<sha>`, updates
+the CloudFormation stack to those tags, and smoke-checks the app through CloudFront. The
+infrastructure, the one-time setup and the operating commands are in
+[`infra/README.md`](infra/README.md).
 
 To run the production images locally against `docker compose` (Postgres + Mailpit):
 
@@ -280,6 +284,8 @@ fetched "latest" at build time — versions change only when one of these files 
 | `docker-compose.yml` | The local infrastructure image versions: Postgres and Mailpit. | Hand-edited. |
 | `backend/Dockerfile`, `frontend/Dockerfile` | The production images' base images: Temurin 21 JDK (build) and JRE (runtime) for the backend; Node 24 (build) and nginx (runtime) for the frontend. These are major-version or channel tags (`eclipse-temurin:21-jre`, `node:24-alpine`, `nginx-unprivileged:stable-alpine`), so each image build picks up the latest security patches. This is the one exception to the rule above. | Hand-edited; Dependabot proposes bumps. |
 | `frontend/nginx/*.conf` | How the SPA is served: deep-link fallback, cache headers, security headers. | Hand-edited. |
+| `infra/app.yaml`, `infra/bootstrap.yaml` | The AWS resources and their sizes: EC2 instance type, the ECS-optimised AMI (`EcsAmiId` parameter), the RDS class and the PostgreSQL version. | Hand-edited. |
+| `infra/requirements.txt` | The `cfn-lint` version CI runs on the templates. | Hand-edited; Dependabot proposes bumps. |
 
 **Version-range syntax** (in the `package.json` files): `^1.2.3` allows any `1.x.x` (compatible
 minor + patch updates), `~1.2.3` allows only `1.2.x` (patch updates), and a bare `1.2.3` would

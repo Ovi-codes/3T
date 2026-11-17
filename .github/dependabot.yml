@@ -54,3 +54,9 @@ updates:
     directories: [/backend, /frontend]
     schedule:
       interval: weekly
+
+  # cfn-lint, which the CI infra job installs from infra/requirements.txt.
+  - package-ecosystem: pip
+    directory: /infra
+    schedule:
+      interval: weekly

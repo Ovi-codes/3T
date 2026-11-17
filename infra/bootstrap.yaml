@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  3T Run: the GitHub OIDC trust and the two roles the deploy uses. Deployed once, by hand
+  (infra/README.md).
+
+# deploy.yml assumes DeployRole through GitHub OIDC (no stored AWS keys). That role can only run
+# CloudFormation on the app stack, and it hands the work to ExecutionRole, which holds the
+# permissions to create the resources. So the GitHub token never holds them itself.
+#
+# What guards this: only a job in the GitHub `production` environment can assume DeployRole,
+# and that environment accepts deployments from `main` only. The templates on `main` went
+# through a reviewed PR.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: Ovi-codes/3T
+    Description: owner/repo, exactly as GitHub spells it (the OIDC subject is case-sensitive).
+  AppStackName:
+    Type: String
+    Default: 3t-run
+  ExistingOidcProviderArn:
+    Type: String
+    Default: ''
+    Description: Leave empty, unless the account already has the GitHub OIDC provider.
+
+Conditions:
+  CreateOidcProvider: !Equals [!Ref ExistingOidcProviderArn, '']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Assumed by deploy.yml (GitHub environment production). Runs CloudFormation only.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [CreateOidcProvider, !Ref GitHubOidcProvider, !Ref ExistingOidcProviderArn]
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepo}:environment:production'
+      Policies:
+        - PolicyName: deploy-app-stack
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AppStackOnly
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStackResources
+                Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AppStackName}/*'
+              - Sid: ReadTemplates
+                Effect: Allow
+                Action: [cloudformation:GetTemplateSummary, cloudformation:ValidateTemplate]
+                Resource: '*'
+              - Sid: HandOffToCloudFormation
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt ExecutionRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: cloudformation.amazonaws.com
+
+  # CloudFormation acts as this role on the app stack. PowerUserAccess covers every service the
+  # stack uses but not IAM, so IAM is limited to the stack's own roles (CloudFormation names
+  # them <stack>-<LogicalId>-<suffix>).
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: CloudFormation execution role for the app stack.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudformation.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/PowerUserAccess]
+      Policies:
+        - PolicyName: app-stack-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:UpdateRole
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:UpdateAssumeRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:PassRole
+                  - iam:CreateInstanceProfile
+                  - iam:DeleteInstanceProfile
+                  - iam:GetInstanceProfile
+                  - iam:TagInstanceProfile
+                  - iam:AddRoleToInstanceProfile
+                  - iam:RemoveRoleFromInstanceProfile
+                  - iam:ListInstanceProfilesForRole
+                Resource:
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AppStackName}-*'
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/${AppStackName}-*'
+
+Outputs:
+  DeployRoleArn:
+    Description: GitHub variable AWS_DEPLOY_ROLE_ARN.
+    Value: !GetAtt DeployRole.Arn
+  ExecutionRoleArn:
+    Description: GitHub variable AWS_CFN_EXEC_ROLE_ARN.
+    Value: !GetAtt ExecutionRole.Arn
