@@ -170,6 +170,25 @@ jobs:
           path: e2e/playwright-report/
           retention-days: 7
 
+  # The AWS templates (infra/*.yaml) and the deploy smoke check. Nothing here talks to AWS.
+  infra:
+    name: Infra (cfn-lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: infra/requirements.txt
+      - name: Install cfn-lint
+        run: pip install -r infra/requirements.txt
+      - name: Lint the CloudFormation templates
+        run: cfn-lint infra/*.yaml
+      # shellcheck is preinstalled on the GitHub Ubuntu runners.
+      - name: Lint the smoke check
+        run: shellcheck infra/smoke-check.sh
+
   # The deploy artifacts (ADR 0003): build both images for arm64, the production architecture,
   # and run them the way production does. The backend runs against a real Postgres. This catches
   # a broken Dockerfile, a bad nginx route, or a security rule change before deploy.yml sees them.

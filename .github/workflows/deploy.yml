@@ -4,10 +4,9 @@ name: Deploy (AWS)
 #
 #   images  Builds the backend and frontend images for linux/arm64 and pushes them to GHCR as
 #           ghcr.io/<owner>/3t-backend:<sha> and ghcr.io/<owner>/3t-frontend:<sha>, plus :main.
-#
-# The AWS deploy job (CloudFormation via GitHub OIDC, then a smoke check through CloudFront)
-# comes with the infrastructure in the next step of #98. Until then, this workflow only
-# publishes the images.
+#   deploy  Signs in to AWS with GitHub OIDC, updates the CloudFormation stack (infra/app.yaml)
+#           to those image tags, and smoke-checks the app through CloudFront
+#           (infra/smoke-check.sh). Skipped until the variable AWS_DEPLOY_ROLE_ARN is set.
 #
 # It runs after CI succeeds on a push to main (the release gate, charter §6), or by hand from
 # the Actions tab.
@@ -71,3 +70,48 @@ jobs:
             ${{ steps.tags.outputs.latest }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  deploy:
+    name: Deploy to AWS
+    needs: images
+    if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    # A ScaleMode switch or a new host takes ~15 min; a normal deploy ~5 min.
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      STACK: 3t-run
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      # Only the image tags change. Every other parameter keeps its current value. CloudFormation
+      # waits until ECS reports the new tasks running, and rolls the stack back if they fail.
+      - name: Update the stack
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          aws cloudformation deploy \
+            --stack-name "$STACK" \
+            --template-file infra/app.yaml \
+            --role-arn "$EXEC_ROLE_ARN" \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              "BackendImage=ghcr.io/${owner}/3t-backend:${SHA}" \
+              "FrontendImage=ghcr.io/${owner}/3t-frontend:${SHA}"
+        env:
+          EXEC_ROLE_ARN: ${{ vars.AWS_CFN_EXEC_ROLE_ARN }}
+      - name: Smoke check
+        run: |
+          url=$(aws cloudformation describe-stacks --stack-name "$STACK" \
+            --query "Stacks[0].Outputs[?OutputKey=='AppUrl'].OutputValue" --output text)
+          bash infra/smoke-check.sh "$url"
+          echo "### Deployed ${SHA::7} to ${url}" >> "$GITHUB_STEP_SUMMARY"

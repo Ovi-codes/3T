@@ -1,0 +1,633 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  3T Run: two containers (Spring Boot API, Angular on nginx) on ECS behind CloudFront, with
+  RDS PostgreSQL 16. ADR 0003; one-time setup in infra/README.md.
+
+# ScaleMode=single runs both containers on one EC2 host that CloudFront reaches over its Elastic
+# IP. ScaleMode=fargate runs them on Fargate behind an internal ALB that CloudFront reaches as a
+# VPC origin. The VPC, the database, the task definitions and CloudFront exist in both modes.
+# Switching mode creates the new services, repoints CloudFront and then deletes the old ones:
+# expect a few minutes of errors, so switch in a planned window.
+#
+# deploy.yml passes only BackendImage and FrontendImage. Every other parameter keeps the value
+# it had, so set them on the first deploy (infra/README.md) and change them by hand.
+
+Parameters:
+  ScaleMode:
+    Type: String
+    AllowedValues: [single, fargate]
+    Default: single
+    Description: single = one EC2 host (everyday). fargate = ALB + Fargate autoscaling (soak, growth).
+  BackendImage:
+    Type: String
+    Default: ghcr.io/ovi-codes/3t-backend:main
+  FrontendImage:
+    Type: String
+    Default: ghcr.io/ovi-codes/3t-frontend:main
+  EcsAmiId:
+    Type: AWS::EC2::Image::Id
+    Description: >-
+      ECS-optimised Amazon Linux 2023 arm64 AMI. A plain value, not an SSM lookup, so the host is
+      replaced only when we bump it. Current ID: aws ssm get-parameter --name
+      /aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id
+  CloudFrontPrefixListId:
+    Type: String
+    AllowedPattern: '^pl-[0-9a-f]+$'
+    Description: >-
+      The CloudFront origin-facing managed prefix list: aws ec2 describe-managed-prefix-lists
+      --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing
+  AdminEmails:
+    Type: String
+    Default: ''
+    Description: Comma-separated accounts granted ROLE_ADMIN.
+  MailFrom:
+    Type: String
+    Description: The From address on confirmation emails. Must be a verified SES identity.
+  MailUsername:
+    Type: String
+    Description: The SES SMTP user name. The password is the SSM SecureString /3t/mail-password.
+  DbInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+  BackendCpu:
+    Type: String
+    Default: '512'
+    AllowedValues: ['256', '512', '1024', '2048']
+    Description: Fargate only. CPU units per backend task.
+  BackendMemory:
+    Type: String
+    Default: '1024'
+    Description: Fargate only. MiB per backend task; must suit BackendCpu (Fargate's valid pairs).
+  BackendMaxCount:
+    Type: Number
+    Default: 4
+    MinValue: 1
+    Description: Fargate only. The most backend tasks autoscaling may run.
+
+Conditions:
+  IsSingle: !Equals [!Ref ScaleMode, single]
+  IsFargate: !Equals [!Ref ScaleMode, fargate]
+
+Resources:
+  # ── Network: 2 public subnets (host, Fargate tasks), 2 private ones (RDS, internal ALB) ──
+  # No NAT gateway (≈ $37/month): the host and each Fargate task get a public IPv4 for outbound
+  # calls (GHCR, SES, Open-Meteo). Nothing is reachable from the internet except through
+  # CloudFront, which the security groups enforce.
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      # CloudFront reaches the host by its public DNS name, which needs DNS hostnames.
+      EnableDnsHostnames: true
+      Tags: [{Key: Name, Value: !Ref AWS::StackName}]
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.0.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-public-a'}]
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.1.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-public-b'}]
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnetARoutes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+  PublicSubnetBRoutes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  # Private subnets use the VPC's main route table, which has no route out.
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-private-a'}]
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.11.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-private-b'}]
+
+  # ── Security groups (free, so they exist in both modes) ──
+  # The prefix list counts as ~55 rules of a group's 60, so each port gets its own group.
+  HostFrontendSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Host port 80 (nginx), from CloudFront only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 80, ToPort: 80, SourcePrefixListId: !Ref CloudFrontPrefixListId}
+  HostBackendSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Host port 8080 (API), from CloudFront only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourcePrefixListId: !Ref CloudFrontPrefixListId}
+  # The VPC origin's network interfaces live in this VPC, so the internal ALB admits the VPC range.
+  AlbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Internal ALB, from the CloudFront VPC origin
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 10.20.0.0/16}
+  BackendTaskSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Fargate backend tasks, from the ALB only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourceSecurityGroupId: !Ref AlbSg}
+  FrontendTaskSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Fargate frontend tasks, from the ALB only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourceSecurityGroupId: !Ref AlbSg}
+  DbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Postgres, from the backend only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: !Ref HostBackendSg}
+        - {IpProtocol: tcp, FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: !Ref BackendTaskSg}
+
+  # ── Database ──
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub '${AWS::StackName} private subnets'
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+  # The password is read when this resource is created or updated. Changing the SSM value alone
+  # does not change the database; see infra/README.md.
+  Db:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      # Minor upgrades are applied in the maintenance window. CloudFormation leaves a newer
+      # minor alone until this value changes.
+      EngineVersion: '16.15'
+      AutoMinorVersionUpgrade: true
+      DBInstanceClass: !Ref DbInstanceClass
+      AllocatedStorage: '20'
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: runro
+      MasterUsername: runro
+      MasterUserPassword: '{{resolve:ssm-secure:/3t/db-password}}'
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VPCSecurityGroups: [!Ref DbSg]
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 7
+      CopyTagsToSnapshot: true
+      DeletionProtection: true
+
+  # ── ECS: cluster, roles, logs, task definitions ──
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterSettings: [{Name: containerInsights, Value: disabled}]
+  BackendLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/${AWS::StackName}/backend'
+      RetentionInDays: 7
+  FrontendLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/${AWS::StackName}/frontend'
+      RetentionInDays: 7
+
+  # Pulls nothing from AWS (the images are public on GHCR); writes logs and reads the secrets.
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - {Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: sts:AssumeRole}
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy]
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/3t/*'
+
+  # The app's own settings, the same in both modes. The defaults in application.yml cover the rest.
+  BackendTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub '${AWS::StackName}-backend'
+      NetworkMode: !If [IsSingle, bridge, awsvpc]
+      RequiresCompatibilities: !If [IsSingle, [EC2], [FARGATE]]
+      Cpu: !If [IsSingle, !Ref AWS::NoValue, !Ref BackendCpu]
+      # On the host: 1280 MiB of the t4g.small's 2 GiB, so the JVM heap is ~960 MB.
+      Memory: !If [IsSingle, '1280', !Ref BackendMemory]
+      RuntimePlatform: !If
+        - IsSingle
+        - !Ref AWS::NoValue
+        - {CpuArchitecture: ARM64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Ref BackendImage
+          Essential: true
+          PortMappings: [{ContainerPort: 8080, HostPort: 8080, Protocol: tcp}]
+          Environment:
+            - {Name: DB_HOST, Value: !GetAtt Db.Endpoint.Address}
+            - {Name: DB_PORT, Value: !GetAtt Db.Endpoint.Port}
+            - {Name: DB_NAME, Value: runro}
+            - {Name: DB_USER, Value: runro}
+            - {Name: DB_SSLMODE, Value: require}
+            - {Name: MAIL_HOST, Value: !Sub 'email-smtp.${AWS::Region}.amazonaws.com'}
+            - {Name: MAIL_PORT, Value: '587'}
+            - {Name: MAIL_SMTP_AUTH, Value: 'true'}
+            - {Name: MAIL_SMTP_STARTTLS, Value: 'true'}
+            - {Name: MAIL_USERNAME, Value: !Ref MailUsername}
+            - {Name: MAIL_FROM, Value: !Ref MailFrom}
+            - {Name: ADMIN_EMAILS, Value: !Ref AdminEmails}
+            # TLS ends at CloudFront. Trust its scheme header so request.isSecure() is true and
+            # the CSRF cookie gets Secure. Any proxy is trusted: only CloudFront reaches the app.
+            - {Name: SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER, Value: CloudFront-Forwarded-Proto}
+            - {Name: SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES, Value: '.*'}
+          Secrets:
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/3t/db-password'
+            - Name: MAIL_PASSWORD
+              ValueFrom: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/3t/mail-password'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref BackendLogs
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: backend
+
+  FrontendTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    # cfn-lint checks the host port against awsvpc in both modes; 80 is only used with bridge.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [E3053]
+    Properties:
+      Family: !Sub '${AWS::StackName}-frontend'
+      NetworkMode: !If [IsSingle, bridge, awsvpc]
+      RequiresCompatibilities: !If [IsSingle, [EC2], [FARGATE]]
+      Cpu: !If [IsSingle, !Ref AWS::NoValue, '256']
+      Memory: !If [IsSingle, '128', '512']
+      RuntimePlatform: !If
+        - IsSingle
+        - !Ref AWS::NoValue
+        - {CpuArchitecture: ARM64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: frontend
+          Image: !Ref FrontendImage
+          Essential: true
+          # nginx-unprivileged listens on 8080. On the host, port 80 maps to it.
+          PortMappings:
+            - {ContainerPort: 8080, HostPort: !If [IsSingle, 80, 8080], Protocol: tcp}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FrontendLogs
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: frontend
+
+  # ── ScaleMode=single: one EC2 host ──
+  HostRole:
+    Type: AWS::IAM::Role
+    Condition: IsSingle
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - {Effect: Allow, Principal: {Service: ec2.amazonaws.com}, Action: sts:AssumeRole}
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        # Shell access through SSM Session Manager, with no SSH port open.
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  HostProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: IsSingle
+    Properties:
+      Roles: [!Ref HostRole]
+  HostLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Condition: IsSingle
+    Properties:
+      LaunchTemplateData:
+        # IMDSv2 only, and a hop limit of 1: the containers (bridge network) cannot reach the
+        # metadata service, so they cannot borrow the host's role.
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpTokens: required
+          HttpPutResponseHopLimit: 1
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            cat >> /etc/ecs/ecs.config <<EOF
+            ECS_CLUSTER=${Cluster}
+            ECS_RESERVED_MEMORY=256
+            EOF
+  # A plain instance, not an Auto Scaling group: it keeps its Elastic IP, so the CloudFront origin
+  # never changes. EC2 simplified automatic recovery (on by default) restarts it on a host failure.
+  Host:
+    Type: AWS::EC2::Instance
+    Condition: IsSingle
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      ImageId: !Ref EcsAmiId
+      InstanceType: t4g.small
+      # Standard credits: a CPU burst is throttled instead of billed.
+      CreditSpecification: {CPUCredits: standard}
+      LaunchTemplate:
+        LaunchTemplateId: !Ref HostLaunchTemplate
+        Version: !GetAtt HostLaunchTemplate.LatestVersionNumber
+      IamInstanceProfile: !Ref HostProfile
+      SubnetId: !Ref PublicSubnetA
+      SecurityGroupIds: [!Ref HostFrontendSg, !Ref HostBackendSg]
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-host'}]
+  HostIp:
+    Type: AWS::EC2::EIP
+    Condition: IsSingle
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Host
+
+  # Static host ports, so a deploy stops the old task before it starts the new one: ~30–60 s
+  # of downtime per backend deploy. The circuit breaker rolls back a task that never starts.
+  BackendServiceSingle:
+    Type: AWS::ECS::Service
+    Condition: IsSingle
+    DependsOn: Host
+    Properties:
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref BackendTaskDef
+      LaunchType: EC2
+      DesiredCount: 1
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+        DeploymentCircuitBreaker: {Enable: true, Rollback: true}
+  FrontendServiceSingle:
+    Type: AWS::ECS::Service
+    Condition: IsSingle
+    DependsOn: Host
+    Properties:
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref FrontendTaskDef
+      LaunchType: EC2
+      DesiredCount: 1
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+        DeploymentCircuitBreaker: {Enable: true, Rollback: true}
+
+  # ── ScaleMode=fargate: internal ALB + Fargate ──
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Condition: IsFargate
+    Properties:
+      Type: application
+      Scheme: internal
+      Subnets: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+      SecurityGroups: [!Ref AlbSg]
+  # Sessions live in the JVM, so a signed-in user must stay on one backend task.
+  BackendTg:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: IsFargate
+    Properties:
+      VpcId: !Ref Vpc
+      TargetType: ip
+      Protocol: HTTP
+      Port: 8080
+      HealthCheckPath: /actuator/health/readiness
+      HealthCheckIntervalSeconds: 15
+      HealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - {Key: stickiness.enabled, Value: 'true'}
+        - {Key: stickiness.type, Value: lb_cookie}
+        - {Key: stickiness.lb_cookie.duration_seconds, Value: '86400'}
+        - {Key: deregistration_delay.timeout_seconds, Value: '30'}
+  FrontendTg:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: IsFargate
+    Properties:
+      VpcId: !Ref Vpc
+      TargetType: ip
+      Protocol: HTTP
+      Port: 8080
+      HealthCheckPath: /healthz
+      HealthCheckIntervalSeconds: 15
+      HealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - {Key: deregistration_delay.timeout_seconds, Value: '15'}
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: IsFargate
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Protocol: HTTP
+      Port: 80
+      DefaultActions: [{Type: forward, TargetGroupArn: !Ref FrontendTg}]
+  AlbBackendRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: IsFargate
+    Properties:
+      ListenerArn: !Ref AlbListener
+      Priority: 10
+      Conditions: [{Field: path-pattern, PathPatternConfig: {Values: ['/api/*', '/actuator/*']}}]
+      Actions: [{Type: forward, TargetGroupArn: !Ref BackendTg}]
+
+  # Rolling deploys with no downtime: new tasks start and pass the ALB health check first.
+  BackendServiceFargate:
+    Type: AWS::ECS::Service
+    Condition: IsFargate
+    DependsOn: AlbBackendRule
+    Properties:
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref BackendTaskDef
+      LaunchType: FARGATE
+      # No DesiredCount: autoscaling owns it, and a deploy must not reset it.
+      HealthCheckGracePeriodSeconds: 120
+      LoadBalancers: [{ContainerName: backend, ContainerPort: 8080, TargetGroupArn: !Ref BackendTg}]
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: [!Ref PublicSubnetA, !Ref PublicSubnetB]
+          SecurityGroups: [!Ref BackendTaskSg]
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker: {Enable: true, Rollback: true}
+  FrontendServiceFargate:
+    Type: AWS::ECS::Service
+    Condition: IsFargate
+    DependsOn: AlbListener
+    Properties:
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref FrontendTaskDef
+      LaunchType: FARGATE
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 30
+      LoadBalancers: [{ContainerName: frontend, ContainerPort: 8080, TargetGroupArn: !Ref FrontendTg}]
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: [!Ref PublicSubnetA, !Ref PublicSubnetB]
+          SecurityGroups: [!Ref FrontendTaskSg]
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker: {Enable: true, Rollback: true}
+
+  BackendScaling:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsFargate
+    Properties:
+      ServiceNamespace: ecs
+      ScalableDimension: ecs:service:DesiredCount
+      ResourceId: !Sub 'service/${Cluster}/${BackendServiceFargate.Name}'
+      MinCapacity: 1
+      MaxCapacity: !Ref BackendMaxCount
+  BackendScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsFargate
+    Properties:
+      PolicyName: backend-cpu
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref BackendScaling
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification: {PredefinedMetricType: ECSServiceAverageCPUUtilization}
+        TargetValue: 60
+        ScaleOutCooldown: 60
+        # Scaling in drops the sessions on the removed task, so do it slowly.
+        ScaleInCooldown: 300
+
+  # CloudFront reaches the internal ALB privately, through network interfaces in this VPC.
+  VpcOrigin:
+    Type: AWS::CloudFront::VpcOrigin
+    Condition: IsFargate
+    Properties:
+      VpcOriginEndpointConfig:
+        Name: !Sub '${AWS::StackName}-alb'
+        Arn: !Ref Alb
+        HTTPPort: 80
+        HTTPSPort: 443
+        OriginProtocolPolicy: http-only
+
+  # ── CloudFront: the only public entry point, and the one origin the browser sees ──
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub '${AWS::StackName} (${ScaleMode})'
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        # Edges in Europe and North America. Romania is served from the EU edges.
+        PriceClass: PriceClass_100
+        ViewerCertificate: {CloudFrontDefaultCertificate: true}
+        Origins: !If
+          - IsSingle
+          # The Elastic IP's public DNS name: CloudFront does not accept an IP address.
+          - - Id: backend
+              DomainName: !Sub
+                - 'ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com'
+                - Dashed: !Join ['-', !Split ['.', !Ref HostIp]]
+              CustomOriginConfig: {HTTPPort: 8080, OriginProtocolPolicy: http-only}
+            - Id: frontend
+              DomainName: !Sub
+                - 'ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com'
+                - Dashed: !Join ['-', !Split ['.', !Ref HostIp]]
+              CustomOriginConfig: {HTTPPort: 80, OriginProtocolPolicy: http-only}
+          # The ALB routes /api/* and /actuator/* itself, so both origins are the ALB.
+          - - Id: backend
+              DomainName: !GetAtt Alb.DNSName
+              VpcOriginConfig: {VpcOriginId: !Ref VpcOrigin}
+            - Id: frontend
+              DomainName: !GetAtt Alb.DNSName
+              VpcOriginConfig: {VpcOriginId: !Ref VpcOrigin}
+        # The SPA. nginx marks hashed files immutable and index.html no-cache, and CloudFront
+        # follows those headers (managed policy UseOriginCacheControlHeaders).
+        DefaultCacheBehavior:
+          TargetOriginId: frontend
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 83da9c7e-98b4-4e11-a168-04f0df8e2c65
+        # The API: never cached. All viewer headers and cookies are forwarded, plus
+        # CloudFront-Forwarded-Proto (managed policies CachingDisabled and
+        # AllViewerAndCloudFrontHeaders-2022-06).
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: backend
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: 33f36d7e-f396-46d9-90e0-52428a34d9dc
+          - PathPattern: /actuator/*
+            TargetOriginId: backend
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: 33f36d7e-f396-46d9-90e0-52428a34d9dc
+
+Outputs:
+  AppUrl:
+    Description: The app, and the base URL for infra/smoke-check.sh.
+    Value: !Sub 'https://${Distribution.DomainName}'
+  ClusterName:
+    Value: !Ref Cluster
+  HostInstanceId:
+    Condition: IsSingle
+    Description: For aws ssm start-session.
+    Value: !Ref Host
+  AlbDnsName:
+    Condition: IsFargate
+    Description: Internal ALB. The soak load generator targets it from inside the VPC (#89).
+    Value: !GetAtt Alb.DNSName
+  DbEndpoint:
+    Value: !GetAtt Db.Endpoint.Address

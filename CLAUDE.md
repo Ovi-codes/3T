@@ -45,6 +45,7 @@ infra/               # AWS resources; infra/README.md has the one-time setup
 - Formatting is a CI gate. Before committing, run `./mvnw spring-javaformat:apply` (in `backend/`)
   and `npm run format` (in `frontend/` and `e2e/`; Prettier config is the root `.prettierrc`).
 - `npx playwright test` (in `e2e/`) — E2E, desktop + mobile viewports
+- `pip install -r infra/requirements.txt && cfn-lint infra/*.yaml` — lint the AWS templates (a CI gate)
 
 ## Conventions - these are critical, do not skip
 
