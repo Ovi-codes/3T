@@ -22,7 +22,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: 'html',
+  // In CI, a stalled stack would otherwise let every test time out and retry for many minutes.
+  // A green run takes ~1 min, so 3 min leaves room for a few retries but fails a hang fast.
+  globalTimeout: process.env.CI ? 180_000 : 0,
+  // The html report is uploaded as an artifact. In CI, `list` also prints each test as it runs,
+  // so the job log shows which test was running when something hangs.
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'html',
 
   use: {
     baseURL: FRONTEND_URL,

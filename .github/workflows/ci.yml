@@ -90,6 +90,9 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
+    # A green run takes ~3 min (tests ~1 min). Playwright's own globalTimeout (3 min) fires first
+    # and still writes the report; this is the backstop if Playwright itself hangs.
+    timeout-minutes: 7
     # spring-boot:run (started by Playwright's webServer) needs a real Postgres, and the CS-1 test
     # needs a real SMTP server to read the confirmation email back from. Testcontainers is not used
     # here, so provide both as services with the same defaults as docker-compose.yml.
