@@ -83,17 +83,8 @@ touching UI; the notes linked below are only the invariants that must hold in th
 See [`docs/implementation_details/design-direction.md`](./docs/implementation_details/design-direction.md)
 for the "Floodlight" theme invariants — tokens, palette, type, the poster element, quality floor, and copy style.
 
-## AWS deployment
-`deploy.yml` ships `main` after green CI (two GHCR images → ECS). Respect the following:
-- All config (DB URL/creds, SMTP host, mail-from, weather API URL/TTL, admin emails) via env vars,
-  never hardcoded. Weather vars: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL`
-  (all defaulted; the defaults hit the public Open-Meteo endpoint, so prod works with none set).
-  `ADMIN_EMAILS`: comma-separated accounts granted `ROLE_ADMIN` (defaulted empty — no admin unless set).
-  `DEMO_DATA`: `true` adds the `db/demo` Flyway seed (fake leaderboard runners + a demo account with
-  a run history for its stats) — local demos only, **never set in prod**.
-- `DB_SSLMODE` (default `prefer`) is appended to the JDBC URL; prod sets `require`.
-- Flyway migrations run on startup so a fresh DB self-provisions.
-- The Angular build is its own image (nginx). The backend hosts no pages: any path outside the
-  opened API is a 401. A new SPA route needs no backend change, but a new top-level path must not
-  start with `/api` or `/actuator`, because CloudFront (and the ALB) route those to the backend.
-- No localhost-baked URLs in app code; the Angular app talks to /api (proxy in dev, same-origin in prod).
+## Deployment
+
+See [`docs/implementation_details/deployment.md`](./docs/implementation_details/deployment.md)
+for the AWS setup (two images on ECS behind CloudFront) and the rules app code must follow:
+config via env vars, `DB_SSLMODE`, migrations on startup, and the `/api` / `/actuator` routing.

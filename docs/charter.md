@@ -50,7 +50,7 @@ Each increment is a **thin vertical slice** (DB → service → API → Angular 
 
 ### Increment 0 — Walking skeleton *(de-risks everything)*
 
-Repo, CI pipeline, Spring Boot + Angular "hello", Postgres via Testcontainers, one trivial end-to-end test, and a working deploy to Azure. Goal: prove the whole pipeline end-to-end before building any feature.
+Repo, CI pipeline, Spring Boot + Angular "hello", Postgres via Testcontainers, one trivial end-to-end test. Goal: prove the whole pipeline end-to-end before building any feature.
 
 ### Increment 1 — Upcoming events list (anonymous)
 
@@ -163,7 +163,6 @@ A feature is shippable when:
   consent banner is needed** (ePrivacy exempts strictly necessary cookies; per the Increment 5 brief).
   The privacy policy names both cookies. Revisit if analytics or any tracking cookie is ever added.
 - **Storage:** EU region; encryption in transit (HTTPS) and at rest (managed DB default).
-- **Processors:** Microsoft Azure hosts the app and the database (EU region) and sends the
-  confirmation emails (Azure Communication Services, data location Europe). Both are named in the
-  privacy policy.
+- **Processors:** Amazon Web Services hosts the app and the database (Frankfurt, eu-central-1)
+  and sends the confirmation emails (Amazon SES, same region). AWS is named in the privacy policy.
 - **Transactional email** (confirmation) is fine without marketing consent.
