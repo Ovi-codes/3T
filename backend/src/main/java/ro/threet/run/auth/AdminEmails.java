@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * The set of accounts that should hold {@code ROLE_ADMIN}, named by the
  * {@code ADMIN_EMAILS} env var (comma-separated). Emails are normalised so membership is
  * case-insensitive. Empty by default, so a plain dev or prod deploy has no admins until
- * the var is set (charter Azure config: no hardcoding).
+ * the var is set (deploy config: no hardcoding).
  */
 @Component
 class AdminEmails {

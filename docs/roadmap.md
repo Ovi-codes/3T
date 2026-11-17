@@ -27,7 +27,8 @@
 
 ## Next — V3
 - Post-event time upload via Strava/Garmin screenshot + AI extraction (vision model reads pace + distance, validates ≥5k, computes time).
-- ~~Azure stand up incl CSRF token layer~~ ✓ Increment 14 (#88) — one container on Azure Container Apps, see [ADR 0002](./adr/0002-single-container-on-container-apps.md)
+- ~~Azure stand up incl CSRF token layer~~ ✓ Increment 14 (#88) — CSRF token layer shipped; the Azure deploy was never provisioned (superseded by Increment 14b)
+- Move the deploy to AWS: two containers on ECS behind CloudFront (Increment 14b, #98) — see [ADR 0003](./adr/0003-two-containers-on-ecs-behind-cloudfront.md)
 - Full-target soak toward ~5,000 concurrent users (#89).
 - Swap local accounts for Microsoft Entra External ID before a real go-live (#90).
 - Running tips + Bucharest running-community/club info (couch-to-5k build-up).

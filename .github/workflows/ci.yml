@@ -167,12 +167,12 @@ jobs:
           path: e2e/playwright-report/
           retention-days: 7
 
-  # The deploy artifact (ADR 0002): build the single image and run it against a real Postgres,
-  # the way Container Apps will. This catches a broken Dockerfile, a missing SPA build, or a
-  # security rule that blocks the SPA before deploy.yml ever sees them. Bicep is compiled too.
+  # The deploy artifacts (ADR 0003): build both images for arm64, the production architecture,
+  # and run them the way production does. The backend runs against a real Postgres. This catches
+  # a broken Dockerfile, a bad nginx route, or a security rule change before deploy.yml sees them.
   image:
-    name: Container image + infra
-    runs-on: ubuntu-latest
+    name: Container images
+    runs-on: ubuntu-24.04-arm
     services:
       postgres:
         image: postgres:16
@@ -189,42 +189,65 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v7
-      - name: Compile Bicep
-        run: az bicep build --file infra/main.bicep --stdout > /dev/null
       - uses: docker/setup-buildx-action@v4
-      - name: Build image
+      - name: Build backend image
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: backend
           load: true
-          tags: 3t-run:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Run the image against Postgres
+          tags: 3t-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: Build frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: frontend
+          load: true
+          tags: 3t-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+      - name: Run the images
         run: |
-          docker run -d --name app --network host --memory 1g \
-            -e DB_HOST=localhost -e DB_SSLMODE=disable -e SESSION_COOKIE_SECURE=false 3t-run:ci
+          docker run -d --name backend --network host --memory 1g \
+            -e DB_HOST=localhost -e DB_SSLMODE=disable -e SESSION_COOKIE_SECURE=false 3t-backend:ci
+          docker run -d --name frontend -p 4300:8080 3t-frontend:ci
           for attempt in $(seq 1 60); do
             if curl -fsS http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
-              echo "UP after ${attempt}s"; break
+              echo "Backend UP after ${attempt}s"; break
             fi
             sleep 1
           done
-      - name: Smoke check
+      - name: Smoke check the backend
         run: |
           set -e
           b=http://localhost:8080
           curl -fsS "$b/actuator/health" | grep -q '"status":"UP"'
-          curl -fsS "$b/" | grep -q '<app-root>'
-          curl -fsS "$b/dashboard" | grep -q '<app-root>'
           test "$(curl -s -o /dev/null -w '%{http_code}' "$b/api/me/registrations")" = 401
-          test "$(curl -s -o /dev/null -w '%{http_code}' "$b/main-STALE.js")" = 404
+          # The API hosts no pages any more: a SPA route is closed like any other path.
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$b/dashboard")" = 401
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' "$b/api/registrations")" = 403
-          curl -s -D - -o /dev/null "$b/" | grep -qi '^set-cookie: XSRF-TOKEN='
-          echo "Image smoke check passed"
+          curl -s -D - -o /dev/null "$b/api/events" | grep -qi '^set-cookie: XSRF-TOKEN='
+          echo "Backend smoke check passed"
+      - name: Smoke check the frontend
+        run: |
+          set -e
+          f=http://localhost:4300
+          curl -fsS "$f/healthz" | grep -q ok
+          curl -fsS "$f/" | grep -q '<app-root>'
+          curl -fsS "$f/dashboard" | grep -q '<app-root>'
+          curl -fsS -D - -o /dev/null "$f/dashboard" | grep -qi '^cache-control: no-cache'
+          # A stale chunk name is a 404, not the shell. Backend paths never get the shell.
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$f/main-STALE.js")" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$f/api/x")" = 404
+          # The real main chunk is cached forever.
+          main=$(curl -fsS "$f/" | grep -o 'main-[A-Z0-9]*\.js' | head -1)
+          curl -fsS -D - -o /dev/null "$f/$main" | grep -qi '^cache-control: public, max-age=31536000, immutable'
+          echo "Frontend smoke check passed"
       - name: Container logs
         if: ${{ failure() }}
-        run: docker logs app
+        run: |
+          docker logs backend
+          docker logs frontend
 
   # On main only: publish the coverage badge JSON to the `badges` branch, which the README's
   # shields.io endpoint badges read. Kept off main itself so CI never commits to the protected branch.

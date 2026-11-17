@@ -1,18 +1,16 @@
-name: Deploy (Azure)
+name: Deploy (AWS)
 
-# Ships main to Azure Container Apps (ADR 0002, infra/README.md).
+# Ships main to AWS (ADR 0003, infra/README.md).
 #
-#   image   Builds the single image (Spring Boot + Angular) and pushes it to GHCR as
-#           ghcr.io/<owner>/3t:<sha> and :main.
-#   deploy  Points the Container App at :<sha> and waits for /actuator/health to report UP.
-#           It is skipped until the repository variable AZURE_CONTAINER_APP is set. That way
-#           the first image can exist in GHCR before the Azure resources do.
+#   images  Builds the backend and frontend images for linux/arm64 and pushes them to GHCR as
+#           ghcr.io/<owner>/3t-backend:<sha> and ghcr.io/<owner>/3t-frontend:<sha>, plus :main.
+#
+# The AWS deploy job (CloudFormation via GitHub OIDC, then a smoke check through CloudFront)
+# comes with the infrastructure in the next step of #98. Until then, this workflow only
+# publishes the images.
 #
 # It runs after CI succeeds on a push to main (the release gate, charter §6), or by hand from
-# the Actions tab. Azure login uses GitHub OIDC: no long-lived secrets.
-#
-# Repository secrets:   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-# Repository variables: AZURE_RESOURCE_GROUP, AZURE_CONTAINER_APP
+# the Actions tab.
 
 on:
   workflow_run:
@@ -30,17 +28,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  image:
-    name: Build and push image
+  images:
+    name: Build and push ${{ matrix.image }} image
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
-    runs-on: ubuntu-latest
+    # Native arm64 runner: production runs on Graviton, and no QEMU emulation is needed.
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        image: [backend, frontend]
     permissions:
       contents: read
       packages: write
-    outputs:
-      image: ${{ steps.tags.outputs.image }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,10 +49,11 @@ jobs:
       - name: Image name
         id: tags
         run: |
-          repo="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/3t"
+          repo="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/3t-${IMAGE}"
           echo "image=${repo}:${SHA}" >> "$GITHUB_OUTPUT"
           echo "latest=${repo}:main" >> "$GITHUB_OUTPUT"
         env:
+          IMAGE: ${{ matrix.image }}
           SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
@@ -62,56 +63,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ${{ matrix.image }}
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ steps.tags.outputs.image }}
             ${{ steps.tags.outputs.latest }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    name: Deploy to Container Apps
-    needs: image
-    if: ${{ vars.AZURE_CONTAINER_APP != '' }}
-    runs-on: ubuntu-latest
-    environment: production
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      APP: ${{ vars.AZURE_CONTAINER_APP }}
-      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
-      IMAGE: ${{ needs.image.outputs.image }}
-    steps:
-      - uses: azure/login@v3
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Roll out the new image
-        run: az containerapp update --name "$APP" --resource-group "$RG" --image "$IMAGE" --output none
-      # The app may be scaled to zero, so the first request waits for a cold start (~20–40 s).
-      # Up to 5 minutes for the new revision to report UP with its database connected.
-      - name: Smoke check
-        run: |
-          fqdn=$(az containerapp show --name "$APP" --resource-group "$RG" \
-            --query properties.configuration.ingress.fqdn --output tsv)
-          url="https://${fqdn}"
-          for attempt in $(seq 1 30); do
-            health=$(curl -fsS --max-time 30 "${url}/actuator/health" || true)
-            if echo "$health" | grep -q '"status":"UP"'; then
-              echo "Health UP after attempt ${attempt}"
-              curl -fsS --max-time 30 "${url}/dashboard" | grep -q '<app-root>' \
-                || { echo "::error::${url}/dashboard did not return the SPA shell"; exit 1; }
-              status=$(curl -s -o /dev/null -w '%{http_code}' "${url}/api/me/registrations")
-              [ "$status" = "401" ] \
-                || { echo "::error::anonymous /api/me/registrations returned ${status}, expected 401"; exit 1; }
-              echo "### Deployed ${IMAGE} to ${url}" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            echo "Attempt ${attempt}: not UP yet (${health:-no response})"
-            sleep 10
-          done
-          echo "::error::${url}/actuator/health never reported UP"
-          exit 1
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

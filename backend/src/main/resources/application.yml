@@ -3,12 +3,17 @@ spring:
     name: 3t-run-backend
 
   # Defaults match docker-compose.yml, so a local run needs no environment at all.
-  # Every value is overridable for CI and for Azure.
+  # Every value is overridable for CI and for the deploy.
   datasource:
-    # DB_SSLMODE: Azure Postgres only accepts TLS, so the deploy sets "require".
+    # DB_SSLMODE: the production database only accepts TLS, so the deploy sets "require".
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:runro}?sslmode=${DB_SSLMODE:prefer}
     username: ${DB_USER:runro}
     password: ${DB_PASSWORD:runro}
+
+  # The API serves no static files. The Angular build is its own image (ADR 0003).
+  web:
+    resources:
+      add-mappings: false
 
   flyway:
     enabled: true
@@ -34,9 +39,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
-  # In Azure, TLS ends at the Container Apps ingress, which forwards plain http with
-  # X-Forwarded-Proto. Trusting it makes request.isSecure() true there, so the CSRF cookie
-  # gets the Secure flag and redirects keep https.
+  # In production, TLS ends at a proxy in front of the app, which forwards plain http with a
+  # header that names the original scheme. Trusting it makes request.isSecure() true there, so
+  # the CSRF cookie gets the Secure flag and redirects keep https. The deploy sets which header
+  # and which proxies to trust (SERVER_TOMCAT_REMOTEIP_*).
   forward-headers-strategy: native
   servlet:
     session:
@@ -52,8 +58,8 @@ server:
 
 # Actuator: the readiness probe. Expose only the health endpoint (E2E and the deploy smoke
 # check hit /actuator/health); its "db" indicator reports UP only once Postgres is reachable.
-# /actuator/health/liveness reports only the process itself: Container Apps restarts the
-# container on that one, so a Postgres blip doesn't cause a restart loop.
+# /actuator/health/liveness reports only the process itself: the container platform restarts
+# the container on that one, so a Postgres blip doesn't cause a restart loop.
 management:
   endpoints:
     web:

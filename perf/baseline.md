@@ -69,5 +69,5 @@ env var with a default, so the scripts run the same way locally and in CI.
 
 ## Not in scope
 
-One full-target soak toward ~5,000 concurrent users is deferred to before launch, alongside the
-Azure stand-up — not this increment (see [`docs/roadmap.md`](../docs/roadmap.md)).
+One full-target soak toward ~5,000 concurrent users is deferred to before launch, against the
+AWS deployment (#89, ADR 0003) — not this increment (see [`docs/roadmap.md`](../docs/roadmap.md)).

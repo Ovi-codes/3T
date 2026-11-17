@@ -1,0 +1,7 @@
+# Keep the build context small and free of local build output, secrets and dependencies.
+node_modules/
+dist/
+.angular/
+coverage/
+**/.env
+**/.env.*

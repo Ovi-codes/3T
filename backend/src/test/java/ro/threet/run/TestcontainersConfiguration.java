@@ -8,7 +8,7 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * Integration tests run against a throwaway Postgres, not the docker-compose one. The
- * image is pinned to the same major version we run in dev and in Azure.
+ * image is pinned to the same major version we run in dev and in production.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
