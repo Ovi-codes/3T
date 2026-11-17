@@ -30,11 +30,11 @@ Runners view upcoming events, register for one, and (if they hold an account) tr
 | :---- | :---- | :---- |
 | Backend | Spring Boot (Java) |  |
 | Frontend | Angular | Both mobile + desktop as first-class (responsive from the start). |
-| DB | PostgreSQL | Runs in a container locally; Azure Database for PostgreSQL Flexible Server (Burstable / free-eligible tier) in cloud. |
+| DB | PostgreSQL | Runs in a container locally; Azure Database for PostgreSQL Flexible Server B1MS (Burstable, 12-month free services) in cloud, TLS required (`DB_SSLMODE=require`). |
 | Auth | Spring Security, email + BCrypt | Swappable behind an interface; migrate to **Microsoft Entra External ID** before a real go-live if desired. **Core loop needs no auth.** |
-| Email | Mailpit in dev/tests; Azure Communication Services Email (or a free-tier provider) in prod | Confirmation email is transactional → clean lawful basis. |
-| Hosting | Local first → Azure | Azure App Service (backend) + Static Web Apps (Angular), or a single container app. Choose the free/low tiers; use new-account credits. Deploy to an **EU region** (North/West Europe) for GDPR. |
-| CI/CD | GitHub Actions | Build, format check, lint, all test layers with coverage, and a deploy step gated on green tests. |
+| Email | Mailpit in dev/tests; Azure Communication Services Email (Azure managed domain, data location Europe) over SMTP in prod | Confirmation email is transactional → clean lawful basis. |
+| Hosting | Local first → Azure | **One Docker image** (Spring Boot also serves the Angular build) on **Azure Container Apps**, consumption plan, scale to zero; image on GHCR; infra in `infra/main.bicep`. ~€0/month; the cost is a ~20–40 s cold start after idle. Decided in Increment 14, see [ADR 0002](adr/0002-single-container-on-container-apps.md). **EU region** for GDPR. |
+| CI/CD | GitHub Actions | Build, format check, lint, all test layers with coverage, an image smoke check, and a deploy (GHCR → Container Apps, Azure login via OIDC) gated on green CI on `main`. |
 
 ### Seams to leave in **now** so V2 stays cheap
 
@@ -163,4 +163,7 @@ A feature is shippable when:
   consent banner is needed** (ePrivacy exempts strictly necessary cookies; per the Increment 5 brief).
   The privacy policy names both cookies. Revisit if analytics or any tracking cookie is ever added.
 - **Storage:** EU region; encryption in transit (HTTPS) and at rest (managed DB default).
+- **Processors:** Microsoft Azure hosts the app and the database (EU region) and sends the
+  confirmation emails (Azure Communication Services, data location Europe). Both are named in the
+  privacy policy.
 - **Transactional email** (confirmation) is fine without marketing consent.

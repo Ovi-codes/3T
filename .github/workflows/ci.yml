@@ -167,6 +167,65 @@ jobs:
           path: e2e/playwright-report/
           retention-days: 7
 
+  # The deploy artifact (ADR 0002): build the single image and run it against a real Postgres,
+  # the way Container Apps will. This catches a broken Dockerfile, a missing SPA build, or a
+  # security rule that blocks the SPA before deploy.yml ever sees them. Bicep is compiled too.
+  image:
+    name: Container image + infra
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: runro
+          POSTGRES_USER: runro
+          POSTGRES_PASSWORD: runro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runro -d runro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile Bicep
+        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: 3t-run:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Run the image against Postgres
+        run: |
+          docker run -d --name app --network host --memory 1g \
+            -e DB_HOST=localhost -e DB_SSLMODE=disable -e SESSION_COOKIE_SECURE=false 3t-run:ci
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
+              echo "UP after ${attempt}s"; break
+            fi
+            sleep 1
+          done
+      - name: Smoke check
+        run: |
+          set -e
+          b=http://localhost:8080
+          curl -fsS "$b/actuator/health" | grep -q '"status":"UP"'
+          curl -fsS "$b/" | grep -q '<app-root>'
+          curl -fsS "$b/dashboard" | grep -q '<app-root>'
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$b/api/me/registrations")" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$b/main-STALE.js")" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' "$b/api/registrations")" = 403
+          curl -s -D - -o /dev/null "$b/" | grep -qi '^set-cookie: XSRF-TOKEN='
+          echo "Image smoke check passed"
+      - name: Container logs
+        if: ${{ failure() }}
+        run: docker logs app
+
   # On main only: publish the coverage badge JSON to the `badges` branch, which the README's
   # shields.io endpoint badges read. Kept off main itself so CI never commits to the protected branch.
   coverage-badges:
