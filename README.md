@@ -45,9 +45,9 @@ their time trend.
   Passwords are hashed with BCrypt. Admin endpoints are restricted to `ROLE_ADMIN`. Runners can
   download their data or delete their account. A privacy policy is published in the app.
 - **Ready for the cloud.** All configuration comes from environment variables, and the
-  migrations run at startup, so a new database provisions itself. One Docker image (Spring Boot
-  serves the Angular build) runs on Azure Container Apps in an EU region at ~€0/month, provisioned
-  by Bicep and deployed after green CI with GitHub OIDC.
+  migrations run at startup, so a new database provisions itself. Two Docker images (the Spring
+  Boot API, and the Angular build on nginx) run on AWS ECS behind CloudFront. One small host runs 
+  both day to day, and one parameter switches the stack to Fargate autoscaling.
 - **Decisions are documented.** The [architecture overview](docs/architecture.html) and the
   [architecture decision records](docs/adr/) give the reasons for decisions that are hard to
   reverse.
@@ -83,10 +83,11 @@ frontend/            Angular (standalone components)
 e2e/                 Playwright: tests the whole system (desktop + mobile, a11y)
 perf/                k6 load tests, the committed baseline and the gate scripts
 docs/                charter, roadmap, architecture, ADRs, design, screenshots
-infra/               Bicep for Azure (Postgres + Container Apps) and the one-time setup
+infra/               AWS infrastructure and the one-time setup (in progress, #98)
 .github              GitHub CI configuration
 docker-compose.yml   Postgres + Mailpit for local dev
-Dockerfile           the production image: Angular build + Spring Boot on a JRE
+backend/Dockerfile   the API image: Spring Boot on a JRE
+frontend/Dockerfile  the SPA image: the Angular build on nginx
 ```
 
 ## Run it locally
@@ -236,28 +237,30 @@ the runner. It is a **required status check** on `main`, failing on a p95 over b
 120 ms write) or a raised error rate. A p95-only failure is retried once, to absorb runner noise
 (see [`perf/baseline.md`](perf/baseline.md)).
 
-The CI `image` job builds the production Docker image, runs it against Postgres and smoke-checks it
-(SPA shell, deep link, 401 on the API, 403 on a write without a CSRF token). It also compiles the
-Bicep.
+The CI `image` job builds both production images for arm64 and smoke-checks them.
 
 ### Deploy
 
-Production is one Docker image on **Azure Container Apps**: Spring Boot serves the API and the
-Angular build from the same origin
-([ADR 0002](docs/adr/0002-single-container-on-container-apps.md)).
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs after CI succeeds on `main`. It
-pushes `ghcr.io/ovi-codes/3t:<sha>`, rolls the Container App onto it (Azure login via GitHub OIDC),
-and waits for `/actuator/health` to report `UP`. The resources are in
-[`infra/main.bicep`](infra/main.bicep). [`infra/README.md`](infra/README.md) has the one-time setup.
+Production is two Docker images on **AWS ECS** behind **CloudFront**. CloudFront
+sends `/api/*` and `/actuator/*` to the Spring Boot API and everything else to the Angular build
+on nginx, so the browser sees one origin
+([ADR 0003](docs/adr/0003-two-containers-on-ecs-behind-cloudfront.md)).
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs after CI succeeds on `main`
+and pushes `ghcr.io/ovi-codes/3t-backend:<sha>` and `ghcr.io/ovi-codes/3t-frontend:<sha>`.
 
-To run the production image locally against `docker compose` (Postgres + Mailpit):
+To run the production images locally against `docker compose` (Postgres + Mailpit):
 
 ```sh
-docker build -t 3t-run .
-docker run --rm -p 8080:8080 -e DB_HOST=host.docker.internal -e MAIL_HOST=host.docker.internal   -e SESSION_COOKIE_SECURE=false 3t-run
+docker build -t 3t-backend backend
+docker build -t 3t-frontend frontend
+docker run --rm -p 8080:8080 -e DB_HOST=host.docker.internal -e MAIL_HOST=host.docker.internal \
+  -e SESSION_COOKIE_SECURE=false 3t-backend
+docker run --rm -p 4300:8080 3t-frontend
 ```
 
-Then open http://localhost:8080.
+The backend answers on http://localhost:8080 and the SPA on http://localhost:4300. The nginx
+image does not proxy `/api` (CloudFront does that in production), so to use the whole app
+locally, run `npm start` in `frontend/` instead.
 
 ## Dependencies & versions
 
@@ -275,8 +278,8 @@ fetched "latest" at build time — versions change only when one of these files 
 | `e2e/package.json` | Playwright (`@playwright/test`) — the E2E runner and browser-download tooling — `@axe-core/playwright` for the accessibility checks the E2E tests run, and Prettier. | Hand-edited. |
 | `e2e/package-lock.json` | The fully-resolved Playwright dependency tree (same role as the frontend lockfile, for `e2e/`). | **Generated** by npm; updates automatically on `npm install`. |
 | `docker-compose.yml` | The local infrastructure image versions: Postgres and Mailpit. | Hand-edited. |
-| `Dockerfile` | The production image's base images: Node 24 (build), Temurin 21 JDK (build) and JRE (runtime). These are major-version tags (`node:24-alpine`, `eclipse-temurin:21-jre`), so each image build picks up the latest security patches for that major. This is the one exception to the rule above. | Hand-edited; Dependabot proposes bumps. |
-| `infra/main.bicep` | Azure resource API versions, Postgres version and SKU, Container App size. | Hand-edited. |
+| `backend/Dockerfile`, `frontend/Dockerfile` | The production images' base images: Temurin 21 JDK (build) and JRE (runtime) for the backend; Node 24 (build) and nginx (runtime) for the frontend. These are major-version or channel tags (`eclipse-temurin:21-jre`, `node:24-alpine`, `nginx-unprivileged:stable-alpine`), so each image build picks up the latest security patches. This is the one exception to the rule above. | Hand-edited; Dependabot proposes bumps. |
+| `frontend/nginx/*.conf` | How the SPA is served: deep-link fallback, cache headers, security headers. | Hand-edited. |
 
 **Version-range syntax** (in the `package.json` files): `^1.2.3` allows any `1.x.x` (compatible
 minor + patch updates), `~1.2.3` allows only `1.2.x` (patch updates), and a bare `1.2.3` would

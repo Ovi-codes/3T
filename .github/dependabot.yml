@@ -49,8 +49,8 @@ updates:
       actions:
         patterns: ['*']
 
-  # Base images in the root Dockerfile (node, eclipse-temurin).
+  # Base images in the two Dockerfiles: eclipse-temurin (backend), node and nginx (frontend).
   - package-ecosystem: docker
-    directory: /
+    directories: [/backend, /frontend]
     schedule:
       interval: weekly

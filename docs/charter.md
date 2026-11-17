@@ -26,15 +26,15 @@ Runners view upcoming events, register for one, and (if they hold an account) tr
 
 ## 3. Architecture & stack decisions
 
-| Area | Decision | Notes |
-| :---- | :---- | :---- |
-| Backend | Spring Boot (Java) |  |
-| Frontend | Angular | Both mobile + desktop as first-class (responsive from the start). |
-| DB | PostgreSQL | Runs in a container locally; Azure Database for PostgreSQL Flexible Server B1MS (Burstable, 12-month free services) in cloud, TLS required (`DB_SSLMODE=require`). |
-| Auth | Spring Security, email + BCrypt | Swappable behind an interface; migrate to **Microsoft Entra External ID** before a real go-live if desired. **Core loop needs no auth.** |
-| Email | Mailpit in dev/tests; Azure Communication Services Email (Azure managed domain, data location Europe) over SMTP in prod | Confirmation email is transactional → clean lawful basis. |
-| Hosting | Local first → Azure | **One Docker image** (Spring Boot also serves the Angular build) on **Azure Container Apps**, consumption plan, scale to zero; image on GHCR; infra in `infra/main.bicep`. ~€0/month; the cost is a ~20–40 s cold start after idle. Decided in Increment 14, see [ADR 0002](adr/0002-single-container-on-container-apps.md). **EU region** for GDPR. |
-| CI/CD | GitHub Actions | Build, format check, lint, all test layers with coverage, an image smoke check, and a deploy (GHCR → Container Apps, Azure login via OIDC) gated on green CI on `main`. |
+| Area | Decision                                           | Notes                                                                                                                                                                                                                                                                                                                      |
+| :---- |:---------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Backend | Spring Boot (Java)                                 |                                                                                                                                                                                                                                                                                                                            |
+| Frontend | Angular                                            | Both mobile + desktop as first-class (responsive from the start).                                                                                                                                                                                                                                                          |
+| DB | PostgreSQL                                         | Runs in a container locally; Amazon RDS for PostgreSQL 16 in cloud, TLS required (`DB_SSLMODE=require`).                                                                                                                                                                                                                   |
+| Auth | Spring Security, email + BCrypt                    | Swappable behind an interface; migrate to external solution before a real go-live. **Core loop needs no auth.**                                                                                                                                                                                                            |
+| Email | Mailpit in dev/tests; Amazon SES over SMTP in prod | Confirmation email is transactional → clean lawful basis.                                                                                                                                                                                                                                                                  |
+| Hosting | Local first → AWS                                  | **Two Docker images** (the Spring Boot API, and the Angular build on nginx) on **AWS ECS** behind **CloudFront**, which routes `/api/*` and `/actuator/*` to the API so the browser sees one origin. See [ADR 0003](adr/0003-two-containers-on-ecs-behind-cloudfront.md), for details. **EU region** (Frankfurt) for GDPR. |
+| CI/CD | GitHub Actions                                     | Build, format check, lint, all test layers with coverage, an image smoke check, and a deploy (two GHCR images → ECS, AWS login via OIDC) gated on green CI on `main`.                                                                                                                                                      |
 
 ### Seams to leave in **now** so V2 stays cheap
 
@@ -50,7 +50,7 @@ Each increment is a **thin vertical slice** (DB → service → API → Angular 
 
 ### Increment 0 — Walking skeleton *(de-risks everything)*
 
-Repo, CI pipeline, Spring Boot + Angular "hello", Postgres via Testcontainers, one trivial end-to-end test, and a working deploy to Azure. Goal: prove the whole pipeline end-to-end before building any feature.
+Repo, CI pipeline, Spring Boot + Angular "hello", Postgres via Testcontainers, one trivial end-to-end test. Goal: prove the whole pipeline end-to-end before building any feature.
 
 ### Increment 1 — Upcoming events list (anonymous)
 
@@ -163,7 +163,6 @@ A feature is shippable when:
   consent banner is needed** (ePrivacy exempts strictly necessary cookies; per the Increment 5 brief).
   The privacy policy names both cookies. Revisit if analytics or any tracking cookie is ever added.
 - **Storage:** EU region; encryption in transit (HTTPS) and at rest (managed DB default).
-- **Processors:** Microsoft Azure hosts the app and the database (EU region) and sends the
-  confirmation emails (Azure Communication Services, data location Europe). Both are named in the
-  privacy policy.
+- **Processors:** Amazon Web Services hosts the app and the database (Frankfurt, eu-central-1)
+  and sends the confirmation emails (Amazon SES, same region). AWS is named in the privacy policy.
 - **Transactional email** (confirmation) is fine without marketing consent.

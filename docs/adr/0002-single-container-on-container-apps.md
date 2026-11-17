@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0003
 ---
 
 # One container on Azure Container Apps, not Static Web Apps + App Service

@@ -24,8 +24,8 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
  * own GDPR data controls ({@code GET /api/me/export}, {@code DELETE /api/me}).
  * Authorisation is therefore deny-by-default with the public API enumerated explicitly,
  * so a new endpoint (like those) is closed until deliberately opened — an anonymous hit
- * is a plain 401. Outside {@code /api} and {@code /actuator}, a GET is the Angular build
- * the same container hosts (see {@code SpaHostingConfig}), and that is public.
+ * is a plain 401. This service hosts no pages: the Angular build is a separate image (ADR
+ * 0003), so any path outside the rules below is a 401 too.
  *
  * Sessions are an httpOnly cookie (Spring Security's default
  * {@code SecurityContextRepository}), SameSite=Lax (see application.yml). On top of that,
@@ -65,14 +65,7 @@ class SecurityConfig {
 			// deny-by-default 401 (this API has no login page to redirect to).
 			.requestMatchers("/api/admin/**")
 			.hasRole(Roles.ADMIN)
-			// The rest of the API and of actuator: closed unless opened above.
-			.requestMatchers("/api/**", "/actuator/**")
-			.authenticated()
-			// Everything else is the Angular build (SpaHostingConfig): the shell, its
-			// chunks and its routes are public. The SPA's own guards are only UX; the
-			// data behind them is the API above.
-			.requestMatchers(HttpMethod.GET, "/**")
-			.permitAll()
+			// Everything else: closed unless opened above.
 			.anyRequest()
 			.authenticated())
 			// The token cookie is the one the repository bean below writes, so login can

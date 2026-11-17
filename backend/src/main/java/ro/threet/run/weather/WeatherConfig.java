@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 /**
- * Wires the weather seam from the environment (charter Azure config rules — no hardcoded
- * URLs). The upstream base URL, forecast horizon and cache TTL are all env-driven; a
- * different provider is a new {@link WeatherProvider} built here, not edits across the
- * app (charter §3).
+ * Wires the weather seam from the environment (deploy config rules — no hardcoded URLs).
+ * The upstream base URL, forecast horizon and cache TTL are all env-driven; a different
+ * provider is a new {@link WeatherProvider} built here, not edits across the app (charter
+ * §3).
  *
  * <p>
  * Assembling the provider here (rather than component-scanning the implementations) keeps
