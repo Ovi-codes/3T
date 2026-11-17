@@ -59,5 +59,3 @@ Monthly costs are for Frankfurt, 24/7, on-demand, from the AWS Price List API (N
 - **App Runner:** closed to new customers on 2026-04-30. Not available.
 - **ECS Express Mode:** routes per host name, not per path, so it cannot put the SPA and `/api`
   on one origin without a domain. Rejected.
-
-How the setup works: [`docs/implementation_details/deployment.md`](../implementation_details/deployment.md).
