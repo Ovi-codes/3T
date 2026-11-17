@@ -18,7 +18,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # ── 2. Spring Boot jar, with the Angular build in classpath:/static ─────────
-FROM eclipse-temurin:21-jdk AS backend
+FROM eclipse-temurin:24-jdk AS backend
 WORKDIR /build
 COPY backend/mvnw backend/pom.xml ./
 COPY backend/.mvn .mvn
@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q -DskipTests package \
  && java -Djarmode=tools -jar app.jar extract --destination extracted
 
 # ── 3. Runtime: JRE only, non-root ──────────────────────────────────────────
-FROM eclipse-temurin:21-jre AS runtime
+FROM eclipse-temurin:24-jre AS runtime
 RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 COPY --from=backend --chown=app:app /build/extracted/ ./
