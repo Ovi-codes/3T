@@ -10,7 +10,7 @@
 # Every setting comes from env vars (see backend/src/main/resources/application.yml).
 
 # ── 1. Angular production build ─────────────────────────────────────────────
-FROM node:24-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
