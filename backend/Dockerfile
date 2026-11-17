@@ -10,7 +10,7 @@
 # Every setting comes from env vars (see src/main/resources/application.yml).
 
 # ── 1. Spring Boot jar ──────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:24-jdk AS build
 WORKDIR /build
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q -DskipTests package \
  && java -Djarmode=tools -jar app.jar extract --destination extracted
 
 # ── 2. Runtime: JRE only, non-root ──────────────────────────────────────────
-FROM eclipse-temurin:21-jre AS runtime
+FROM eclipse-temurin:24-jre AS runtime
 RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 COPY --from=build --chown=app:app /build/extracted/ ./
