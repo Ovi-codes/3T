@@ -5,7 +5,7 @@ setup: [ADR 0003](../adr/0003-two-containers-on-ecs-behind-cloudfront.md).
 
 `deploy.yml` ships `main` after green CI. It builds both images for arm64, pushes them to GHCR
 (`ghcr.io/ovi-codes/3t-backend` and `3t-frontend`, tagged `:<sha>` and `:main`), updates the
-CloudFormation stack `3t-run` ([`infra/app.yaml`](../../infra/app.yaml)) to the new tags, and runs
+CloudFormation stack `run-3t` ([`infra/app.yaml`](../../infra/app.yaml)) to the new tags, and runs
 [`infra/smoke-check.sh`](../../infra/smoke-check.sh) through CloudFront. The one-time setup and
 day-to-day operations are in [`infra/README.md`](../../infra/README.md).
 

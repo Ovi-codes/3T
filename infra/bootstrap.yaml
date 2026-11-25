@@ -15,7 +15,7 @@ Parameters:
     Description: owner/repo, exactly as GitHub spells it (the OIDC subject is case-sensitive).
   AppStackName:
     Type: String
-    Default: 3t-run
+    Default: run-3t
   ExistingOidcProviderArn:
     Type: String
     Default: ''

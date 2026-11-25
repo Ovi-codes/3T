@@ -83,7 +83,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      STACK: 3t-run
+      STACK: run-3t
       SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v7

@@ -6,13 +6,13 @@ Production runs as two containers on AWS ECS behind CloudFront, in EU.
 
 | File | What it is |
 | :--- | :--- |
-| `bootstrap.yaml` | Stack `3t-bootstrap`: the GitHub OIDC trust, the deploy role, and the CloudFormation execution role. Deployed once, by hand. |
-| `app.yaml` | Stack `3t-run`: the VPC, RDS, ECS, the EC2 host or the ALB + Fargate (`ScaleMode`), and CloudFront. |
+| `bootstrap.yaml` | Stack `run-3t-bootstrap`: the GitHub OIDC trust, the deploy role, and the CloudFormation execution role. Deployed once, by hand. |
+| `app.yaml` | Stack `run-3t`: the VPC, RDS, ECS, the EC2 host or the ALB + Fargate (`ScaleMode`), and CloudFront. |
 | `smoke-check.sh` | Checks the deployed app through CloudFront. `deploy.yml` runs it after every deploy. |
 | `requirements.txt` | The pinned `cfn-lint` that CI runs on the templates. |
 
 After the one-time setup below, every green CI run on `main` deploys by itself: `deploy.yml`
-pushes both images to GHCR, updates `3t-run` to the new tags, and runs the smoke check.
+pushes both images to GHCR, updates `run-3t` to the new tags, and runs the smoke check.
 
 ## One-time setup
 
@@ -57,9 +57,9 @@ You need the AWS CLI v2, signed in with an admin profile, region `eu-central-1`
 
 6. **Deploy the bootstrap stack**, then read its outputs:
    ```sh
-   aws cloudformation deploy --stack-name 3t-bootstrap --template-file infra/bootstrap.yaml \
+   aws cloudformation deploy --stack-name run-3t-bootstrap --template-file infra/bootstrap.yaml \
      --capabilities CAPABILITY_IAM
-   aws cloudformation describe-stacks --stack-name 3t-bootstrap --query 'Stacks[0].Outputs'
+   aws cloudformation describe-stacks --stack-name run-3t-bootstrap --query 'Stacks[0].Outputs'
    ```
 
 7. **Deploy the app stack** for the first time. This sets every parameter that `deploy.yml`
@@ -69,11 +69,11 @@ You need the AWS CLI v2, signed in with an admin profile, region `eu-central-1`
      --name /aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id)
    cf=$(aws ec2 describe-managed-prefix-lists --query 'PrefixLists[0].PrefixListId' --output text \
      --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing)
-   aws cloudformation deploy --stack-name 3t-run --template-file infra/app.yaml \
+   aws cloudformation deploy --stack-name run-3t --template-file infra/app.yaml \
      --role-arn <ExecutionRoleArn> --capabilities CAPABILITY_IAM \
      --parameter-overrides EcsAmiId="$ami" CloudFrontPrefixListId="$cf" \
        MailFrom='<sender address>' MailUsername='<SES SMTP user name>' AdminEmails='<your account>'
-   url=$(aws cloudformation describe-stacks --stack-name 3t-run --output text \
+   url=$(aws cloudformation describe-stacks --stack-name run-3t --output text \
      --query "Stacks[0].Outputs[?OutputKey=='AppUrl'].OutputValue")
    bash infra/smoke-check.sh "$url"
    ```
@@ -105,15 +105,15 @@ You need the AWS CLI v2, signed in with an admin profile, region `eu-central-1`
 ## Operating
 
 All commands assume the admin profile and `AWS_REGION=eu-central-1`. `<ExecutionRoleArn>` is the
-`3t-bootstrap` output.
+`run-3t-bootstrap` output.
 
-- **Logs:** `aws logs tail /3t-run/backend --follow` (or `/3t-run/frontend`). Kept 7 days.
+- **Logs:** `aws logs tail /run-3t/backend --follow` (or `/run-3t/frontend`). Kept 7 days.
 - **Shell on the host** (`ScaleMode=single`), with no SSH port open:
   `aws ssm start-session --target <HostInstanceId output>`. Needs the Session Manager plugin.
 - **Roll back:** revert the commit on `main`, and the deploy ships the revert. In a hurry,
   redeploy the earlier images by hand:
   ```sh
-  aws cloudformation deploy --stack-name 3t-run --template-file infra/app.yaml \
+  aws cloudformation deploy --stack-name run-3t --template-file infra/app.yaml \
     --role-arn <ExecutionRoleArn> --capabilities CAPABILITY_IAM \
     --parameter-overrides BackendImage=ghcr.io/ovi-codes/3t-backend:<sha> \
       FrontendImage=ghcr.io/ovi-codes/3t-frontend:<sha>
@@ -141,5 +141,5 @@ All commands assume the admin profile and `AWS_REGION=eu-central-1`. `<Execution
   next deploy (the `single` services set `DesiredCount: 1`).
 - **Tear down:** turn off the database's deletion protection
   (`aws rds modify-db-instance --db-instance-identifier <id> --no-deletion-protection`), then
-  `aws cloudformation delete-stack --stack-name 3t-run`. RDS keeps a final snapshot, which costs
+  `aws cloudformation delete-stack --stack-name run-3t`. RDS keeps a final snapshot, which costs
   storage until you delete it.
