@@ -34,12 +34,14 @@ You need the AWS CLI v2, signed in with an admin profile, region `eu-central-1`
       ```
    2. In *SES → SMTP settings*, create SMTP credentials. Note the user name; the password is
       shown once.
-   3. While the account is in the SES sandbox, mail reaches verified addresses only. Verify your
-      own address the same way to test. In *SES → Get set up*, request production access (free,
-      about a day).
-
-   Without a domain, the From address is a mailbox at a public provider. Some inboxes put such
-   mail in spam (DMARC). A domain with SPF and DKIM fixes that later.
+   3. While the account is in the SES sandbox, mail reaches verified addresses only, and the
+      sender must be verified too. Verify each recipient the same way as the sender (their owner
+      clicks the link). The sandbox allows 200 messages a day. Anyone else who registers gets
+      no confirmation email.
+   4. To leave the sandbox, verify a sending domain first (*SES → Identities → Create identity →
+      Domain*, then add the DKIM CNAME records at your DNS provider). The console keeps
+      *Request production access* disabled ("Domain verification needed") until a domain is
+      verified. Then request access (free, about a day) and send from an address on that domain.
 
 4. **Store the secrets** as SSM SecureStrings. The stack reads them by name.
    ```sh
@@ -129,6 +131,14 @@ All commands assume the admin profile and `AWS_REGION=eu-central-1`. `<Execution
   --master-user-password <new>`. Then restart the backend:
   `aws ecs update-service --cluster <ClusterName> --service <backend service> --force-new-deployment`.
 - **Cost:** in Cost Explorer, `ScaleMode=single` costs about $1.25 a day.
+- **Approve each deploy (optional):** in *Settings → Environments → production*, add yourself
+  under *Required reviewers*. The `deploy` job then waits for your approval after every green
+  push to `main`. The `images` job still runs without approval. Leave *Prevent self-review* off
+  if you are the only maintainer. Private repos need a paid GitHub plan for this setting.
+- **Pause deploys:** `gh variable delete AWS_DEPLOY_ROLE_ARN`. Pushes to `main` then build and
+  push images but never change AWS, and this includes a manual *Run workflow*. Set the variable
+  again to resume. A pause does not stop the running app. A stopped service can restart on the
+  next deploy (the `single` services set `DesiredCount: 1`).
 - **Tear down:** turn off the database's deletion protection
   (`aws rds modify-db-instance --db-instance-identifier <id> --no-deletion-protection`), then
   `aws cloudformation delete-stack --stack-name 3t-run`. RDS keeps a final snapshot, which costs
