@@ -1,22 +1,23 @@
 # Deployment
 
-Two containers on AWS ECS behind CloudFront, in eu-central-1 (Increment 14b, #98). Why this
+Two containers on AWS ECS behind CloudFront. Why this
 setup: [ADR 0003](../adr/0003-two-containers-on-ecs-behind-cloudfront.md).
 
 `deploy.yml` ships `main` after green CI. It builds both images for arm64, pushes them to GHCR
-(`ghcr.io/ovi-codes/3t-backend` and `3t-frontend`, tagged `:<sha>` and `:main`) and rolls them
-out to ECS.
+(`ghcr.io/ovi-codes/3t-backend` and `3t-frontend`, tagged `:<sha>` and `:main`), updates the
+CloudFormation stack `3t-run` ([`infra/app.yaml`](../../infra/app.yaml)) to the new tags, and runs
+[`infra/smoke-check.sh`](../../infra/smoke-check.sh) through CloudFront. The one-time setup and
+day-to-day operations are in [`infra/README.md`](../../infra/README.md).
 
 ## Rules for app code
 
-- **All config comes from env vars**, never hardcoded: DB URL and credentials, SMTP host,
-  mail-from, weather API URL and TTL, admin emails.
+- **All config comes from env vars**:
   - Weather: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL`. All have
     defaults that hit the public Open-Meteo endpoint, so prod works with none set.
   - `ADMIN_EMAILS`: comma-separated accounts granted `ROLE_ADMIN`. Empty by default, so there is
     no admin unless it is set.
   - `DEMO_DATA`: `true` adds the `db/demo` Flyway seed (fake leaderboard runners and a demo
-    account with a run history). Local demos only, **never set in prod**.
+    account with a run history). Local demos only, **default 'false' in prod**.
 - **`DB_SSLMODE`** (default `prefer`) is appended to the JDBC URL. Prod sets `require`.
 - **Flyway migrations run on startup**, so a fresh database provisions itself.
 - **The backend hosts no pages.** The Angular build is its own image (nginx), and any backend
@@ -49,9 +50,21 @@ CloudFront ─VPC origin─> internal ALB ─ /api/*, /actuator/* ─> backend o
 ```
 
 - **The same container definitions run in both modes.** Only the network mode, the launch
-  type and the origin behind CloudFront change.
+  type and the origin behind CloudFront change. Switching mode creates the new services,
+  repoints CloudFront and then deletes the old ones, with a few minutes of errors.
+- **Deploys:** in `single` mode the host ports are fixed, so ECS stops the old task before it
+  starts the new one: ~30–60 s of downtime per backend deploy. In `fargate` mode, new tasks pass
+  the ALB health check first, so there is no downtime. In both modes, a task that never starts
+  rolls the stack back.
 - **Only CloudFront can reach the host.** The security groups admit only the CloudFront
-  origin-facing managed prefix list.
+  origin-facing managed prefix list. In `fargate` mode, the ALB is internal and CloudFront
+  reaches it as a VPC origin.
+- **CloudFront to the host is plain HTTP** in `single` mode. A `*.compute.amazonaws.com` name
+  cannot get a certificate, and a VPC origin needs the host in a private subnet, which needs a NAT
+  gateway. The traffic stays between CloudFront and the region. In `fargate` mode it does not
+  leave the VPC.
+- **The containers cannot use the host's role.** The host requires IMDSv2 with a hop limit of
+  1, so the bridge-network containers cannot reach the metadata service.
 - **The backend trusts the forwarded scheme.** TLS ends at CloudFront, which sends
   `CloudFront-Forwarded-Proto`. The backend sets `SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER` to that
   header and trusts any proxy (`SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES=.*`). That makes
@@ -66,7 +79,8 @@ CloudFront ─VPC origin─> internal ALB ─ /api/*, /actuator/* ─> backend o
   outbound calls to GHCR, SES and Open-Meteo.
 - **Images stay on GHCR** as public packages, built natively for arm64 on GitHub's free arm
   runners.
-- **Secrets are SSM Parameter Store SecureStrings** (free), not an RDS-managed secret, whose
-  7-day rotation would break running tasks.
+- **Secrets are SSM Parameter Store SecureStrings** (free): `/3t/db-password` and
+  `/3t/mail-password`. ECS injects them as `DB_PASSWORD` and `MAIL_PASSWORD`. They are not an
+  RDS-managed secret, whose 7-day rotation would break running tasks.
 - **The database is private.** RDS admits port 5432 only from the backend's security groups,
   and TLS is required (`DB_SSLMODE=require`).

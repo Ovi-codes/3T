@@ -1,0 +1,2 @@
+# Pinned infra tooling, installed by the CI infra job. Dependabot proposes bumps.
+cfn-lint==1.60.1
