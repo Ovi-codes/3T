@@ -1,7 +1,6 @@
 name: CI
 
-# The seed of the release gate. All three jobs must pass; the CS-1..6 core-scenario
-# E2E tests (charter §5) plug into the e2e job as they are built.
+# The seed of the release gate. All three jobs must pass
 on:
   push:
     branches: [main]
@@ -24,8 +23,7 @@ jobs:
           java-version: '21'
           cache: maven
       # verify = format check (Spring Java Format, validate phase) + unit tests + Testcontainers
-      # integration + JaCoCo report. Docker is present on the runner, so the throwaway Postgres
-      # spins up with no extra setup.
+      # integration + JaCoCo report.
       - name: mvn verify
         working-directory: backend
         run: ./mvnw -B verify
@@ -90,12 +88,9 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    # A green run takes ~3 min (tests ~1 min). Playwright's own globalTimeout (3 min) fires first
-    # and still writes the report; this is the backstop if Playwright itself hangs.
     timeout-minutes: 7
     # spring-boot:run (started by Playwright's webServer) needs a real Postgres, and the CS-1 test
-    # needs a real SMTP server to read the confirmation email back from. Testcontainers is not used
-    # here, so provide both as services with the same defaults as docker-compose.yml.
+    # needs a real SMTP server to read the confirmation email back from.
     services:
       postgres:
         image: postgres:16
@@ -170,7 +165,7 @@ jobs:
           path: e2e/playwright-report/
           retention-days: 7
 
-  # The AWS templates (infra/*.yaml) and the deploy smoke check. Nothing here talks to AWS.
+  # The AWS templates (infra/*.yaml) and the deploy smoke check.
   infra:
     name: Infra (cfn-lint)
     runs-on: ubuntu-latest
@@ -185,11 +180,10 @@ jobs:
         run: pip install -r infra/requirements.txt
       - name: Lint the CloudFormation templates
         run: cfn-lint infra/*.yaml
-      # shellcheck is preinstalled on the GitHub Ubuntu runners.
       - name: Lint the smoke check
         run: shellcheck infra/smoke-check.sh
 
-  # The deploy artifacts (ADR 0003): build both images for arm64, the production architecture,
+  # The deploy artifacts: build both images for arm64, the production architecture,
   # and run them the way production does. The backend runs against a real Postgres. This catches
   # a broken Dockerfile, a bad nginx route, or a security rule change before deploy.yml sees them.
   image:
@@ -272,7 +266,7 @@ jobs:
           docker logs frontend
 
   # On main only: publish the coverage badge JSON to the `badges` branch, which the README's
-  # shields.io endpoint badges read. Kept off main itself so CI never commits to the protected branch.
+  # shields.io endpoint badges read.
   coverage-badges:
     name: Publish coverage badges
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

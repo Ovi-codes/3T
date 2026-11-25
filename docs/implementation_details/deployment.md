@@ -1,6 +1,6 @@
 # Deployment
 
-Two containers on AWS ECS behind CloudFront, in eu-central-1 (Increment 14b, #98). Why this
+Two containers on AWS ECS behind CloudFront. Why this
 setup: [ADR 0003](../adr/0003-two-containers-on-ecs-behind-cloudfront.md).
 
 `deploy.yml` ships `main` after green CI. It builds both images for arm64, pushes them to GHCR
@@ -11,14 +11,13 @@ day-to-day operations are in [`infra/README.md`](../../infra/README.md).
 
 ## Rules for app code
 
-- **All config comes from env vars**, never hardcoded: DB URL and credentials, SMTP host,
-  mail-from, weather API URL and TTL, admin emails.
+- **All config comes from env vars**:
   - Weather: `WEATHER_API_URL`, `WEATHER_FORECAST_HORIZON_DAYS`, `WEATHER_CACHE_TTL`. All have
     defaults that hit the public Open-Meteo endpoint, so prod works with none set.
   - `ADMIN_EMAILS`: comma-separated accounts granted `ROLE_ADMIN`. Empty by default, so there is
     no admin unless it is set.
   - `DEMO_DATA`: `true` adds the `db/demo` Flyway seed (fake leaderboard runners and a demo
-    account with a run history). Local demos only, **never set in prod**.
+    account with a run history). Local demos only, **default 'false' in prod**.
 - **`DB_SSLMODE`** (default `prefer`) is appended to the JDBC URL. Prod sets `require`.
 - **Flyway migrations run on startup**, so a fresh database provisions itself.
 - **The backend hosts no pages.** The Angular build is its own image (nginx), and any backend
@@ -60,7 +59,7 @@ CloudFront ─VPC origin─> internal ALB ─ /api/*, /actuator/* ─> backend o
 - **Only CloudFront can reach the host.** The security groups admit only the CloudFront
   origin-facing managed prefix list. In `fargate` mode, the ALB is internal and CloudFront
   reaches it as a VPC origin.
-- **CloudFront to the host is plain HTTP** in `single` mode. An `*.compute.amazonaws.com` name
+- **CloudFront to the host is plain HTTP** in `single` mode. A `*.compute.amazonaws.com` name
   cannot get a certificate, and a VPC origin needs the host in a private subnet, which needs a NAT
   gateway. The traffic stays between CloudFront and the region. In `fargate` mode it does not
   leave the VPC.

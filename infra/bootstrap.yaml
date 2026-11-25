@@ -7,9 +7,6 @@ Description: >-
 # CloudFormation on the app stack, and it hands the work to ExecutionRole, which holds the
 # permissions to create the resources. So the GitHub token never holds them itself.
 #
-# What guards this: only a job in the GitHub `production` environment can assume DeployRole,
-# and that environment accepts deployments from `main` only. The templates on `main` went
-# through a reviewed PR.
 
 Parameters:
   GitHubRepo:

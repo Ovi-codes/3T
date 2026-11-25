@@ -1,6 +1,6 @@
 # AWS infrastructure
 
-Production runs as two containers on AWS ECS behind CloudFront, in eu-central-1 (Frankfurt).
+Production runs as two containers on AWS ECS behind CloudFront, in EU.
 [ADR 0003](../docs/adr/0003-two-containers-on-ecs-behind-cloudfront.md) explains why, and
 [`deployment.md`](../docs/implementation_details/deployment.md) explains how it fits together.
 

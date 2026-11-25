@@ -27,7 +27,7 @@ Parameters:
   EcsAmiId:
     Type: AWS::EC2::Image::Id
     Description: >-
-      ECS-optimised Amazon Linux 2023 arm64 AMI. A plain value, not an SSM lookup, so the host is
+      ECS-optimised Amazon Linux 2023 arm64 AMI. The host is
       replaced only when we bump it. Current ID: aws ssm get-parameter --name
       /aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id
   CloudFrontPrefixListId:
@@ -142,7 +142,6 @@ Resources:
       Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-private-b'}]
 
   # ── Security groups (free, so they exist in both modes) ──
-  # The prefix list counts as ~55 rules of a group's 60, so each port gets its own group.
   HostFrontendSg:
     Type: AWS::EC2::SecurityGroup
     Properties:

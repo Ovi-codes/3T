@@ -36,7 +36,7 @@ their time trend.
   viewports, with axe-core accessibility checks.
 - **Coverage and formatting in CI.** JaCoCo (backend) and Vitest (frontend) coverage is
   posted to each CI run's summary. Spring Java Format and Prettier fail the build on
-  unformatted code. Dependabot opens weekly update PRs for Maven, npm, GitHub Actions and the Docker base images.
+  unformatted code. Dependabot opens quarterly update PRs for Maven, npm, GitHub Actions and the Docker base images.
 - **Performance gate.** k6 load tests on the two hot paths are a required check on `main`.
 - **Seams at the boundaries.** Authentication and the weather forecast are behind interfaces
   (`AuthProvider`, `WeatherProvider`). Forecasts come from Open-Meteo and are cached with
@@ -222,7 +222,7 @@ pull request, as three jobs that must all pass:
 | `frontend` | Node 24, `npm ci`, Prettier check, `npm run lint`, `npm run test:coverage`. Posts a coverage table to the job summary and uploads the HTML report. |
 | `e2e` | Prettier check on the tests, then builds both apps, runs Playwright against the live stack (backed by a Postgres service), and uploads the HTML report as a build artifact. |
 
-[`.github/dependabot.yml`](.github/dependabot.yml) opens weekly update PRs for Maven
+[`.github/dependabot.yml`](.github/dependabot.yml) opens quarterly update PRs for Maven
 (`backend/`), npm (`frontend/` and `e2e/`) and GitHub Actions. Minor and patch updates are grouped
 per ecosystem. Angular packages are grouped so that they move together. TypeScript major and minor
 updates are ignored, because each Angular release accepts only a narrow TypeScript range. Bump
